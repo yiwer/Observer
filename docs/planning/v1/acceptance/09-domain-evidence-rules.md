@@ -25,7 +25,7 @@ Root持有不可变旧档：Record1/2 `accept-v1-05/data/root-v1-06-compat-4ca1d
 
 ## 安全与外部门槛
 
-不读秘密、认证文件或用户`.idea/`，不调用真实Provider/SMTP，QQ已单封SMTP受理但收件未确认，禁止重发。本机Codex地区资格待Owner、Claude真实环境延期；不阻止本票离线实施。固定CLI镜像/版本/daemon保持，不升级、重建、重tag或全局prune。首轮tag查询偶发错误根因未知，完整失败/只读诊断/同SHA重跑分别记录；#8最终三方完整检查均通过，不能假定本票必过。
+不读秘密、认证文件或用户`.idea/`，不调用真实Provider/SMTP；QQ单封SMTP受理后，Owner已在2026-09-06确认实际收件和中文显示，禁止重复发送。本机Codex地区资格待Owner、Claude真实环境延期；不阻止本票离线实施。固定CLI镜像/版本/daemon保持，不升级、重建、重tag或全局prune。首轮tag查询偶发错误根因未知，完整失败/只读诊断/同SHA重跑分别记录；#8最终三方完整检查均通过，不能假定本票必过。
 
 测试只用自己新唯一目录，保留证据，不清理他人或既有材料。绝对禁止触碰/换工具清理：`C:/Users/16348/AppData/Local/Temp/observer-codex-O2hbGJ`、`O:/GenesisCode/Observer-worktrees/v1-05/data/spec-review-9f568c`、`C:/Users/16348/AppData/Local/Temp/observer-six-ip5kK3`。
 
