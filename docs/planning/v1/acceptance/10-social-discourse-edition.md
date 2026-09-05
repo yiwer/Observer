@@ -52,4 +52,21 @@ Root实际读了作者工作树 `data/v1-10-slices/01-red-ready.log`、`01-green
 
 Root已完整读独立研究，并通过官方文档和固定v4.7.1源码独立核对关键协议事实：标签分页链接只保留部分参数，须固定原查询；ID为opaque string且排序不保证created_at顺序；单状态404同时涵盖找不到和无权查看，不能称已确认作者删除。来源：[标签Controller](https://github.com/mastodon/mastodon/blob/v4.7.1/app/controllers/api/v1/timelines/tag_controller.rb)、[官方ID指南](https://docs.joinmastodon.org/api/guidelines/#handling-ids-within-api-responses)、[状态Controller](https://github.com/mastodon/mastodon/blob/v4.7.1/app/controllers/api/v1/statuses_controller.rb)。研究文档由作者最终提交纳入；它不批准真实来源或证明实际平台采样。最后收紧PDF/邮件未来实测措辞后，Root读回变更段落并验证文件SHA256 `e4a070fbfcb8bcfd22822a72369231592eb55be77ff8c64068d48b19a871b210`；当前仅Canonical/MD及永久Record可验证。
 
-作者亲读完整研究后，Root确认具体正向首片：真实Mastodon协议Adapter以自有虚构两页加终止空页取得6条获准本地原发样本，实际capture早于cutoff、produce晚于cutoff；匿名获准文字经Runner/Verifier后形成指向本期唯一合格主EventCluster的Story-linked Discourse，账户/头像等传输层哨兵不进入模型或永久Record，SQLite重启保持字节。下一片再推进native门槛、偏斜和生命周期。截止本记录更新，尚无该正向片结果。
+作者亲读完整研究后，Root确认具体正向首片：真实Mastodon协议Adapter以自有虚构两页加终止空页取得6条获准本地原发样本，实际capture早于cutoff、produce晚于cutoff；匿名获准文字经Runner/Verifier后形成指向本期唯一合格主EventCluster的Story-linked Discourse，账户/头像等传输层哨兵不进入模型或永久Record，SQLite重启保持字节。下一片再推进native门槛、偏斜和生命周期。该次方案确认时尚无正向片结果，后续进展如下。
+
+## 正向链路与Root互补检查（变化中工作树）
+
+随后Root实际读 `04-typecheck.log` 和 `04-progress.log`：作者正向Story-linked片4/4通过、326.5018ms，typecheck无错误。它不是完整套件或冻结结果。作者又报告native的12/11门槛、Profile开始固定、复核后不可用及受限兴趣排除等后续片；最终须以冻结代码与完整证据审查，不由切片数量认定票完成。
+
+Root在独立 `data/root-v1-10-review/` 写少量互补公开seam探针，不导入产品fixture期待、不旁读SQLite、不访问真实网络：
+
+- `adapter-policy-probe.mjs` 先捕获6条自有响应，再撤销collection许可；实际RED为仍读取6条status（exit1，20.813ms）。作者修复公共Adapter自身的当前权限/原政策/来源origin绑定后，Root原样复跑1/1通过、14.599ms，脚本SHA256 `5c520e243cdb2714e25d2dd34143f621560be1c419186e1f2e861115e4dea65f`。
+- `discourse-t1-probe.mjs` 用12条两桶材料和完全空的普通Bundle，证明可产生1组native观察且不虚构新闻/主EventCluster，鉴权重启相同：1/1通过、51.8256ms，脚本SHA256 `191c77187c7d26c8b792dd8772219a970fcd183c1fc5ae71ad8d4392377009d3`。Root读完整社交MD段，未知地域/作者数及非代表性局限均可见。首次Root错误输入了domain-v1不接受的主题枚举，被正确隔离；只修了探针输入，保留失败记录，不计产品RED。
+- `post-verifier-t1-probe.mjs` 证明Claim已送Verifier后，将复核响应改为404；原Claim及复制进自由注解的原句均不在全Report中，0组观察且重启相同：1/1通过、46.0057ms，脚本SHA256 `99280ecd676cc78cce13b43ceb8ee390f0a42255dbbea054e94d590b68a40b85`。首次Root负向子串断言误报了正确的否定说明「未将不可用断言为作者已删除」；亲读中文后改为检查结构化unavailable原因，禁留原句期待未改，原日志保留为探针断言错误。
+- `adapter-cancellation-probe.mjs` 在最后一条status响应期间取消，最初仍返回unchanged；实际RED exit1、1项失败、13.8962ms。作者修复后Root保持原期待复跑1/1通过、18.5967ms；问题局部关闭，最终冻结重跑仍待完成。
+
+Root另静态发现Interest快照曾放在新增异步采样之后；作者报告已用复核等待期间导入v2的真实RED→GREEN修到任何新await之前，保持旧请求时钟不变。Root也批准仅request6、通过全部社会Gate的native analysis使用受限topics/entities兴趣投影做排除/排序；不能扩普通analysis，地域固定未知、GlobalBaseline不由社交推断，原词不作为自由注解永久保留，Story-linked仍跟随最终主Cluster。Record7社交观察的一致性校验仍在实施。
+
+在作者第13片后变化中源码上，Root四个原探针又独立并行复跑，均exit0/各1项：policy16.0268ms、cancellation18.5967ms、native-only66.1554ms、post-Verifier56.1193ms。日志为 `data/root-v1-10-review/wip-after-s13-*.log`，SQLite/MD输出各自独立新目录；不是同一冻结版完整check，不将重复计数累计成测试覆盖量。
+
+以上均基于尚未提交冻结的工作树；完整check/smoke、fresh Standards/Spec、Root冻结构建和actual-master验收仍未执行。本票保持in-progress，不启动#11。
