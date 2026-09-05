@@ -38,6 +38,8 @@
 - 为避免 Windows bind mount 权限语义掩盖 Linux UID 不匹配，实施 agent 将采用受控 stdin 投送；编译产物也须包含进程辅助资产并实测。
 - 拟获取固定且校验完整性的 Linux CLI，以本地无凭证模型协议替身测试实际工具拒绝；这项尚未完成，不能把计划写成实测。
 
+后续阶段报告：timeout/cancel 已转绿，按 ID/label/Created 核验回收并读回 removed。为避免下面记录的 internal gateway 例外，模型通道改用断网容器内仅 loopback 的 HTTP broker，经可信 supervisor 的 stdout 控制帧与宿主 stdin 响应连接固定 ModelTransport；宿主仅执行模型协议，密钥留在隔离边界外。该通道与实际 CLI 拒绝测试仍在实施，未冻结，不能提前记通过。
+
 ## Root 网络前提核查
 
 Root 实际打开 Docker 官方 [network create](https://docs.docker.com/reference/cli/docker/network/create/#network-internal-mode---internal) 和 [gateway modes](https://docs.docker.com/engine/network/port-publishing/#gateway-modes)：普通 `--internal` bridge 仍可访问网关地址上的宿主服务，包含监听所有地址的服务；`isolated` gateway mode 配合 internal 才不向 bridge 分配地址。因此仅检查 `Internal=true` 及已连接容器名单，不能证明模型专用网络已隔离宿主旁路。
