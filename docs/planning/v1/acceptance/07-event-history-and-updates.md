@@ -63,3 +63,17 @@ Root 允许在当前票范围内按 T1 竖切推进，并要求：事实性的�
 - 已有 #5 producer 的 Record v1/v2 两份历史基线继续保留在 `accept-v1-05/data/root-v1-06-compat-4ca1d8`，不重新生成、不用新实现反造旧版预期。
 
 复跑：`node O:/GenesisCode/Observer-worktrees/accept-v1-06/data/root-v1-07-compat-a913cb/verify-reader.ts <绝对路径/dist/observer.js>`。此目录是独立验收证据，不归作者或其它 reviewer 清理。
+
+## Root 实施期独立探针（WIP，非冻结验收）
+
+Root 新建自有 ignored `accept-v1-06/data/root-v1-07-review`，仅用虚构素材、外部 Runner/Verifier/时钟替身、真实磁盘 SQLite，公开 `produce → close → readReport`。没有修改作者代码或检查内部 SQL。作者此时 HEAD 仍为起点 `5da8197`，产品代码未提交；以下结果不绑定为该基线的行为，也不视作最终证据。
+
+`fact-and-causality-probe.ts` **3/3 PASS**（82.1607 ms），覆盖同候选中旧 fact 后附今日新 fact 的保留、未来业务日报不能进入旧期回放、旧业务日期但实际晚出版的日报不能成为早先 cutoff 的历史。脚本 SHA-256 `5c22dc44a7529e2b8e19b66f8bc29e99372d94e049d56d7fc4a8c56fe96ef11b`；三个 `causality-run-*` 目录保留。冻结后须对 built 复跑。
+
+`annotation-retention-probe.ts` **0/4 RED**（67.6951 ms，exit 1）：来源禁止分发、禁止永久归档、Verifier 返回后过期、措辞 unsafe 四种已被 Publication Gate 隔离的内容，虽然 stories=0 且 Markdown 不含 marker，仍通过 `publicationGate.batches[].verification.assessments[].event.fact` 的自由文本进入已持久化 Report Record，关闭/重开公开读取后仍可见。违反既有 PRD D6 与 ADR-0005 的来源分发/永久保留边界，是当前实施必须关闭的阻断；不是新增加产品需求，也不是对 #6 已接受 SHA 的发现。
+
+- retention 探针 SHA-256 `1d310d04a050570d55f3e85ce845b3fbbe19378d1e52672c00a9fb46c6956628`；四份 `retention-run-*` SQLite 保留，只含自有虚构 marker。
+- 复现后取得 WIP 文件 SHA-256：`gate-contracts.ts` `1ecd485e5803e0e6daf77838472c29a8c3ada9ed7123e80bd9dd854f21904f1e`；`publication-gate.ts` `c428abc7e5795018765a32e06fcde72ccc2b805e0bb20bff847bf8490407a971`；`batched-publication-gate.ts` `1181aa0e5f605c3edfe3caf5164583f46f775e6c0ef5c15cf7bd5fce8b7450aa`。这只是定位 WIP 的证据，不冒充冻结整个候选。
+- 已交原作者用 TDD 窄范围修复：最终门槛后的 event 派生文本不得保留被隔离内容；检查跨批最终 TTL 和同样接受 optional event 的 request v1/v2 路径；不能把本地归档投影伪称完整原始模型回执。
+
+双轴正式 code-review、完整 check/smoke、冻结/集成复验尚未开始，#7 仍 OPEN。
