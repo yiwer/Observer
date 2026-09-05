@@ -10,7 +10,7 @@ import { createObserver, ObserverError, type ObserverOptions } from "../src/obse
 import { policy } from "./helpers/source-fixtures.ts";
 import { policyDigest } from "../src/collection.ts";
 import { ownerToken, request } from "./fixtures.ts";
-import { modelResponseFixture } from "./helpers/model-responses.ts";
+import { modelResponseFixture, usageResponseFixture } from "./helpers/model-responses.ts";
 
 const image = "sha256:183e5ad42322fea6f731433ae7f6be7498812b31d2eaf05537ffed838dd1ba7c";
 async function fixture(t: TestContext, scenario = "success", extra: Partial<Parameters<typeof createCodexRunner>[0]> = {}, observerExtra: Partial<ObserverOptions> = {},
@@ -58,7 +58,7 @@ test("The saved redacted real-CLI event sample replays through the private repor
   const report = observer.readReport(version.id, ownerToken);
   assert.match(report.canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
   assert.deepEqual(report.record.agentResult.usage, { inputTokens: 12, outputTokens: 21, cachedInputTokens: 2,
-    cacheWriteInputTokens: 0, reasoningOutputTokens: 0, costUsd: null });
+    cacheWriteInputTokens: 0, reasoningOutputTokens: 0, costUsd: null, source: "cli-turn", modelResponses: [] });
 });
 
 test("The isolated runner can use an explicit model transport without giving the process external network or credentials", async (t) => {
@@ -171,6 +171,81 @@ test("An attempted executable model tool is rejected before Codex or the publica
   assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
 });
 
+test("Rejected real-CLI model output retains already observed Responses usage without publishing", async (t) => {
+  const cliImage = execFileSync("docker", ["image", "inspect", "observer-v1-04-codex:0.153.4", "--format", "{{.Id}}"], { encoding: "utf8", timeout: 5000, windowsHide: true }).trim();
+  const { observer } = await fixture(t, "success", { runtime: { kind: "codex-cli", image: cliImage }, timeoutMs: 25_000,
+    transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body: usageResponseFixture({
+      input_tokens: 12, input_tokens_details: { cached_tokens: 2 }, output_tokens: 21,
+      output_tokens_details: { reasoning_tokens: 3 }, total_tokens: 33,
+    }, true) }) } });
+  await assert.rejects(observer.produce(request), (error: unknown) => {
+    assert.ok(error instanceof ObserverError);
+    assert.equal(error.code, "agent-policy-violation");
+    assert.equal(error.agentRun?.execution?.cleanup, "removed");
+    assert.equal(error.agentRun?.usage?.inputTokens, 12);
+    assert.equal(error.agentRun?.usage?.outputTokens, 21);
+    assert.equal(error.agentRun?.usage?.cachedInputTokens, 2);
+    assert.equal(error.agentRun?.usage?.reasoningOutputTokens, 3);
+    assert.equal(error.agentRun?.usage?.cacheWriteInputTokens, null);
+    assert.equal(error.agentRun?.usage?.costUsd, null);
+    assert.equal(error.agentRun?.usage?.source, "model-responses");
+    assert.equal(error.agentRun?.usage?.modelResponses?.[0]?.request, 1);
+    assert.equal(JSON.stringify(error).includes("untrusted-response-id-must-not-be-retained"), false);
+    return true;
+  });
+  assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+});
+
+test("Missing, invalid or conflicting Responses usage stays unknown after a tool refusal", async (t) => {
+  const valid = { input_tokens: 12, output_tokens: 21, total_tokens: 33 };
+  for (const body of [
+    usageResponseFixture(null, true), usageResponseFixture({ input_tokens: "12", output_tokens: 21 }, true),
+    usageResponseFixture({ input_tokens: -1, output_tokens: 21 }, true), usageResponseFixture({ ...valid, total_tokens: 1 }, true),
+    usageResponseFixture({ ...valid, input_tokens_details: { cached_tokens: 13 } }, true),
+    usageResponseFixture(valid, true) + usageResponseFixture(valid, true),
+    usageResponseFixture(valid, true) + usageResponseFixture({ input_tokens: 8, output_tokens: 9, total_tokens: 17 }, true),
+  ]) {
+    const { observer } = await fixture(t, "model-tool", { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    await assert.rejects(observer.produce(request), (error: unknown) => {
+      assert.ok(error instanceof ObserverError);
+      assert.equal(error.code, "agent-policy-violation");
+      assert.deepEqual(error.agentRun?.usage, { inputTokens: null, outputTokens: null, cachedInputTokens: null,
+        cacheWriteInputTokens: null, reasoningOutputTokens: null, costUsd: null, source: "model-responses", modelResponses: [{ request: 1,
+          inputTokens: null, outputTokens: null, cachedInputTokens: null, cacheWriteInputTokens: null, reasoningOutputTokens: null, costUsd: null }] });
+      return true;
+    });
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+  }
+});
+
+test("Multiple model sends retain bounded per-request usage and sum only completely observed fields", async (t) => {
+  for (const partial of [false, true]) {
+    let sends = 0;
+    const { observer } = await fixture(t, "broker-twice", { transport: { provenance: "model-protocol-fixture", respond: async () => {
+      sends += 1;
+      if (sends === 1) return { status: 200, body: JSON.stringify({ acknowledged: true, object: "response", model: "gpt-5.6-sol", status: "completed", output: [],
+        usage: { input_tokens: 12, output_tokens: 21, input_tokens_details: { cached_tokens: 2 }, output_tokens_details: { reasoning_tokens: 3 }, total_tokens: 33 } }) };
+      return { status: 200, body: usageResponseFixture(partial ? { output_tokens: 11, output_tokens_details: { reasoning_tokens: 1 } } : {
+        input_tokens: 7, output_tokens: 11, input_tokens_details: { cached_tokens: 3 }, output_tokens_details: { reasoning_tokens: 1 }, total_tokens: 18,
+      }, true) };
+    } } });
+    await assert.rejects(observer.produce(request), (error: unknown) => {
+      assert.ok(error instanceof ObserverError);
+      assert.equal(error.code, "agent-policy-violation");
+      assert.equal(error.agentRun?.usage?.source, "model-responses");
+      assert.equal(error.agentRun?.usage?.inputTokens, partial ? null : 19);
+      assert.equal(error.agentRun?.usage?.outputTokens, 32);
+      assert.equal(error.agentRun?.usage?.cachedInputTokens, partial ? null : 5);
+      assert.equal(error.agentRun?.usage?.reasoningOutputTokens, 4);
+      assert.equal(error.agentRun?.usage?.costUsd, null);
+      assert.deepEqual(error.agentRun?.usage?.modelResponses?.map((receipt) => [receipt.request, receipt.inputTokens]), [[1, 12], [2, partial ? null : 7]]);
+      return true;
+    });
+    assert.equal(sends, 2);
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+  }
+});
+
 test("Malicious source instructions encounter actual file, environment, privilege, network and broker refusals", async (t) => {
   const previous = process.env.OBSERVER_TEST_SECRET;
   process.env.OBSERVER_TEST_SECRET = "host-only-secret-not-for-model";
@@ -219,6 +294,10 @@ test("The pinned real Codex CLI reaches the archived body through an offline Res
   assert.match(report.canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
   assert.equal(report.record.agentResult.execution?.cliVersion, "codex-cli 0.153.4");
   assert.equal(report.record.agentResult.execution?.provenance, "protocol-fixture");
+  assert.equal(report.record.agentResult.usage?.source, "cli-turn");
+  assert.equal(report.record.agentResult.usage?.inputTokens, 12);
+  assert.equal(report.record.agentResult.usage?.outputTokens, 21);
+  assert.deepEqual(report.record.agentResult.usage?.modelResponses?.map((receipt) => [receipt.request, receipt.inputTokens, receipt.outputTokens]), [[1, 12, 21]]);
 });
 
 test("Every actual model request rechecks the trusted Evidence expiry, including a second request", async (t) => {
@@ -245,6 +324,38 @@ test("Every actual model request rechecks the trusted Evidence expiry, including
     } else {
       const version = await observer.produce(input);
       assert.equal(sends, 2);
+      assert.match(observer.readReport(version.id, ownerToken).canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
+    }
+  }
+});
+
+test("Evidence expiring during task startup is not sent even to the first model request", async (t) => {
+  for (const expire of [true, false]) {
+    const source = policy(); source.sourceId = "source-fixture";
+    const input = { ...request, evidenceBundle: { ...request.evidenceBundle, schemaVersion: 2, coverageGaps: [], evidence: [{
+      ...request.evidenceBundle.evidence[0]!, policyVersion: 1, policySha256: policyDigest(source), trust: "untrusted-source-data",
+      expiresAtUtc: "2026-09-04T23:41:00.000Z",
+    }] } };
+    let now = "2026-09-04T23:40:00.000Z", sends = 0;
+    const { observer } = await fixture(t, "broker", { clock: () => now, transport: {
+      provenance: "model-protocol-fixture", respond: async () => { sends += 1; return { status: 200, body: '{"acknowledged":true,"output":[]}' }; },
+    } }, { clock: () => now, sourcePolicies: [source] });
+    const producing = observer.produce(input);
+    // Advance external time while asynchronous task startup is outstanding.
+    if (expire) now = "2026-09-04T23:41:00.000Z";
+    if (expire) {
+      await assert.rejects(producing, (error: unknown) => {
+        assert.ok(error instanceof ObserverError);
+        assert.equal(error.code, "agent-evidence-expired");
+        assert.equal(error.agentRun?.execution?.cleanup, "removed");
+        assert.deepEqual(error.agentRun?.usage?.modelResponses, []);
+        return true;
+      });
+      assert.equal(sends, 0);
+      assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+    } else {
+      const version = await producing;
+      assert.equal(sends, 1);
       assert.match(observer.readReport(version.id, ownerToken).canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
     }
   }

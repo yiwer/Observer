@@ -22,3 +22,9 @@ export function modelResponseFixture() {
   ];
   return events.map((event, sequence_number) => `event: ${event.type}\ndata: ${JSON.stringify({ ...event, sequence_number })}\n\n`).join("");
 }
+
+export function usageResponseFixture(usage: unknown, rejectedTool = false) {
+  const response = { id: "untrusted-response-id-must-not-be-retained", object: "response", model: "gpt-5.6-sol", status: "completed",
+    output: rejectedTool ? [{ type: "function_call", name: "exec_command", call_id: "blocked-tool", arguments: '{"cmd":"must-not-execute"}' }] : [], usage };
+  return `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", response })}\n\n`;
+}

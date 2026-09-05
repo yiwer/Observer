@@ -79,6 +79,19 @@ export const CandidateStorySchema = z.strictObject({
 });
 export type CandidateStory = z.infer<typeof CandidateStorySchema>;
 
+const tokenUsage = {
+  inputTokens: z.number().int().nonnegative().nullable(),
+  outputTokens: z.number().int().nonnegative().nullable(),
+  cachedInputTokens: z.number().int().nonnegative().nullable(),
+  cacheWriteInputTokens: z.number().int().nonnegative().nullable(),
+  reasoningOutputTokens: z.number().int().nonnegative().nullable(),
+  costUsd: z.number().nonnegative().nullable(),
+};
+const TokenUsageSchema = z.strictObject(tokenUsage);
+const ModelUsageReceiptSchema = z.strictObject({ request: z.number().int().min(1).max(8), ...tokenUsage });
+export type TokenUsage = z.infer<typeof TokenUsageSchema>;
+export type ModelUsageReceipt = z.infer<typeof ModelUsageReceiptSchema>;
+
 const agentMetadata = {
   schemaVersion: z.literal(1),
   taskId: id, evidenceBundleId: id, configurationId: id,
@@ -95,13 +108,9 @@ const agentMetadata = {
     containerId: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
     cleanup: z.enum(["removed", "not-created", "unverified"]),
   }).optional(),
-  usage: z.strictObject({
-    inputTokens: z.number().int().nonnegative().nullable().optional(),
-    outputTokens: z.number().int().nonnegative().nullable().optional(),
-    cachedInputTokens: z.number().int().nonnegative().nullable().optional(),
-    cacheWriteInputTokens: z.number().int().nonnegative().nullable().optional(),
-    reasoningOutputTokens: z.number().int().nonnegative().nullable().optional(),
-    costUsd: z.number().nonnegative().nullable().optional(),
+  usage: TokenUsageSchema.partial().extend({
+    source: z.enum(["cli-turn", "model-responses", "unknown"]).optional(),
+    modelResponses: z.array(ModelUsageReceiptSchema).max(8).optional(),
   }).optional(),
 };
 export const AgentResultSchema = z.discriminatedUnion("status", [
