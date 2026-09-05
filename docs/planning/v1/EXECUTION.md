@@ -14,7 +14,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 ## 当前停止点
 
 - 已完成票：#1、#2、#3，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
-- 下一票：V1-04 / GitHub #4；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。尚未派发，下一步创建固定基线的独立 worktree 并启动 fresh-context implement agent。
+- 当前票：V1-04 / GitHub #4，进行中；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。fresh-context 实施 agent 为 `/root/implement_v1_04`。
+- #4 固定起点：320ab620a2d3f22c09e13334a68f06a3b664af05；worktree：`O:/GenesisCode/Observer-worktrees/v1-04`；分支：`ticket/v1-04`；[启动回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550300477)，已读回 OPEN 且 assignee=yiwer。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
 - 最新已验收集成提交：a83cf2a08b8db8b9b960f059e2a3653cc01c3935。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
@@ -40,6 +41,6 @@ V1-26 起的真实环境、Provider 资格/凭证、来源许可、费用、收�
 
 2026-09-05，orchestrator 在等待 #3 时执行了本机 `codex --version`、根/exec/sandbox/features 帮助命令及无调用参数解析检查。当前二进制为 `C:/Users/16348/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe`，版本 **codex-cli 0.153.4**，已不同于历史研究的 0.151.0。`--search -a never` 放在 `exec` 前可通过帮助解析，`exec --ask-for-approval never --help` 仍被拒绝。没有读取凭证、修改配置或发起模型请求。
 
-#4 实施时必须重验实际二进制与完整终态契约，不得从历史版本或帮助解析推定认证、费用、事实质量、OS 隔离或进程树清理已经合格。预检已重新打开官方[非交互模式](https://learn.chatgpt.com/docs/non-interactive-mode)、[安全边界](https://learn.chatgpt.com/docs/agent-approvals-security)和[配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)；这些文档与本机帮助仅作后续测试依据，不是实际拒绝边界的测试证据。#4 尚未派发或开始实施。
+#4 实施时必须重验实际二进制与完整终态契约，不得从历史版本或帮助解析推定认证、费用、事实质量、OS 隔离或进程树清理已经合格。预检已重新打开官方[非交互模式](https://learn.chatgpt.com/docs/non-interactive-mode)、[安全边界](https://learn.chatgpt.com/docs/agent-approvals-security)和[配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)；这些文档与本机帮助仅作后续测试依据，不是实际拒绝边界的测试证据。预检时未开始实施，现已按上述固定基线派发。
 
 本机有 Docker CLI、WSL CLI，但 `wsl --list --quiet` 只列 docker-desktop；读取 Docker Server 版本时 Linux Engine named pipe 不存在，不能视为容器运行环境已就绪。此次只读预检没有启动虚拟机/容器、安装组件或修改配置。

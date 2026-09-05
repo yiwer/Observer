@@ -149,7 +149,7 @@
       "number": 4,
       "title": "Codex 单栏研究到受控候选输出",
       "file": "tickets/04-codex-runner.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-03"
