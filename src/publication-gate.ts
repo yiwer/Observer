@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { VerificationSchema, type CandidateV2, type Claim, type GateDecision, type SemanticVerifier, type UnconfirmedItem, type VerificationInput } from "./gate-contracts.ts";
 import { editionNames, type ProduceRequest, type ReportRecord } from "./contracts.ts";
+import { domainFailure } from "./domain-evidence.ts";
 
 export const inputDigest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
@@ -11,6 +12,7 @@ export interface EvaluationOptions {
   structuralStories?: CandidateV2[];
   verifier: SemanticVerifier | undefined;
   recordVerifierDispatch?: boolean;
+  domainRules?: boolean;
   clock: () => string;
   modelPolicyCheck: (evidenceIds: string[], atUtc: string) => string | null;
   publicationPolicyCheck: (evidenceIds: string[], claim: Claim, atUtc: string) => string | null;
@@ -41,7 +43,7 @@ export async function evaluatePublication(options: EvaluationOptions) {
   const parsed = VerificationSchema.safeParse(output);
   const expected = reviewStories.flatMap((story) => story.claims.map((claim) => ({ storyId: story.id, claim })));
   const consistentReasons = { supported: ["supported-by-evidence"], insufficient: ["insufficient-evidence"], conflicting: ["source-conflict"], unsafe: ["unsafe-material", "irrelevant-evidence"] };
-  const valid = parsed.success && parsed.data.assessments.every((item) => item.eventProjection === undefined && item.selectionProjection === undefined && consistentReasons[item.conclusion].includes(item.reason)) && parsed.data.inputSha256 === input.inputSha256 && parsed.data.assessments.length === expected.length && expected.every(({ storyId, claim }) => {
+  const valid = parsed.success && parsed.data.assessments.every((item) => item.eventProjection === undefined && item.selectionProjection === undefined && item.domainProjection === undefined && consistentReasons[item.conclusion].includes(item.reason)) && parsed.data.inputSha256 === input.inputSha256 && parsed.data.assessments.length === expected.length && expected.every(({ storyId, claim }) => {
     const matches = parsed.data.assessments.filter((item) => item.storyId === storyId && item.claimId === claim.id);
     return matches.length === 1 && matches[0]!.evidence.length === claim.evidenceIds.length &&
       new Set(matches[0]!.evidence.map((item) => item.evidenceId)).size === claim.evidenceIds.length &&
@@ -76,6 +78,11 @@ export async function evaluatePublication(options: EvaluationOptions) {
       }
       if (!verification) {
         decide("quarantined", "invalid-verifier-receipt");
+        return false;
+      }
+      const domainRejected = options.domainRules && assessment ? domainFailure(claim, assessment, request.evidenceBundle.evidence, request.evidenceBundle.cutoffUtc) : null;
+      if (domainRejected) {
+        decide(domainRejected.outcome, domainRejected.reason, { semantic: { status: assessment!.conclusion, reason: assessment!.reason } });
         return false;
       }
       const semanticFailure = assessment?.conclusion === "unsafe" || assessment?.wording === "unsafe" ? "unsafe-material" :
@@ -126,6 +133,16 @@ export function claimWording(claim: Claim): string {
 export const escapeMarkdown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   .replace(/[\\`*_{}\[\]()#+!|~]/g, "\\$&").replace(/[\r\n]+/g, " ");
 export const failureExplanations: Record<string, string> = {
+  "domain-assessment-unavailable": "主题风险评估缺失或未知，无法安全呈现该陈述。",
+  "domain-assertion-inconsistent": "陈述类型与事实、归因或解释判断不一致，不能借类型标签绕过证据门。",
+  "high-risk-independent-sources-required": "高风险断言至少需要两个独立可靠来源；相同上游的转载不能形成交叉确认。",
+  "finance-primary-corroboration-required": "高风险财经除两个独立可靠来源外，还必须包含一个适当的一手直接观察。",
+  "financial-content-forbidden": "财经仅呈现资讯与影响解释；买卖指令、目标价、收益承诺或边界未知的内容已隔离。",
+  "statistics-time-unavailable": "动态数字缺少本陈述证据支持的有效统计时间；未用材料发布时间代填，原数字已隔离。",
+  "statistics-attribution-unavailable": "动态数字尚无自身独立交叉依据或明确单方来源归因，原数字已隔离。",
+  "research-assessment-unavailable": "研究成熟度缺少本陈述逐证据判断，不能借用其他材料的研究标签。",
+  "company-capability-unconfirmed": "公司能力声明尚无独立证据支持；官方发布不等于能力已经验证。",
+  "publication-material-forbidden": "未核验社交视频、血腥图片或材料性质未知，不得进入报道材料。",
   "unknown-evidence-reference": "引用的 Evidence 不在本次材料中，已隔离该陈述。",
   "ambiguous-claim-identity": "陈述或证据标识重复，无法建立唯一核验关系。",
   "invalid-verifier-receipt": "语义核验未返回完整且关联正确的结果，尚不能发布。",
