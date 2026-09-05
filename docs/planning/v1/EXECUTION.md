@@ -32,3 +32,9 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 ## 外部就绪项
 
 V1-26 起的真实环境、Provider 资格/凭证、来源许可、费用、收件人与备份资源需授权和实测；V1-28 需要连续 14 天真实记录及规定比例的人工事实核查。没有这些证据时不得宣布 V1 生产通过。
+
+## 下一票只读预检
+
+2026-09-05，orchestrator 在等待 #3 时执行了本机 `codex --version`、根/exec/sandbox/features 帮助命令及无调用参数解析检查。当前二进制为 `C:/Users/16348/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe`，版本 **codex-cli 0.153.4**，已不同于历史研究的 0.151.0。`--search -a never` 放在 `exec` 前可通过帮助解析，`exec --ask-for-approval never --help` 仍被拒绝。没有读取凭证、修改配置或发起模型请求。
+
+#4 实施时必须重验实际二进制与完整终态契约，不得从历史版本或帮助解析推定认证、费用、事实质量、OS 隔离或进程树清理已经合格。预检已重新打开官方[非交互模式](https://learn.chatgpt.com/docs/non-interactive-mode)、[安全边界](https://learn.chatgpt.com/docs/agent-approvals-security)和[配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)；这些文档与本机帮助仅作后续测试依据，不是实际拒绝边界的测试证据。#4 尚未派发或开始实施。
