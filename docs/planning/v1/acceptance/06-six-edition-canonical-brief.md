@@ -39,3 +39,18 @@ Final Editor 只接触已校验 Report Record，不能联网、运行 shell 或�
 作者实际 `node --test tests/six-edition.test.ts` 首片 **RED 0/1**（`runner-unavailable`，204.6564ms），最小接入后 **GREEN 1/1**（233.9689ms）：真实 SQLite 可读取 Record3 的 42 条故事、六个独立栏目及每栏 3 个重点位置，输入中的未核验标题不进入正文，错误凭证无法读取。Root 随后只读核对 WIP 的业务测试和实现差异，未运行独立验收，也未把该定向结果称作完整票通过。
 
 此时原有 CLI 测试因联合 Record 增加 v3，需要先按 schema 判别才读取旧 `agentResult`；作者将补类型判别保留既有断言，不能删除旧用例或改变旧 Runner 契约来消除类型错误。首片暂用旧 renderer 的临时分组，仅为 tracer；后续应改为 Record 直接投影，并补稀疏/全空、逐栏失败、事实及链接/状态一致性、Priority 解释、Impact Note 和许可优先。当前无最终 SHA、完整 typecheck/check 或双轴结论。
+
+## 空栏与失败推进（仍未冻结）
+
+作者随后报告全空与单栏失败已各经历 RED→GREEN：无证据时不运行 Agent、Record 中不捏造 Provider；失败栏保留实际 status/category/usage，成功但无候选另记 `no-candidates`。Root 只读看到了这些公开业务断言及新增直接 Record 投影；未独立运行该 WIP，也没有取得完整 check 终态，不能作冻结通过结论。
+
+Root 另检查原 Claude/Codex 测试 diff，当前只是增加 5/4 处 Record schema 判别，旧业务/用量/权限断言未删除。初稿 renderer 曾以 `storyId` 的栏目名前缀判断隔离说明归属，这不是既有 ID 契约；新的通用来源渲染也尚未保留旧待确认项的支持/相反材料标签。Root 已提示作者用可信结构关联和任意 ID 场景、冲突来源语义回归解决，作者已确认纳入后续竖切。它们是未冻结阶段的具体风险观察，不是已经完成的最终 review。
+
+## Root 独立历史兼容样本
+
+为避免只以新实现生成新样本测试兼容性，Root 在已验收的 detached `accept-v1-05`、固定 `177cfbbddf08e507c448e76dbe23ebc31a2ef617` 使用公开 `produce → readReport`、虚构来源、标注语义替身，生成两份真实 SQLite 历史归档。所有文件位于 Root 独占且 ignored 的 `O:/GenesisCode/Observer-worktrees/accept-v1-05/data/root-v1-06-compat-4ca1d8`：`generate-baseline.ts`、`baseline.json`、`verify-reader.ts`、`record-v1.sqlite`、`record-v2.sqlite`；没有真实新闻、秘密或其他 agent 数据，未修改冻结产品代码。
+
+- Record v1：MD 747 bytes；MD SHA-256 `551448c57bdce0e16e65387d2a0b54d8d5e1950b99a97a233d45a21a517d9e66`；完整 PublishedReport JSON SHA-256 `138852de154063f97746fb154b357d6acb9060318d9d43f2ada92a6333ca24d8`。
+- Record v2：MD 596 bytes；MD SHA-256 `98caf0ccf24fb58ecc52fa06e7361aff0dc86b5b8dc7df095f56e594d350e3df`；完整 PublishedReport JSON SHA-256 `2051e2a9bfae59fce7c206c9d2adb53985bb0beba25ec759cf97c5b3dd5bcc41`。
+
+生成进程结束后，另一个进程使用旧版本 `dist/observer.js` 读取同批样本，2/2 旧版自洽核对通过：schema、MD byte length/hash、Report Version hash、完整 Report JSON hash 一致，错误 Owner token 被拒绝。这里只建立旧样本基线，不证明 #6 的兼容性；待 #6 最终冻结后必须由新 built reader 读取这些既有归档并重复核对。生成脚本拒绝覆盖既有数据库，证据保留不重新生成成“新样本”。
