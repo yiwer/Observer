@@ -271,7 +271,7 @@
       "number": 7,
       "title": "Event Cluster、跨栏去重与跨日报更新",
       "file": "tickets/07-event-history-and-updates.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-06"
