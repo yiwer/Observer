@@ -28,6 +28,8 @@ Final Editor 只接触已校验 Report Record，不能联网、运行 shell 或�
 
 此前策略拒绝清理的 `C:/Users/16348/AppData/Local/Temp/observer-codex-O2hbGJ`、`O:/GenesisCode/Observer-worktrees/v1-05/data/spec-review-9f568c` 绝对不触碰，不换工具重试。其他 agent 的证据目录不修改/删除。
 
+本票后续另新增禁止触碰/清理重试路径 `C:/Users/16348/AppData/Local/Temp/observer-six-ip5kK3`：作者测试收尾曾 EBUSY，随后精确目录清理被自动策略拒绝；Root 已明确保留，不换工具或重跑同目录 cleanup 绕过。它仅含虚构 SQLite 测试证据，不是产品数据库。
+
 ## 待验收
 
 作者竖切 TDD、定期 typecheck/单文件检查后，提交代码与实施说明并冻结；最终完整 `check` / `smoke` 绑定该 SHA。Root 固定非空三点差异，协调独立 Standards / Spec，另在 detached 工作区与集成基线复跑后才验收。当前未提供冻结 SHA 或通过计数，不把 #5 的 104/104 当作 #6 结果。
@@ -54,3 +56,9 @@ Root 另检查原 Claude/Codex 测试 diff，当前只是增加 5/4 处 Record s
 - Record v2：MD 596 bytes；MD SHA-256 `98caf0ccf24fb58ecc52fa06e7361aff0dc86b5b8dc7df095f56e594d350e3df`；完整 PublishedReport JSON SHA-256 `2051e2a9bfae59fce7c206c9d2adb53985bb0beba25ec759cf97c5b3dd5bcc41`。
 
 生成进程结束后，另一个进程使用旧版本 `dist/observer.js` 读取同批样本，2/2 旧版自洽核对通过：schema、MD byte length/hash、Report Version hash、完整 Report JSON hash 一致，错误 Owner token 被拒绝。这里只建立旧样本基线，不证明 #6 的兼容性；待 #6 最终冻结后必须由新 built reader 读取这些既有归档并重复核对。生成脚本拒绝覆盖既有数据库，证据保留不重新生成成“新样本”。
+
+Root 随后提前用未冻结 #6 的 `src/observer.ts` 做一次诊断读取，同批 v1/v2 样本 **2/2** 的 MD 与完整 Report hash/鉴权均匹配。运行前后六个相关源文件 hash 一致，具体身份保存在同目录 `unfrozen-source-diagnostic.json`。这是 WIP source 诊断，不是最终 SHA 或 build 验收，后续仍必须重跑。
+
+## 后续阶段反馈（未冻结）
+
+作者报告新增 13 项 T1 与 typecheck 曾通过，来源许可/TTL 矩阵沿新入口回归；按竖切继续收紧任意 ID 拒绝说明、冲突来源关系、单栏坏结构降级、悬空/未确认/隔离分析引用、自由文本缺口原因及跨栏证据归属。随后扩到 15 项的定向运行在最后一项收尾出现 EBUSY：production reader 晚于 fixture cleanup 关闭；作者调整为先关闭 reader，再回收本轮目录。这是 harness 收尾问题，不能将该失败轮当作完整 PASS；新的定向运行及冻结 SHA 全量结果尚待实际终态。上述被策略拒绝的目录不再清理，且没有把被拒 shell 后未执行的测试算作运行。

@@ -50,6 +50,18 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 外部就绪项
 
+### 保留的测试证据与禁止重试清理边界
+
+以下精确路径的清理曾被自动策略拒绝，后续 agent 不触碰、不换工具或重跑 cleanup 绕过；它们是虚构测试证据，不是当前开发阻断：
+
+- `C:/Users/16348/AppData/Local/Temp/observer-codex-O2hbGJ`。
+- `O:/GenesisCode/Observer-worktrees/v1-05/data/spec-review-9f568c`。
+- `C:/Users/16348/AppData/Local/Temp/observer-six-ip5kK3`（#6 harness 关闭顺序 EBUSY 后新增，新的测试必须使用自己新建的独立目录）。
+
+Root 的历史兼容样本及其他 reviewer 证据归各自所有，不得顺带删除。仅按不可变身份/精确句柄收尾本轮自己的进程和容器，不进行全局 prune。
+
+### 外部资格状态
+
 V1-26 起的真实环境、Provider 资格/凭证、来源许可、费用、收件人与备份资源逐项结合最新 Owner 输入判断；Codex 本机调用费用已授权，Claude 外部测试已明确延期，QQ 授权码已在本机用户级环境可用且单封 SMTP 受理成功，收件仍待确认；其余未获授权部分仍不得擅自执行。V1-28 需要连续 14 天真实记录及规定比例的人工事实核查。没有这些证据时不得宣布 V1 生产通过。
 
 ## 下一票只读预检
