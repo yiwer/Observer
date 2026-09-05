@@ -388,7 +388,7 @@
       "number": 10,
       "title": "合规社交样本到话语观察 Edition",
       "file": "tickets/10-social-discourse-edition.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-07"
