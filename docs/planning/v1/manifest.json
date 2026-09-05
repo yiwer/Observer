@@ -64,7 +64,7 @@
       "number": 2,
       "title": "受来源政策约束的持续采集",
       "file": "tickets/02-policy-bound-collection.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-01"

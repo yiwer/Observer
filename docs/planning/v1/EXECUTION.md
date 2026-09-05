@@ -13,11 +13,14 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 下一票：V1-02 / GitHub #2，准备在确认原生依赖 #1 已关闭且集成提交存在后派发。
+- 当前票：V1-02 / GitHub #2，已读回原生依赖只有 #1 且 CLOSED，已认领并[回写启动信息](https://github.com/yiwer/Observer/issues/2#issuecomment-5549957821)。
+- 状态：fresh-context subagent `implement_v1_02` 正在使用 implement skill 实施；尚未验收。
+- 固定起点：5b3ad4b16680cbd3e6181a08c6afc33909576a95。
+- 工作目录：O:/GenesisCode/Observer-worktrees/v1-02，分支 ticket/v1-02。
 - #1 已完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
 - 已验收集成提交：179861356306ace135b5e731e0655e272df1b1b6。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
-- 下一步：为 #2 固定 fresh-context worktree 与起点；执行来源许可、增量采集及网络安全边界的 TDD、review 和验收。
+- 下一步：等待 #2 的来源许可、增量采集及网络安全边界 TDD 与固定提交；要求独立 Standards/Spec review，然后 orchestrator 再核对权限、重定向/内网目标、留存与下游许可并在集成基线复跑。
 
 ## 已验收
 
