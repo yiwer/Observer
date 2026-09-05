@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**首轮冻结候选未通过独立评审，作者正在修复三个已复现阻断；尚未合并或完成本票验收**。GitHub #10 OPEN / assignee yiwer。
+状态：**首轮冻结候选未通过独立评审，作者正在修复三个评审阻断及Root补充的时间解析反例；尚未合并或完成本票验收**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -125,3 +125,11 @@ Root亲读并原样重复三个评审探针，每个对照通过、负例失败�
 原探针与首次日志分别保留在 `Observer/data/root-v1-10-standards-review` / `root-v1-10-spec-review`。Root仅另做可移植副本，参数化被测built模块路径及SHA诊断，业务期待不变；先对原detached R1重新证明各2项中1失败，105.8668/90.4179/106.6598ms，`root-v1-10-review/portable-r1-*-red.log`。Standards早期探针的Windows导入URL和SourcePolicy规范化顺序准备错误保留，不算产品RED。
 
 Root因此拒绝R1合并，批准作者按TDD窄修：最终await后以唯一最终时间重查全部可展示Claim的完整当前许可/TTL及受限回执；先确定每组唯一且可刊资格再进行native排序/容量/priority；全部组HTTP完成后无新HTTP地同步重扫所有未隔离组当前许可/TTL。不放宽一致性校验、不改旧字节/独立探针期待。新clean SHA须重新冻结、双轴复审、完整check/smoke、Root独立与actual-master验收，当前不启动#11。
+
+## R1修复中补充检查
+
+Root的可移植评审探针只参数化模块路径/诊断SHA，固定业务期待。它们在同一R1 built上重现原失败，后续新冻结与master保持文件不变：native-group `c2c5a8abe57fabb8eb5e2313570f1a9e9e7a2cfd919dac3f6e2ff15467839d5b`；multi-group `97e6008bc44b1a672ac547b0caed93e34d80e77fd2addddbe4bd51c17a3fd60f`；final-expiry `fe15739af7284aa264c62894f434a5ceada006c9869fa8c67d7b9e477464fbd4`。文件均为 `Observer/data/root-v1-10-review/*-portable.mjs`。
+
+作者第3片修复过程还遇到关联失败：移除已撤来源后，Runner仍返回该已知失效组候选会使原Edition assignment检查拒绝整栏。Root批准仅Request6/social入口先隔离**本期配置中已sticky失效组**的候选，再执行原assignment检查；不能让未知group、未知Evidence或错误Edition借此绕过校验。Root另指出反向时序A等待期间撤B：每组I/O前也须读取当前政策，不能只依赖整轮开始的旧数组；这是同一多组生命周期修复，不要求每个socket监听磁盘。作者报告正反向都已取得真实RED→GREEN，仍待新冻结独立验证。
+
+Root额外运行唯一时间解析反例：R1 Adapter的created_at/edited_at只验证string，JavaScript Date会把日期-only补成UTC午夜，导致缺失实际时刻的记录被采纳进时间窗。`adapter-creation-time-probe.mjs` SHA256 `3c1569a2cb6a03239b129b0a52fbea381c4fd21808f071f70a6eebf2449fb45b`在R1 detached built的明确时刻对照通过，`created_at=2026-09-04`的6条负例却全被采纳；2项中1失败、19.271ms，原日志 `adapter-creation-time-r1-red.log`。Root要求created及非null edited必须是有明确时区的合法ISO实际时刻，允许合法offset规范到UTC；日期-only、缺时区及无效日历隔离，不能发明缺失时间。此为Root补充检查，不重写原Standards/Spec报告计数。
