@@ -40,6 +40,17 @@
 
 后续阶段报告：timeout/cancel 已转绿，按 ID/label/Created 核验回收并读回 removed。为避免下面记录的 internal gateway 例外，模型通道改用断网容器内仅 loopback 的 HTTP broker，经可信 supervisor 的 stdout 控制帧与宿主 stdin 响应连接固定 ModelTransport；宿主仅执行模型协议，密钥留在隔离边界外。该通道与实际 CLI 拒绝测试仍在实施，未冻结，不能提前记通过。
 
+## Linux CLI 依赖取得
+
+实施 agent 的 `npm pack` 工具 session 18443 长时间无输出且目标目录空，但进程仍在运行。Root 没有凭观察超时重启或终止它；另对同一公开 tarball 做范围请求，确认服务返回 206 及总长度，再用独立临时目录执行有界 `curl -q` 下载。
+
+- 包：`@openai/codex@0.153.4-linux-x64`；[版本元数据](https://registry.npmjs.org/@openai/codex/0.153.4-linux-x64)，[原始 tarball](https://registry.npmjs.org/@openai/codex/-/codex-0.153.4-linux-x64.tgz)。Root 独立重新读取 metadata 后核验。
+- 下载退出 0，129272137 bytes，47.480581 秒。SHA-512 与 metadata `dist.integrity` 完全一致：`sha512-x1EcwBlY3AObM1VTUHNM2AzAJQsyreGdagpF+qFiYi/Oa30VBktvvG0C6tLtCzqW6hjZNWkGZQWmeVk7MuJKWg==`。
+- 下载文件 SHA-256：`54818cb9fce3360cc6e44cfc5a96952cd5c1243efb43cbe488e11dda84663e08`。
+- 只读 tar 清单确认 CLI 位于 `package/vendor/x86_64-unknown-linux-musl/bin/codex`，另有 code-mode host、bwrap、rg、zsh 等资源；不能沿用旧目录猜测。
+
+已将已核验文件交给实施 agent 做本票镜像/CLI 测试，未改变宿主 CLI 安装或读取凭证。完整性匹配只确认取得了指定分发物，不证明模型可用性、安全拒绝、真实调用或生产资格。原 npm session 由创建它的 agent 按准确工具句柄或进程身份处理，不全局杀 node/npm。
+
 ## Root 网络前提核查
 
 Root 实际打开 Docker 官方 [network create](https://docs.docker.com/reference/cli/docker/network/create/#network-internal-mode---internal) 和 [gateway modes](https://docs.docker.com/engine/network/port-publishing/#gateway-modes)：普通 `--internal` bridge 仍可访问网关地址上的宿主服务，包含监听所有地址的服务；`isolated` gateway mode 配合 internal 才不向 bridge 分配地址。因此仅检查 `Internal=true` 及已连接容器名单，不能证明模型专用网络已隔离宿主旁路。
