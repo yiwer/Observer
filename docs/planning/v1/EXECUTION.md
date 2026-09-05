@@ -18,7 +18,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - #1、#2 已完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 均已读回 CLOSED。
 - 最新已验收集成提交：7fdef6736f0629850cba11061bf9607a853e3d2a。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
-- 下一步：等待 #3 的固定实施提交，执行 Standards / Spec 独立双轴 review 与 orchestrator 冻结验收；重点核对逐陈述证据绑定、正常发布与隔离路径，以及结构、政策、语义结论和测试/真实质量边界。
+- #3 首轮冻结提交：4ae2b6a7c49e7805c8768d7c661a6256bfbafe03；Root 独立复跑 check 46/46、smoke 3/3 通过，但额外探测发现阻断。两个 fresh-context reviewer 已完成独立 Standards / Spec 首审；详见 [V1-03 审查记录（未验收）](acceptance/03-evidence-publication-gate.md)。
+- 下一步：实施 agent 修复各模型/归档边界 TTL、冲突项安全说明与归因、Root 发现的矛盾语义回执；新 SHA 重做冻结复审与验收。不得以首轮测试通过关闭 #3 或启动 #4 实施。
 
 ## 已验收
 
