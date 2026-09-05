@@ -13,15 +13,15 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 当前票：V1-01 / GitHub #1，前置关系已读回为空。
-- 状态：implement_v1_01 subagent 正在实施，尚未完成验收。
-- 固定起点：99d7fb5fd3873786d2510fc6ccbf230997a07374。
-- 工作目录：O:/GenesisCode/Observer-worktrees/v1-01，分支 ticket/v1-01。
-- 下一步：等待 #1 实施与两轴 review；orchestrator 另行检查鉴权、重启持久化、不可变版本与替身/生产隔离，并在集成基线重跑验收。
+- 下一票：V1-02 / GitHub #2，准备在确认原生依赖 #1 已关闭且集成提交存在后派发。
+- #1 已完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
+- 已验收集成提交：179861356306ace135b5e731e0655e272df1b1b6。
+- 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
+- 下一步：为 #2 固定 fresh-context worktree 与起点；执行来源许可、增量采集及网络安全边界的 TDD、review 和验收。
 
 ## 已验收
 
-尚无。发布票和验证依赖不计为功能验收。
+- [V1-01 验收记录](acceptance/01-private-brief-spine.md)：实施 35c647c，集成 1798613；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、13/13 测试及 2/2 smoke。Standards 有 1 项非阻塞建议，Spec 无发现。
 
 ## 外部就绪项
 

@@ -26,7 +26,7 @@
       "number": 1,
       "title": "最小私有日报闭环与共享契约",
       "file": "tickets/01-private-brief-spine.md",
-      "status": "ready-for-agent",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [],
       "userStories": [
@@ -49,8 +49,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/1",
       "issueDatabaseId": 5355681211,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "35c647c40ef569453dc1edcc0a15b488150d3f05",
+        "integrationCommit": "179861356306ace135b5e731e0655e272df1b1b6",
+        "acceptanceFile": "acceptance/01-private-brief-spine.md",
+        "qualification": "local-fixture-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-02",
