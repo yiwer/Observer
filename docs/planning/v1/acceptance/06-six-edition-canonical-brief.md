@@ -1,6 +1,6 @@
 # V1-06 执行与待验收记录
 
-状态：**首个冻结候选被 2 项 P2 阻断，已交作者修复；未接受或集成**。GitHub #6 OPEN，assignee=yiwer。
+状态：**第二个冻结候选 73c95da 仍有 1 项 Spec P2 阻断，已交作者修复；未接受或集成**。GitHub #6 OPEN，assignee=yiwer。
 
 - 范围：[GitHub #6](https://github.com/yiwer/Observer/issues/6)、[本地票](../tickets/06-six-edition-canonical-brief.md)。
 - Fixed base：`e57832f65222c949b00acb12bbb5196ae2c2c033`，包含已验收 #5 集成及最新证据。
@@ -95,3 +95,35 @@ Root 已交原 implement agent 按 TDD 分别修复，保留独立核验回执�
 两轴汇总：Standards **0 hard / 1 heuristic，worst P3**；Spec **2，worst P2**。
 
 [首轮不接受回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551336428)已发布并读回，Issue 仍 OPEN；本地候选与这次审查记录未 push。
+
+## 整改期间的独立边界证据（尚无新冻结）
+
+Root 将独立容量/身份探针扩展到完整合法上限 6 栏 × 50 故事 × 50 Claims：旧 ac55dc4 built code 对 15000 条陈述全部给出 `invalid-verifier-receipt`、零故事。扩展后单独命令 **6 cases / 1 PASS / 5 RED、exit 1**，保留 `run-tZCZM7`；脚本当时 SHA-256 为 `593ea3a980b8c71006d9085997bc1c529750bb1263c40e040bfcc46024f8b67e`。这是原容量问题的上限覆盖，不另增 Spec 发现数。
+
+另有独立 `batch-boundary-probe.ts`：同样 42 故事/504 Claims，AI 错配回执应只影响 AI；以及世界栏首批已核验、AI 栏结束推进时钟令世界栏证据过期、其余五栏仍有效的场景。预期分别保留 35 故事/420 Claims，后者还检查过期证据不进入后续模型发送或最终归档、最终发布时间一致。旧 built code **0/2、exit 1**，最新保留 `boundary-run-Jk6P0V`（初版 `boundary-run-ZWTX2y` 也保留）；其失败受旧聚合容量问题影响，不声称独立定位第三种实现根因。新冻结仍须复跑。
+
+Root 额外确认一个独立身份容量问题：新 SixEditionRequest 接受 200 字符 taskId，但研究结果规定 `${taskId}:${edition}`，长度变成 203–220，超过沿用的 Agent metadata 200 上限，六栏均被归为 invalid-output，零故事；任何符合既有派生规则的结果都无法满足这类已接受输入。`identity-boundary-probe.ts` 通过公开 produce/read 与真实内存 SQLite 实测 **0/1、exit 1**（预期 6 故事）。此项为 **Root P2**，独立于 Spec 的 2 P2，不改写两轴原始结论。已要求在冻结前 TDD 修复，只明确扩展新 Edition 成功/失败结果的有界派生 ID 容量，旧 AgentResult/CLI 200 字符边界保留。
+
+作者阶段反馈：原容量竖切 RED（501 处 0≠42），批次实现后完整 15000 输入均核验且最多 30 批/每批≤500；身份竖切曾 RED 35≠41，随后重复 Claim、同栏/跨栏 Story、Evidence 引用隔离转绿。后续 typecheck 与新增六栏/既有 Gate 定向 **40/40**（2353.5882 ms），覆盖真实独立批次回执、坏批隔离及跨批 TTL。研究任务 ID 边界仍在处理，以上均为未冻结阶段结果，不代表完整 check 或最终验收。
+
+## 第二次冻结 73c95da：复审中
+
+新候选 `73c95da371e710a59a2658c8e82073dbcf6eb44c`；修复增量 8 files、+244/-16，原 fixed base 至 HEAD 总计 10 files、+918/-48。两项提交为 ac55dc4、73c95da。Root 验证作者 clean，取得完整三点 diff（97723 chars），将自有 detached acceptance 工作树切到新 SHA，保留所有 ignored 旧证据。
+
+研究 ID 边界作者实际 RED **0≠6**（227.7191 ms），GREEN **1/1**（225.1572 ms），成功和失败的派生任务元数据均覆盖。仅新 Edition 契约最大 220，旧 AgentResult/CLI 200 保持不变。
+
+作者本 SHA 首轮完整 check **124/125 FAILED**（136606.8876 ms），唯一失败再次为首个 Claude fixture setup 的 tag inspect No such image；只读 default/显式 daemon 的 tag/immutable ID 均恢复正确，不修改源码/环境后单项 **1/1**（2079.6281 ms），第二轮完整 **125/125 PASS**（131287.283 ms）、smoke **3/3**（1309.4927 ms）。Root 同 SHA 独立 check **125/125 PASS**（139912.6709 ms）、smoke **3/3**（1309.2241 ms）；均 typecheck/build 通过，0 failed/skipped/cancelled。
+
+Root 新 built reader 独立专项全部通过：容量/重复身份 **6/6**（`run-Q56hrP`）；坏批关联/跨批最终 TTL **2/2**（`boundary-run-WQ9aEF`）；最大 taskId **1/1**；各独立进程 exit 0，合计 9 个专项场景，不与 125 项重复相加。旧 177cfbb 生成的 Record v1/v2 SQLite 样本 **2/2**，MD 与完整记录 hash/鉴权仍一致。
+
+Standards 第二轮为 **0 hard / 1 原 P3**，无新增发现。原 Spec agent 已不在 live inventory，followup 遭 thread limit；Root 实际启用现存 `/root/implement_v1_05_usage_fix` 作只读 Spec-only reviewer（其未参与 #6 作者实现），与 Standards 独立运行。该 reviewer 自行通过 six-edition + publication-gate **41/41**（3592.593 ms），仍在检查局部运行关联异常边界，尚无最终接受结论。
+
+Root 已另独立复现该局部边界：顶层研究 Envelope 和六栏身份均有效，仅 AI 的任务/Bundle/配置关联错误、结束时间晚于当前钟、Provider provenance 不合格或故事跑错 Edition 时，仍触发整期 `uncorrelated-agent-result` / `invalid-fixture-run`，其余 35 个合法故事不发布。这些是局部输出异常，不是顶层整体关联不可信；作者说明/既有测试中的全拒断言不能豁免 PRD D4 的部分失败保留有效栏要求。`edition-correlation-probe.ts` 在新 built code、公开 produce/read、真实内存 SQLite 上 **9 cases / 3 PASS / 6 RED、exit 1**；3 个正确全拒反例是顶层 taskId/BundleId 错误及重复 Edition 身份。该项须在最终复审结论中单独处理，不能用已有全量绿灯关闭 #6。
+
+Docker 偶发失败另作只读诊断：Root 按 diagnosing-bugs 的 CLI 反馈路径运行 `docker-image-read-probe.mjs`，对固定显式 Linux daemon 的 tag/immutable ID 顺序检查 20 轮（40 次），**40/40、exit 0**，5.663 秒。尚未获得稳定/高概率失败的最小循环，不进入推测归因或修复阶段；未重建、改标签、重启或清理 Docker，也未把诊断绿灯等同于问题已修复。
+
+第二轮最终 Spec 结论：**1 项 P2，未发现 scope creep**；旧 2 项 Spec P2 与 Root 长 taskId 问题关闭，剩余上述单栏局部关联/运行信息错误拖垮整期。reviewer 在自有 ignored `v1-06/data/spec-73c95da-independent/probe.test.ts` 独立 **9 项、6 PASS / 3 RED、exit 1**（714.3964 ms），另证明同栏坏批不污染后续批、旧 v1/v2 新生产与存量归档兼容；句柄关闭且证据保留，不触碰。两轴最终汇总为 Standards **0 hard / 1 heuristic，worst P3**；Spec **1，worst P2**。
+
+Root 已交原作者继续窄范围 TDD，要求隔离已识别且唯一归属的坏栏，不虚构 Provider/用量；同时保留顶层 Envelope 错配、重复/缺失/未知 Edition、可信请求/来源政策错误的整期拒绝。新冻结和完整验收仍待完成；73c95da 不集成，#7 不启动。
+
+[第二轮不接受回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551405763)已发布并读回，Issue 仍 OPEN。
