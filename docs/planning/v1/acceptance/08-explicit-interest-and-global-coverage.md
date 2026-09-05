@@ -73,3 +73,9 @@ Root 独立 `coverage-attribution-probe.ts` 在新自有 `accept-v1-07/data/root
 原因定位是当前 `interestCoverage.entry` 按共享Evidence ID给最终故事继承整个来源文档汇总地域，没有沿实际选中Claim/Cluster的地域标注归因。违反本票“实际覆盖可解释”和已确认的输入/标注/成稿统计分离；是当前WIP的实际错误，不是因尚未完成其它规则而人为制造RED。Root脚本 SHA-256 **`6ba77479ba076f8bda92108a448e98541978c631c0fc6c7225d0b174d57c688a`**，全程公开生产/关闭/重启读取、真实SQLite，无SQL侧读，失败材料保留。
 
 已交原作者按现有竖切顺序用其自身T1复现后窄修复：区分证据观察与真实选中事件地域，不让已排除/未刊登/隔离成员因共享文档借权；支持事实/Impact Note按已声明统计语义处理。语言指标同样应核对其定义，但不把来源语言和事件地域混为一种含义。修复后Root原脚本/预期复跑，再在冻结built与实际master重验；当前不接受、不关闭、不开始#9。
+
+### 覆盖归因整改后复验（仍为WIP）
+
+作者用自己的第7片公开T1独立复现：重复Cluster成员标US，而主CN与另一EU事件共享Evidence，错误的US已选故事数组同时包含space/climate；当时6 PASS / 1 RED，约448 ms。改为沿实际已选fact/statement及supportingClaim的qualified annotation归因后，作者单文件 **7/7 GREEN**（416.7 ms）。纯Impact Note成员不会将未承载事实的地域借给主故事；证据层的研究观察计数仍保留。语言已选计数定义为已选Claim所见获准材料的标注语言，不再无条件join整个共享文档。
+
+Root 未修改脚本或预期，对整改后WIP source实际重跑：原覆盖归因 **1/1 PASS**（53.9939 ms），US.evidenceIds仍为shared而US.selectedStoryIds正确为空；容量 **1/1 PASS**（74.7954 ms），旧Record1/2/3/两期4 **5/5**兼容。原RED材料保留，不改写历史。此开发期复现已转绿，正式关闭仍待固定SHA、双轴和built/master验收；其它来源/元数据边界继续实施。
