@@ -83,3 +83,11 @@ Root 新建自有 ignored `accept-v1-06/data/root-v1-07-review`，仅用虚构�
 作者报告已用自己的公开 T1 先 RED→GREEN，覆盖 request v1/v2/v3 × 禁止分发/禁止永久归档/核验后过期/unsafe/允许来源 **15 种组合**，当时文件 **11/11 PASS**（645.2856 ms）及 typecheck PASS。新增 `event-projection.ts`，先完成 Gate（含最终跨批检查），统一剥离 Verifier `event` 自由文本；只有最终可发布 fact 保留明确标为 `observer-final-event-projection-v1` 的摘要、枚举和合格引用，不把本地投影冒充原始响应。外部回填本地投影字段不能获得授权。此为作者实施报告，不替代 Root 复验。
 
 Root 未改探针或预期，直接针对整改后 WIP source reader 重跑：原归档注解 **4/4 PASS**（100.4523 ms），因果/同候选多 fact **3/3 PASS**（114.0533 ms）；固定 #5 的 Record v1/v2 与 #6 的 Record v3 **3/3** 全 JSON、MD、身份与鉴权兼容通过。最初 0/4 RED 证据与 SQLite 保留，不覆盖。当前 WIP 复现已转绿，但正式关闭仍待冻结 SHA、独立双轴与 built/master 重验；其它时间/关联/源权限场景继续实施。
+
+### 后续竖切进展与冻结前核对
+
+作者随后报告事件文件 **14/14 PASS**（831.8935 ms）、typecheck PASS；覆盖去重后配额补位、单主故事保留 **98 条**独立事实、有效分析 Impact Note、旧档缺少可信事件身份时明确未分类历史缺口，以及窗口端点/晚发现新进展。
+
+历史来源另做两阶段 T1：D1 旧源有效，D2 用新源报道更新且借入 D1 的时间；重开后撤销 D1 源，公开读取 D1/D2 均 `not-found`；D3 仅凭仍有效新源继续产生更新，不输出受限旧时间并明确 `source-policy-withheld`。作者先取得 RED（236.2916 ms，Missing expected exception），再以 EventCluster 的 `historyPolicies` 记录借入元数据所依赖的来源 policy/version/hash，在读与新生产时重新核对传递依赖；不覆写已发表正文、不将历史原文发模型。以上仍为作者 WIP 结果，Root 未以此替代独立冻结验收。
+
+Root 已要求冻结清单明确合法发布者声明的覆盖边界：不能因 event-aware 暂只接受 kind=fact 身份锚而无意缩窄 PRD D5 的正确归因声明；可确认“声明被发布”事件，但不得将声明内容升级事实。作者仍在核对这一边界、reader 事件关系一致性及实施判定表，尚未给最终提交、full check 或 review 结果。
