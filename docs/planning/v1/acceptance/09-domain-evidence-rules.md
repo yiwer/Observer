@@ -1,6 +1,6 @@
 # V1-09 执行与待验收记录
 
-状态：**候选 57e9686 已 clean 冻结，双轴及离线检查完成；完整 Docker 回归待环境，未接受/集成**。GitHub #9 OPEN、assignee yiwer，#10 未开始。下文早期 WIP 记录是历史过程，最新结论见“首个冻结候选”。
+状态：**候选 57e9686 已通过冻结验收：作者/Root完整各186/186，允许本地集成；实际master复验尚未执行**。GitHub #9 OPEN、assignee yiwer，#10 未开始。下文早期 WIP / 等待环境记录是历史过程，最新结论见“Docker 就绪后的恢复全检”。
 
 - [本地票](../tickets/09-domain-evidence-rules.md) / [GitHub #9](https://github.com/yiwer/Observer/issues/9)全文与空评论已实际读取；原生唯一依赖API返回#6closed，顺序前票#8亦已CLOSED。
 - 固定base **df63b78875a1fb8b4c85389ac6797ddfc5e75400**，包含#8最终06fc8b3、master集成8079271与验收关闭记录。
@@ -19,7 +19,7 @@
 
 ## 验收与归档基线
 
-当前167个测试，smoke3为子集。作者专属说明和代码一起提交clean冻结SHA，再运行完整check/smoke；Root固定非空三点diff、独立Standards/Spec双轴、detached及实际master验收。真实质量/来源许可/长期人工核查另记，不以fixture替代。
+起始基线167个测试，smoke3为子集。作者专属说明和代码一起提交clean冻结SHA，再运行完整check/smoke；Root固定非空三点diff、独立Standards/Spec双轴、detached及实际master验收。真实质量/来源许可/长期人工核查另记，不以fixture替代。
 
 Root持有不可变旧档：Record1/2 `accept-v1-05/data/root-v1-06-compat-4ca1d8`；Record3 `accept-v1-06/data/root-v1-07-compat-a913cb`；两期Record4 `accept-v1-07/data/root-v1-08-compat-9b22d0`；Record5 **`accept-v1-08-r2/data/root-v1-09-compat-06fc8b3-r2`**。最后路径必须带-r2，非-r2目录是保留的生成器封装错误，不是oracle。各`verify-reader.ts <absolute-module>`只读新reader，不能用#9生成器改写旧期望。具体摘要见[#8记录](08-explicit-interest-and-global-coverage.md#后续record5兼容基线)。
 
@@ -126,3 +126,29 @@ Standards 两项 P3 保留为非阻断维护建议，不为此改变冻结；Spe
 因此当前**不接受、不合并、不关闭 #9、不开始 #10**。Docker 就绪后先核对既有固定镜像身份，在同一冻结 SHA 完成作者/Root 全检；如代码有变须新冻结复审。冻结验收满足后再本地集成，并在实际 master 重跑完整检查与相应 probes/旧档读取。真实 Provider、来源许可、目标部署、产品 SMTP/PDF 与14天人工质量仍分别验收；Owner 新确认的单封 SMTP 收件/中文显示只关闭对应预检。
 
 Root 已将上述冻结进展[回写 GitHub #9](https://github.com/yiwer/Observer/issues/9#issuecomment-5554274086)（`2026-09-05T19:33:58Z`），通过独立 API 实际读回完整评论、ID 与 URL，并另读 Issue 仍为 OPEN / yiwer。评论明确候选及本轮文档未 push、全检未执行与不关闭票；不是远端代码交付或最终验收。
+
+## Docker 就绪后的恢复全检
+
+Owner 回复“继续”后，Root 实际读回 Docker Engine29.6.1 / desktop-linux 与固定 Linux npipe；三个既有镜像 ID 均与此前冻结一致：Codex0.153.4=`12226892754c245087a7285475dad50d58322e7b9d637ba40850370c37cc5024`、Claude2.1.252=`0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269`、协议fixture=`183e5ad42322fea6f731433ae7f6be7498812b31d2eaf05537ffed838dd1ba7c`（均sha256）。Root没有启动/重启/升级daemon或重建、改tag。
+
+第一轮恢复测试因工具会话中断失去终态：Root session79496 后续返回 Unknown process id；live inventory 只剩Root，已无对应测试node或运行中Docker容器。作者 `data/v1-09-57e9686-author-full-20260905T215526Z/run.md` 只有running记录，无完整终态。保留这些历史；不把部分绿项算全检成功，也不冒称已确认产品失败。确认句柄消失后才派 fresh `/root/verify_v1_09_author_resume` 补作者全检，Root 在未变的 clean57e9686独立重跑。
+
+Root detached 新单次 session6340：`npm run check` **exit0，186/186，120668.2425ms**，typecheck/build通过；`npm run smoke` **exit0，3/3，1461.7758ms**。每段输出及时落盘，完整 `data/root-full-57e9686-20260905T2158Z/check.log` 仅连接同次session连续块0–3，SHA256=`15e0dbf7b6b74f1df537c8a0f8dc7fde0918570af8c042a3b0d67fb3e425e825`。HEAD前后57e9686、状态clean，0失败/跳过/取消；未用筛选子集替代全检。
+
+Root 对同一built模块另复跑原公司探针1/1（含三模式/重启），既有兴趣6/6、事件14/14、旧Record1–5六份读取均通过，日志同新目录。原Spec探针也在同一built模块复跑3/3（125.6928ms）。新生成Record6/Version5三份独立数据库基线及其读取也通过，详见下节；它们不是另三条旧档。
+
+作者新全检 **exit0，186/186，168049.5343ms**（wall174052.5359ms），`2026-09-05T22:01:42.076Z`→`22:04:36.131Z`；smoke **exit0，3/3，1338.2673ms**（wall3761.3544ms）。Root已亲读全部check/smoke原始combined日志、结果JSON及记录器，实现只改变本次子进程TEMP/TMP到新唯一目录，不改产品、镜像或全局环境。前后clean57e9686，0失败/跳过/取消。完整证据 `O:/GenesisCode/Observer-worktrees/v1-09/data/v1-09-57e9686-author-full-20260905T215936276Z-resume/`：check.log SHA256=`168504aa3b28441f82d3e24235527400e87fba7b68751aa40d7699d0b39104c5`，smoke.log=`0461621359419dd7a883f6bd74d8cafcf3bc73faf9ab14773a3cf5375c12dd96`。两方时长不是性能评测，不把186与子集累加。
+
+后置只读检查发现两只旧exited容器：`fb6640585ce194f76080e0ad7fabf18837f28ce15898313c9b03eeb3799eef06`（21:56:47.805Z创建，accept-v1-09挂载）、`c9e72c9c5c5f7b06b77f91132c93dcc0de28818c4cac2def9e63a36b5be3f861`（21:56:46.925Z创建，v1-09挂载）。Root实际inspect确认均已停止，创建时间早于新全检，保留未清理；不能把之前`docker ps`空输出说成旧容器完全不存在，也不归作新run的遗留或成功清理证据。
+
+冻结代码未变化，原Standards0hard/2非阻断P3及Spec0继续对应准确SHA。结合完整两方检查、19项领域行为及独立探针、正文/来源审查、旧档兼容，Root接受此候选进入本地集成。此时仍不关闭#9或开始#10；实际master必须重新build/check/smoke及相应探针、归档读取。来源许可/真实Provider/部署/产品交付/14天质量门槛不变。
+
+### Record6 后续兼容基线
+
+新 ignored `O:/GenesisCode/Observer-worktrees/accept-v1-09/data/root-v1-10-compat-57e9686/` 绑定clean57e9686 built producer。生成器沿Root已RED→GREEN的公司独立性公开T1探针，保留发布/待确认、完整Report重启/鉴权期待，增加Record6/Version5/domain-v1及精确JSON往返断言后才一次性存档；不存在旧基线才允许生成。三模式独立验证/同上游转载/同Source自测均执行，生成器1/1（109.6481ms）。Root补读三份AI正文主体，实际独立者发布，后两者待确认且矛盾独立标签为未知。只用于固定替身兼容，不是真实新闻质量证明。
+
+- baseline.json SHA256：`511a3d84a1f66fdcadf088df8b94691417036ffec7d3d31d28b4ff5f1feaafb3`。
+- generate-baseline.ts SHA256：`a1808fb32d4a1585e54c5de20fec8a2b27de2a2349e4adce7e5f5c8dc2a4798c`；不能重跑或为新reader重写期待。
+- verify-reader.ts SHA256：`931b528e91c2b419e1f6d836927cc0efc93fe3915da985f23f6f5117ab935180`；接受绝对模块路径，固定baseline文件摘要，比较三份完整Report/MD并检查鉴权/production隐藏。
+
+冻结built读取3/3通过；后续actual-master/新版本须另跑。原Record1–5各oracle与原Root独立探针均未改。

@@ -378,7 +378,7 @@
       "execution": {
         "implementationCommit": "57e9686a14003055f6c9e51483cd7e0cd4393663",
         "acceptanceFile": "acceptance/09-domain-evidence-rules.md",
-        "qualification": "frozen-offline-checks-only-full-suite-pending",
+        "qualification": "frozen-accepted-actual-master-verification-pending",
         "pushed": false
       }
     },
