@@ -348,7 +348,7 @@
       "number": 9,
       "title": "高风险新闻与 AI／科技证据标签",
       "file": "tickets/09-domain-evidence-rules.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-06"
