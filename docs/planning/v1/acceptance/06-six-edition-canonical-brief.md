@@ -1,6 +1,6 @@
 # V1-06 执行与待验收记录
 
-状态：**实施中，尚无冻结提交/验收结果**。GitHub #6 OPEN，assignee=yiwer。
+状态：**首个冻结候选被 2 项 P2 阻断，已交作者修复；未接受或集成**。GitHub #6 OPEN，assignee=yiwer。
 
 - 范围：[GitHub #6](https://github.com/yiwer/Observer/issues/6)、[本地票](../tickets/06-six-edition-canonical-brief.md)。
 - Fixed base：`e57832f65222c949b00acb12bbb5196ae2c2c033`，包含已验收 #5 集成及最新证据。
@@ -62,3 +62,36 @@ Root 随后提前用未冻结 #6 的 `src/observer.ts` 做一次诊断读取，�
 ## 后续阶段反馈（未冻结）
 
 作者报告新增 13 项 T1 与 typecheck 曾通过，来源许可/TTL 矩阵沿新入口回归；按竖切继续收紧任意 ID 拒绝说明、冲突来源关系、单栏坏结构降级、悬空/未确认/隔离分析引用、自由文本缺口原因及跨栏证据归属。随后扩到 15 项的定向运行在最后一项收尾出现 EBUSY：production reader 晚于 fixture cleanup 关闭；作者调整为先关闭 reader，再回收本轮目录。这是 harness 收尾问题，不能将该失败轮当作完整 PASS；新的定向运行及冻结 SHA 全量结果尚待实际终态。上述被策略拒绝的目录不再清理，且没有把被拒 shell 后未执行的测试算作运行。
+
+## 首次冻结与独立审查
+
+首个候选 `ac55dc418425d02030441156bf9eef9224873f1c`，固定 base 不变；单一提交 `feat: assemble six-edition canonical briefs (#6)`，8 files、+682/-40，作者工作树 clean。Root 已解析 base/HEAD、取得完整非空三点 diff 与提交列表，另创建 detached `O:/GenesisCode/Observer-worktrees/accept-v1-06`，相同 SHA、clean，锁文件安装 7 packages / 0 vulnerabilities。
+
+Standards fresh reviewer `/root/review_v1_06_standards` 已完成：明确规范违反 **0**；**1 项 P3 possible Duplicated Code**，`src/six-edition.ts` 的分析 Claim 引用集合与资格判断在校验、过滤、缺口识别三处重复。属于非阻断维护判断，没有证明行为错误。首次 fresh Spec spawn 和复用独立旧 agent 的 followup 均遭 thread limit；Standards 完成后重新实际创建 fresh `/root/review_v1_06_spec` 成功，需求轴尚在审查，不将此前失败调用当作已运行。该轴正在调查六栏合并 Claim 数与既有核验 assessments 上限的兼容性，结论待公开 seam 实验。
+
+作者首轮冻结 `check` 终态 **119/120、1 failed、0 skipped/cancelled**，139349.4796 ms，失败为既有真实 Claude 正常用例在创建 Runner/Observer 前的 `docker image inspect` 返回 `No such image`。没有修改代码、重建/改标签/重启 Docker 后，只读 tag 与 immutable ID 又返回既定镜像，原单项复跑 **1/1**、1775.0989 ms。根因尚不明确，失败轮保留，不与复跑拼成 PASS。第二轮同 SHA 完整 check 正在运行；Root 独立 check 也正在运行，尚无全量终态。
+
+Root 在上述冻结 detached 工作区完成 build 后，用 `dist/observer.js` 读取前述 **177cfbb** 生成并保留的两份旧 SQLite：**2/2 PASS**。Record v1/v2 的 schema、MD 字节长度/hash、Version hash、完整 PublishedReport JSON hash 与旧基线一致，错误 Owner token 拒绝；运行后 HEAD 仍为 ac55dc4、tracked clean。此次是冻结 built-reader 兼容性证据，区别于早先 WIP source 诊断；若候选改变，仍须重跑，集成后也须重跑。
+
+## 首轮验收结论：不接受 ac55dc4
+
+作者第二轮同 SHA `check` **120/120**、0 failed/skipped/cancelled，142717.7669 ms；`smoke` **3/3**、1384.2508 ms。Root detached 相同 SHA `check` **120/120**、0 failed/skipped/cancelled，147254.4143 ms；`smoke` **3/3**、1376.983 ms。typecheck/build 通过；smoke 是旧子集，不额外相加。这些绿灯不抵消独立审查发现。
+
+### Standards
+
+明确规范违反 0；1 项 P3 possible Duplicated Code（上述分析引用资格判断三处重复），非阻断。没有为解决该建议扩大本轮整改范围。
+
+### Spec
+
+独立 reviewer `/root/review_v1_06_spec` 完成完整 diff/规范核对，确认 **2 项 P2**、未发现明确范围膨胀：
+
+1. `src/observer.ts:239` 合并六栏所有陈述进入同一次 Gate，而既有 `VerificationSchema.assessments` 限制 500。六栏 42 故事、500 Claims 可以发布 42；501/504 Claims 均变为零故事、全体 `invalid-verifier-receipt`，各栏约 84 Claims 本身符合新输入契约。违背票据“候选充分时按约 7 条、约 3 条重点组织”。
+2. `src/observer.ts:125/159` 仅逐栏检查 Schema，重复 Claim/Story 身份仍进入共享核验，导致整份回执无效。AI 一故事追加重复 Claim 后，41 正常 Claims 也被标成 `invalid-verifier-receipt`，整期零故事。违背 PRD D4“部分栏目失败：发布有效部分并明确 Coverage Gap，不凑数”。
+
+Spec 自有复现使用公开 `produce → readReport` 与真实内存 SQLite、标注 Verifier，不使用真实网络/模型。Root 另在冻结 built code 上创建独立磁盘 SQLite，关闭 writer 再重开 reader 验证，脚本为 ignored `O:/GenesisCode/Observer-worktrees/accept-v1-06/data/root-v1-06-review/probe.ts`；最后单独命令 exit **1**，**5 cases / 1 PASS / 4 RED**：500→42、501/504→0（期望各 42）、重复 Claim→0（期望保留 41）、跨栏重复 Story→0（期望隔离冲突两条并保留 40）。两次独立运行分别保留在该目录 `run-epHX6r`、`run-yWE8D7`；没有原文秘密，未清理。首条命令后接 Git 诊断导致外层 exit 为 0，故另用单独 probe 命令取得真实 exit 1，不把前者解释为 PASS。
+
+Root 已交原 implement agent 按 TDD 分别修复，保留独立核验回执的有界容量、逐批模型发送前许可/TTL、统一最终发布时刻的权限检查、整期引用配额和原 Gate 语义；局部身份错误必须隔离，不扩大为全局污染，但 task/configuration/Bundle 全局关联错误仍整体拒绝。新的批次审计契约不能伪造单一已核验回执或破坏旧归档字节。待新 SHA、完整检查、两轴复审、Root 专项/旧归档与集成验收后才能关闭 #6；不开始 #7。
+
+两轴汇总：Standards **0 hard / 1 heuristic，worst P3**；Spec **2，worst P2**。
+
+[首轮不接受回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551336428)已发布并读回，Issue 仍 OPEN；本地候选与这次审查记录未 push。
