@@ -44,3 +44,5 @@ V1-26 起的真实环境、Provider 资格/凭证、来源许可、费用、收�
 #4 实施时必须重验实际二进制与完整终态契约，不得从历史版本或帮助解析推定认证、费用、事实质量、OS 隔离或进程树清理已经合格。预检已重新打开官方[非交互模式](https://learn.chatgpt.com/docs/non-interactive-mode)、[安全边界](https://learn.chatgpt.com/docs/agent-approvals-security)和[配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)；这些文档与本机帮助仅作后续测试依据，不是实际拒绝边界的测试证据。预检时未开始实施，现已按上述固定基线派发。
 
 本机有 Docker CLI、WSL CLI，但 `wsl --list --quiet` 只列 docker-desktop；读取 Docker Server 版本时 Linux Engine named pipe 不存在，不能视为容器运行环境已就绪。此次只读预检没有启动虚拟机/容器、安装组件或修改配置。
+
+随后 #4 实施 agent 明确需要 Linux 隔离测试，root 启动已有 Docker Desktop 并读取运行库存：Engine 29.6.1、Linux amd64；已有 10 个其他项目容器仍全部 exited，未修改或删除。已交付固定 Python 镜像身份供无模型协议/权限探测使用。详见 [V1-04 执行与待验收记录](acceptance/04-codex-runner.md)；环境启动不等于安全边界或实际 Codex 接入通过。

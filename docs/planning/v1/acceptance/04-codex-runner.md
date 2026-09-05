@@ -1,0 +1,41 @@
+# V1-04 审查与验收记录
+
+状态：**实施中，尚未验收**。GitHub #4 OPEN；没有固定实施候选或双轴最终结论。此文是执行与证据边界，不是通过证明。
+
+- 范围：[GitHub #4](https://github.com/yiwer/Observer/issues/4)、[本地票](../tickets/04-codex-runner.md)。
+- 固定起点：`320ab620a2d3f22c09e13334a68f06a3b664af05`；fresh agent `/root/implement_v1_04`。
+- 工作区：`O:/GenesisCode/Observer-worktrees/v1-04`，分支 `ticket/v1-04`。
+- [启动记录](https://github.com/yiwer/Observer/issues/4#issuecomment-5550300477)；依赖 #3 已关闭且本地验收集成。
+
+## 运行时预检
+
+2026-09-05，root 启动本机已有 Docker Desktop，以便本票执行不需要模型的本地隔离测试；未读取凭证、安装虚拟机、调用模型或修改已有容器。启动后已有 10 个其他项目容器均保持 exited。
+
+- Docker Desktop 4.82.0 (233772)；Linux Engine 29.6.1 / API 1.55 / amd64。
+- Kernel `6.18.33.2-microsoft-standard-WSL2`；安全选项报告 `seccomp,builtin`、`cgroupns`。
+- 本地可用 Python 镜像：`python:3.12-slim-bookworm`，镜像 ID `sha256:183e5ad42322fea6f731433ae7f6be7498812b31d2eaf05537ffed838dd1ba7c`，RepoDigest `python@sha256:a116514e19457bcb7af7efe9c3dd0b9b71e85b317694e7882a1c52aa15a78134`。
+- 预检未发现 Linux Node/Codex 镜像。Windows 已安装 CLI 的帮助版本为 codex-cli 0.153.4，不能据此声称 Linux 二进制或权限行为已测试。
+
+这些只是环境库存与就绪性，不证明实现的隔离、进程回收、协议或真实接入通过。本票新测试资源必须有独有身份；不清理现有容器、镜像、网络或卷。
+
+## 待冻结后核验
+
+沿已确认的公开 `produce` → `readReport` seam，关注完整 Bundle→外部进程→适配器→Gate→归档，不只验证事件解析函数。保留正常候选路径，同时验证失败不能生成发布版本。
+
+1. 版本化 CLI 参数、进程退出、终态、最终结构、业务身份各自核验；矛盾/重复/晚到失败不能被有利结果遮盖。
+2. 候选与原始事件始终是数据；正文必须经 Gate，stderr/错误事件不得带入秘密或归档。未知消耗不能等于零。
+3. 实际读取/写入/联网/提权尝试的拒绝证据，区分工具权限、文件系统、进程和模型网络；`noexec` 不能单独证明解释器无法运行候选代码。
+4. 超时、取消、异常路径回收本任务完整进程树，按不可变运行身份定位，不影响旁路正常任务；输出与耗时有界。
+5. 协议替身、原生 CLI 帮助、Linux 容器运行、真实模型/地域资格分别标明。断网替身成功不证明真实模型可达；待授权实测和仍待实现的能力必须分开。
+
+## Standards
+
+等待固定非空三点 diff 后独立 review；当前没有结论。
+
+## Spec
+
+等待固定非空三点 diff 后独立 review；当前没有结论。
+
+## 外部门槛
+
+没有真实 Provider 认证、地域资格、付费调用、事实质量或生产部署证据。生产发布仍不得因本地测试开启。当前提交均未 push。
