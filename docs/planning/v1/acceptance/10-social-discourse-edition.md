@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**fresh 实施作者已派发，局部方案收敛中；无本票测试/验收结果**。GitHub #10 OPEN / assignee yiwer。
+状态：**fresh 作者实施中，已取得局部 RED→GREEN；尚未冻结提交或完成本票验收**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -36,4 +36,20 @@ Root持有旧Record1–5六份及Record6三份不可变oracle；新增后者在 
 
 Root要求将最初“仅Owner-supplied sample Adapter”方案改为**一个真实Mastodon受控HTTP/分页协议Adapter + 自有合法固定响应替身**，避免以每日手动dump接口替代票内平台采样能力。Root依research技能实际派 `/root/v1_10_mastodon_research` 独立核对官方API/字段/分页/删除/许可边界，仅写作者工作树 `docs/research/mastodon-social-sample-adapter-2026-09-05.md`，不读取真实时间线或帖子。所有实际实例仍未批准、保持关闭；正向采样片要先根据研究收敛具体合同，技术可访问不代表使用许可。
 
-已批准先做不依赖真实网络的首片：public produce6面对缺社会用途许可时不调用采样，普通合格新闻仍成稿，社会栏明确无合规来源Gap；真实SQLite重启/鉴权可读，request5仍原Record6。作者应先取得真实RED，再最小GREEN；目前尚无该片结果。
+已批准先做不依赖真实网络的首片：public produce6面对缺社会用途许可时不调用采样，普通合格新闻仍成稿，社会栏明确无合规来源Gap；真实SQLite重启/鉴权可读，request5仍原Record6。作者应先取得真实RED，再最小GREEN；首片确认时尚无结果，随后进展见下节。
+
+## 局部实施与截稿采样合同
+
+Root实际读了作者工作树 `data/v1-10-slices/01-red-ready.log`、`01-green-after-clock-fix.log`、`02-red.log`、`02-green.log` 全文：
+
+- 首片已安装锁定依赖后因 `invalid-request` 真正 RED（1项失败）；增加新版本并窄修只对request6读取新冻结时钟后，单文件1/1通过、319.5877ms。最初缺zod是环境失败，不计业务RED。
+- 第2片先因缺少「平台：Mastodon」展示 RED，最小披露后2/2通过、344.9583ms；未采集时语言、地域、样本量仍为未知，不编造零值。
+- 这些是作者变化中工作树的局部结果，Root仅核对已存日志与当前测试，不是独立冻结重跑、完整测试或正式双轴审查，计数不相加为本票验收。
+
+作者发现现有 `Evidence.retrievedAtUtc <= cutoffUtc` 与在produce中首次实时采样不相容。Root核对当前 `observer.ts`、采集器和PRD D4后，批准 **截稿前显式 `createMastodonAdapter.capture`，截稿后 `produce6` 读取该冻结快照并只作撤销式复核**。capture返回实际receivedAt、来源政策/采样配置指纹和有界样本，不以created_at代替首次取得时间、不回填cutoff；快照/receipt按不可信来源输入解析和冻结，Runner不能赋予权限。许可不足须在第一次HTTP前拒绝；跨cutoff、取消、超时和有限分页不能伪装完整取得。
+
+此调整仍是已批准来源I/O到T1的时序，不引入每日手动dump或通用缓存。若实现仅同进程短存，须明确TTL及重启丢失后的Gap，持久调度留在后续票；截稿后同实例复核不能添加新版正文。所有来源/材料生命周期只能收紧。
+
+Root已完整读独立研究，并通过官方文档和固定v4.7.1源码独立核对关键协议事实：标签分页链接只保留部分参数，须固定原查询；ID为opaque string且排序不保证created_at顺序；单状态404同时涵盖找不到和无权查看，不能称已确认作者删除。来源：[标签Controller](https://github.com/mastodon/mastodon/blob/v4.7.1/app/controllers/api/v1/timelines/tag_controller.rb)、[官方ID指南](https://docs.joinmastodon.org/api/guidelines/#handling-ids-within-api-responses)、[状态Controller](https://github.com/mastodon/mastodon/blob/v4.7.1/app/controllers/api/v1/statuses_controller.rb)。研究文档由作者最终提交纳入；它不批准真实来源或证明实际平台采样。最后收紧PDF/邮件未来实测措辞后，Root读回变更段落并验证文件SHA256 `e4a070fbfcb8bcfd22822a72369231592eb55be77ff8c64068d48b19a871b210`；当前仅Canonical/MD及永久Record可验证。
+
+作者亲读完整研究后，Root确认具体正向首片：真实Mastodon协议Adapter以自有虚构两页加终止空页取得6条获准本地原发样本，实际capture早于cutoff、produce晚于cutoff；匿名获准文字经Runner/Verifier后形成指向本期唯一合格主EventCluster的Story-linked Discourse，账户/头像等传输层哨兵不进入模型或永久Record，SQLite重启保持字节。下一片再推进native门槛、偏斜和生命周期。截止本记录更新，尚无该正向片结果。
