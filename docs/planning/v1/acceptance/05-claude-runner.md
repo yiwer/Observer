@@ -43,6 +43,16 @@ Root 另查官方[结构化输出说明](https://code.claude.com/docs/en/agent-s
 
 后续作者报告的实际 red→green：`stop_reason=refusal` 且退出 0 曾误出版，联合唯一 result/init/session/StructuredOutput 完成状态后拒绝；恶意 Bash 响应已有用量却是 null，现保留 Messages 12/21/cached 2 且不出版；第二次发送前 TTL 曾未阻断，现依可信快照拒绝过期发送。该阶段 **4/4** 通过；共享重命名后旧 Codex 适配器文件 **22/22** 通过（60.638 秒）。当前扩展协议失败/整树/OS 拒绝检查在作者 session 59932，未冻结，Root 尚未独立复跑这些新增用例。最终需旧 74 + 新测试完整运行，不把分阶段计数叠加冒充最终总数。
 
+## 继续实施与环境观察（未冻结）
+
+作者后来读回扩展 Claude 测试 **16/16**（56.906 秒）、恶意工具/坏用量/logging/API 失败定向 **4/4**（17.412 秒）；完整 `check` session 84756 为 **93/93**（74.419 秒）。这些是作者在新增嵌套输入检查之前的阶段证据，尚无冻结 SHA，不能作为后续源码版本或 Root 独立验收的通过结论。原 session 59932 的 8/9 中，唯一失败是 `docker top -eo args` 缺少 PID 列；改成 `-eo pid,args` 后实际看到两个协议进程及整树回收。重复 Messages `message_stop` 曾误出版，完整流状态校验后定向通过。
+
+实施 agent 一度因用量限制退出；Owner 明确“继续”后恢复原 agent / 原工作树，没有清理或重写未提交代码。恢复后正补充模型请求中嵌套远程图片/文件能力的边界检查及合法多轮回归。顶层 MCP/容器/beta 字段已窄投影不等于嵌套输入已完成验收；此时未证明存在可利用的实际网页绕过，也未调用真实 API。
+
+2026-09-05 09:55 UTC 后 Root 与作者分别复现 Docker 对 `observer-v1-05-claude:2.1.252` 的 `image inspect` 报 `No such image`，但同 daemon 以不可变 ID 查询及 `image ls` 都有该镜像和标签。Root 按 diagnosing-bugs 的 CLI 反馈环核查；**未重启 Docker、重建、重新打标或删除任何镜像**，下一轮原标签、规范化名称和 ID 均恢复，随后原标签连续 **10/10** 查询返回既定 `sha256:0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269`。仅记为已观察的瞬态名称查询异常，根因未确定，不声称产品修复或放宽测试失败处理。当时无 `observer.task` 残留容器。
+
+随后作者提供嵌套边界的实际 RED→GREEN：`nested-image` 协议进程输入起初在公开业务 seam 中仍出版（`Missing expected rejection`）；收紧 Messages/system 与 StructuredOutput 历史后，四种嵌套输入均在模型发送前拒绝（sends=0、cleanup=removed）。解析异常在容器事件回调内转 `policy-violation`，不能逃逸为宿主崩溃。作者该阶段定向 **2/2** 与 typecheck 通过，正重跑完整 94 项及 smoke；Root 尚未独立复现最终实现。该 RED 只证明受控外部协议进程提交的字段越过原边界，并非真实网页/模型触发或远端实际取图证据。
+
 ## Standards
 
 待冻结后独立审查，无结论。
