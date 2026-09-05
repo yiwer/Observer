@@ -63,3 +63,13 @@ Root 新建自有 ignored `O:/GenesisCode/Observer-worktrees/accept-v1-07/data/r
 同一阶段 Root 用既有不可变producer档案对新WIP source读取：Record1/2 **2/2**、Record3 **1/1**、两期Record4 **2/2**，合计**5/5**旧JSON/MD/摘要/身份与私有读取兼容。未重造旧档，未把Source reader诊断绑为当前HEAD基线的实现结果；作者此时HEAD仍b1b6ac3，代码尚未提交。
 
 Root capacity 脚本 SHA-256：`41d5883d4edc7cda3eb5e7db990f96b67c8b3cdf92459e7c35d8b277f020d827`。
+
+## 后续竖切与覆盖归因整改
+
+作者随后报告5个兴趣T1已GREEN：显式排序/快照、无效导入与版本冲突、在途import冻结、baseline在截断前跨兴趣排除，以及地域/语言已知与未知缺口；最近typecheck PASS，单文件5/5约351 ms。此前22个事件回归与当时3个兴趣场景25/25通过。以上为作者WIP报告，仍无最终冻结或全量check；逐片准确RED/命令明细留待实施说明和终态交接。
+
+Root 独立 `coverage-attribution-probe.ts` 在新自有 `accept-v1-07/data/root-v1-08-review` 实际运行 **0/1 RED**（37.3762 ms）：同一来源文档明确包含中国/美国两个独立事件，可信标注分别为CN/US，兴趣排除US；最终仅选 `cn-only`，但 `coverage.regions.US.selectedStoryIds` 错误为 `["cn-only"]`。正确应为空；US的 `evidenceIds: ["shared"]` 可以保留，表示研究阶段确实观察到相关材料，不等于最终选中美国事件。
+
+原因定位是当前 `interestCoverage.entry` 按共享Evidence ID给最终故事继承整个来源文档汇总地域，没有沿实际选中Claim/Cluster的地域标注归因。违反本票“实际覆盖可解释”和已确认的输入/标注/成稿统计分离；是当前WIP的实际错误，不是因尚未完成其它规则而人为制造RED。Root脚本 SHA-256 **`6ba77479ba076f8bda92108a448e98541978c631c0fc6c7225d0b174d57c688a`**，全程公开生产/关闭/重启读取、真实SQLite，无SQL侧读，失败材料保留。
+
+已交原作者按现有竖切顺序用其自身T1复现后窄修复：区分证据观察与真实选中事件地域，不让已排除/未刊登/隔离成员因共享文档借权；支持事实/Impact Note按已声明统计语义处理。语言指标同样应核对其定义，但不把来源语言和事件地域混为一种含义。修复后Root原脚本/预期复跑，再在冻结built与实际master重验；当前不接受、不关闭、不开始#9。
