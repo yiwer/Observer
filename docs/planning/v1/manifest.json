@@ -64,7 +64,7 @@
       "number": 2,
       "title": "受来源政策约束的持续采集",
       "file": "tickets/02-policy-bound-collection.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-01"
@@ -90,8 +90,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/2",
       "issueDatabaseId": 5355689192,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "293109802149beb1c95cd213e5306e54ac404561",
+        "integrationCommit": "7fdef6736f0629850cba11061bf9607a853e3d2a",
+        "acceptanceFile": "acceptance/02-policy-bound-collection.md",
+        "qualification": "local-fixture-and-injected-network-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-03",

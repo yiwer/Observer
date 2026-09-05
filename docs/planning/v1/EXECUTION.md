@@ -13,18 +13,20 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 当前票：V1-02 / GitHub #2，已读回原生依赖只有 #1 且 CLOSED，已认领并[回写启动信息](https://github.com/yiwer/Observer/issues/2#issuecomment-5549957821)。
-- 状态：fresh-context subagent `implement_v1_02` 正在使用 implement skill 实施；尚未验收。
-- 固定起点：5b3ad4b16680cbd3e6181a08c6afc33909576a95。
-- 工作目录：O:/GenesisCode/Observer-worktrees/v1-02，分支 ticket/v1-02。
-- #1 已完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
-- 已验收集成提交：179861356306ace135b5e731e0655e272df1b1b6。
+- 下一票：V1-03 / GitHub #3；已读回原生依赖只有 #2 且 CLOSED，准备派发 fresh-context 实施 agent。
+- #1、#2 已完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 均已读回 CLOSED。
+- 最新已验收集成提交：7fdef6736f0629850cba11061bf9607a853e3d2a。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
-- 下一步：等待 #2 的来源许可、增量采集及网络安全边界 TDD 与固定提交；要求独立 Standards/Spec review，然后 orchestrator 再核对权限、重定向/内网目标、留存与下游许可并在集成基线复跑。
+- 下一步：固定 #3 worktree 与起点；实施陈述级 Publication Gate，保留结构、政策和语义核验的独立结论与测试/真实质量边界。
 
 ## 已验收
 
 - [V1-01 验收记录](acceptance/01-private-brief-spine.md)：实施 35c647c，集成 1798613；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、13/13 测试及 2/2 smoke。Standards 有 1 项非阻塞建议，Spec 无发现。
+- [V1-02 验收记录](acceptance/02-policy-bound-collection.md)：最终实施 2931098，集成 7fdef67；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、32/32 测试及 3/3 smoke。两轴原 3 项阻断和 root 删除准入发现均修复；余 1 项非阻塞维护建议。
+
+## 协作容量
+
+#2 的第二个 reviewer spawn 曾返回 `collab spawn failed: agent thread limit reached`。Standards 使用独立新 reviewer，Spec 复用未参与 #2 实施的 #1 agent，两轴没有互换报告内容。后续实施仍要求 fresh context；若平台无法释放线程，不得把旧实施上下文冒充 fresh context，需核实容量或请求 Owner 调整会话。
 
 ## 外部就绪项
 
