@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
-  AgentResultSchema, ProduceRequestSchema, PublishedReportSchema, SixEditionRequestSchema, EventEditionRequestSchema, InterestEditionRequestSchema, DomainEditionRequestSchema, EditionResearchSchema, EditionResearchEnvelopeSchema, ReportRecordSchema,
+  AgentResultSchema, ProduceRequestSchema, PublishedReportSchema, SixEditionRequestSchema, EventEditionRequestSchema, InterestEditionRequestSchema, DomainEditionRequestSchema, DiscourseEditionRequestSchema, EditionResearchSchema, EditionResearchEnvelopeSchema, ReportRecordSchema,
   editionNames, type AgentRunner, type AgentResult, type PublishedReport, type ReportRecord, type EditionRunner, type EditionResearch,
 } from "./contracts.ts";
 import { SourcePolicySchema, policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
@@ -18,6 +18,8 @@ import { consistentArchive } from "./archive-integrity.ts";
 import { interestConfiguration } from "./interest-profile.ts";
 import { projectSelectionReceipt } from "./interest-selection.ts";
 import { projectDomainReceipt } from "./domain-evidence.ts";
+import { DiscourseConfigurationSchema } from "./discourse-contracts.ts";
+import { prepareDiscourse, type DiscourseOptions } from "./discourse.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -37,6 +39,8 @@ export interface ObserverOptions {
   editionRunner?: EditionRunner;
   sourcePolicies?: SourcePolicy[];
   verifier?: SemanticVerifier;
+  discourse?: DiscourseOptions;
+  sourcePolicyReader?: () => unknown;
 }
 
 function digest(text: string): string {
@@ -44,7 +48,7 @@ function digest(text: string): string {
 }
 
 function markdown(record: ReportRecord): string {
-  if (record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || record.schemaVersion === 6) return sixEditionMarkdown(record);
+  if (record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) return sixEditionMarkdown(record);
   if (record.schemaVersion === 2) return gatedMarkdown(record);
   const story = record.stories[0]!;
   const overview = Object.entries(editionNames).map(([edition, label]) =>
@@ -67,8 +71,9 @@ function markdown(record: ReportRecord): string {
 export function createObserver(options: ObserverOptions) {
   const interest = interestConfiguration(options.databasePath);
   const policies = (options.sourcePolicies ?? []).map((source) => SourcePolicySchema.parse(source));
+  const currentPolicies = () => options.sourcePolicyReader ? SourcePolicySchema.array().parse(options.sourcePolicyReader()) : policies;
   function checkedPolicy(evidence: { sourceId: string; policyVersion: number; policySha256: string }) {
-    const source = policies.find((source) => source.sourceId === evidence.sourceId);
+    const source = currentPolicies().find((source) => source.sourceId === evidence.sourceId);
     if (!source || source.review.status !== "approved" || !source.collection.enabled || source.version !== evidence.policyVersion || policyDigest(source) !== evidence.policySha256) throw new ObserverError("source-policy-invalid");
     return source;
   }
@@ -93,7 +98,7 @@ export function createObserver(options: ObserverOptions) {
     const row = database.prepare("SELECT payload FROM reports WHERE id = ?").get(versionId);
     if (!row) return undefined;
     const report = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
-    if ((report.record.schemaVersion !== 4 && report.record.schemaVersion !== 5 && report.record.schemaVersion !== 6) || !consistentArchive(report, versionId)) throw new ObserverError("history-integrity-failed");
+    if ((report.record.schemaVersion !== 4 && report.record.schemaVersion !== 5 && (report.record.schemaVersion !== 6 && report.record.schemaVersion !== 7)) || !consistentArchive(report, versionId)) throw new ObserverError("history-integrity-failed");
     return report;
   };
 
@@ -102,13 +107,31 @@ export function createObserver(options: ObserverOptions) {
     exportInterestProfile(filePath: string) { return interest.export(filePath); },
     async produce(input: unknown, runOptions?: { signal?: AbortSignal }) {
       if (options.mode !== "test-fixture") throw new ObserverError("publication-disabled");
-      const parsedRequest = ProduceRequestSchema.or(SixEditionRequestSchema).or(EventEditionRequestSchema).or(InterestEditionRequestSchema).or(DomainEditionRequestSchema).safeParse(input);
+      const parsedRequest = ProduceRequestSchema.or(SixEditionRequestSchema).or(EventEditionRequestSchema).or(InterestEditionRequestSchema).or(DomainEditionRequestSchema).or(DiscourseEditionRequestSchema).safeParse(input);
       if (!parsedRequest.success) throw new ObserverError("invalid-request");
       const request = parsedRequest.data;
-      const interestProfile = request.schemaVersion === 4 || request.schemaVersion === 5 ? interest.snapshot() : undefined;
+      const frozenAtUtc = request.schemaVersion === 6 ? (options.clock ?? (() => new Date().toISOString()))() : undefined;
+      const discourseConfiguration = request.schemaVersion === 6 ? DiscourseConfigurationSchema.parse(options.discourse?.configuration ?? { schemaVersion: 1, version: 1, groups: [] }) : undefined;
+      const interestProfile = request.schemaVersion === 4 || request.schemaVersion === 5 || request.schemaVersion === 6 ? interest.snapshot() : undefined;
+      if (request.schemaVersion === 6) {
+        // Ordinary Evidence cannot declare itself an eligible social sample. Only the
+        // separately captured, policy-bound sample path can populate this Edition.
+        const socialSourceIds = new Set([...policies.filter((source) => source.edition === "social-discourse").map((source) => source.sourceId), ...discourseConfiguration!.groups.map((group) => group.sourceId)]);
+        const socialIds = new Set([...request.editions.filter((entry) => entry.edition === "social-discourse").flatMap((entry) => entry.evidenceIds), ...request.evidenceBundle.evidence.filter((evidence) => socialSourceIds.has(evidence.sourceId)).map((evidence) => evidence.id)]);
+        if (request.evidenceBundle.schemaVersion === 1) request.evidenceBundle.evidence = request.evidenceBundle.evidence.filter((evidence) => !socialIds.has(evidence.id));
+        else request.evidenceBundle.evidence = request.evidenceBundle.evidence.filter((evidence) => !socialIds.has(evidence.id));
+        request.editions = request.editions.map((entry) => ({ ...entry, evidenceIds: entry.evidenceIds.filter((id) => !socialIds.has(id)) }));
+      }
+      const discourse = request.schemaVersion === 6 ? await prepareDiscourse({ request, configuration: discourseConfiguration!, frozenAtUtc: frozenAtUtc!,
+        adapter: options.discourse?.adapter, policies: currentPolicies, clock: options.clock ?? (() => new Date().toISOString()), ...(runOptions?.signal ? { signal: runOptions.signal } : {}) }) : undefined;
+      if (discourse && request.schemaVersion === 6 && request.evidenceBundle.schemaVersion === 2) {
+        request.evidenceBundle.evidence.push(...discourse.evidence);
+        request.editions.find((entry) => entry.edition === "social-discourse")!.evidenceIds.push(...discourse.evidence.map((evidence) => evidence.id));
+      }
       if (request.schemaVersion === 1 ? !options.runner : request.evidenceBundle.evidence.length > 0 && !options.editionRunner) throw new ObserverError("runner-unavailable");
       const bundle = request.evidenceBundle;
       const modelRequest = structuredClone(request);
+      if (modelRequest.schemaVersion === 6) delete modelRequest.discourseSamples;
       if (!bundle.evidence.length && request.schemaVersion === 1) throw new ObserverError("evidence-unavailable");
       if (request.schemaVersion !== 1 && (new Set(request.editions.map((entry) => entry.edition)).size !== 6 || request.editions.some((entry) => new Set(entry.evidenceIds).size !== entry.evidenceIds.length || entry.evidenceIds.some((id) => !bundle.evidence.some((evidence) => evidence.id === id))))) throw new ObserverError("invalid-edition-input");
       if (modelRequest.evidenceBundle.schemaVersion === 2) {
@@ -208,6 +231,7 @@ export function createObserver(options: ObserverOptions) {
           if (!evidence.url || !evidence.title) throw new ObserverError("citation-unavailable");
         }
       }
+      if (discourse) await discourse.refresh();
       const story = stories[0];
       const commonRecord = {
         schemaVersion: 1, id: `${request.businessDate}-v1-record`,
@@ -217,7 +241,7 @@ export function createObserver(options: ObserverOptions) {
         coverageGaps: (Object.keys(editionNames) as Array<keyof typeof editionNames>)
           .filter((edition) => edition !== story?.edition)
           .map((edition) => ({ edition, reason: "not-implemented-in-fixture-spine" })),
-        sourcePolicyDecisions: bundle.schemaVersion === 1 ? bundle.evidence.map((evidence) => ({ evidenceId: evidence.id, decision: "test-fixture-only" })) : bundle.evidence.map((evidence) => ({ evidenceId: evidence.id, decision: "source-policy-v1", sourceId: evidence.sourceId, policyVersion: evidence.policyVersion, policySha256: evidence.policySha256, attribution: checkedPolicy(evidence).citation.attribution })),
+        sourcePolicyDecisions: bundle.schemaVersion === 1 ? bundle.evidence.map((evidence) => ({ evidenceId: evidence.id, decision: "test-fixture-only" })) : bundle.evidence.filter((evidence) => !discourse?.modelFailure([evidence.id])).map((evidence) => ({ evidenceId: evidence.id, decision: "source-policy-v1", sourceId: evidence.sourceId, policyVersion: evidence.policyVersion, policySha256: evidence.policySha256, attribution: checkedPolicy(evidence).citation.attribution })),
         agentResult: results[0],
       };
       let record: ReportRecord;
@@ -230,6 +254,8 @@ export function createObserver(options: ObserverOptions) {
           quotationTotals.set(evidence.sourceId, (quotationTotals.get(evidence.sourceId) ?? 0) + [...claim.originalText].length + (claim.translated ? [...claim.text].length : 0));
         }
         const modelPolicyCheck = (ids: string[], atUtc: string): string | null => {
+          const socialFailure = discourse?.modelFailure(ids);
+          if (socialFailure) return socialFailure;
           if (bundle.schemaVersion === 1) return null;
           for (const id of ids) {
             const evidence = bundle.evidence.find((item) => item.id === id)!;
@@ -259,11 +285,26 @@ export function createObserver(options: ObserverOptions) {
           return null;
         };
         const { completedAtUtc, ...gated } = await (research ? evaluateBatchedPublication : evaluatePublication)({ request: { ...modelRequest, schemaVersion: 1 }, stories, verifier: options.verifier,
-          ...(request.schemaVersion === 4 || request.schemaVersion === 5 ? { recordVerifierDispatch: true } : {}),
-          ...(request.schemaVersion === 5 ? { domainRules: true } : {}),
+          ...(request.schemaVersion === 4 || request.schemaVersion === 5 || request.schemaVersion === 6 ? { recordVerifierDispatch: true } : {}),
+          ...(request.schemaVersion === 5 || request.schemaVersion === 6 ? { domainRules: true } : {}),
+          ...(discourse ? { beforeVerification: discourse.refresh, afterVerification: discourse.refresh, claimEligibility: discourse.claimEligibility, semanticEligibility: discourse.semanticEligibility } : {}),
           clock: options.clock ?? (() => new Date().toISOString()), modelPolicyCheck, publicationPolicyCheck: policyCheck });
         publishedAtUtc = completedAtUtc;
-        const project = (verification: Parameters<typeof projectEventReceipt>[0]) => projectDomainReceipt(projectSelectionReceipt(projectEventReceipt(verification, gated.stories, request.schemaVersion === 3 || request.schemaVersion === 4 || request.schemaVersion === 5), gated.stories, request.schemaVersion === 4 || request.schemaVersion === 5, modelRequest.evidenceBundle.evidence), gated.publicationGate.decisions, request.schemaVersion === 5, modelRequest.evidenceBundle.evidence);
+        if (discourse) {
+          await discourse.refresh();
+          publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
+          gated.publicationGate.checkedAtUtc = publishedAtUtc;
+          for (const decision of gated.publicationGate.decisions) {
+            const failure = discourse.modelFailure(decision.evidenceIds);
+            if (failure) { decision.outcome = "quarantined"; decision.reason = failure; decision.policy = { status: "failed", reason: failure }; decision.semantic = { status: "not-evaluated", reason: "policy-failed" }; }
+          }
+          gated.stories = gated.stories.flatMap((story) => { const claims = story.claims.filter((claim) => gated.publicationGate.decisions.some((decision) => decision.storyId === story.id && decision.claimId === claim.id && decision.outcome === "published")); return claims.length ? [{ ...story, claims }] : []; });
+          gated.publicationGate.unconfirmedItems = gated.publicationGate.unconfirmedItems.filter((item) => !discourse.modelFailure(item.evidenceIds));
+        }
+        const project = (verification: Parameters<typeof projectEventReceipt>[0]) => {
+          const projected = projectDomainReceipt(projectSelectionReceipt(projectEventReceipt(verification, gated.stories, request.schemaVersion >= 3), gated.stories, request.schemaVersion >= 4, modelRequest.evidenceBundle.evidence, discourse?.nativeStoryIds(gated.stories)), gated.publicationGate.decisions, request.schemaVersion >= 5, modelRequest.evidenceBundle.evidence);
+          return projected ? { ...projected, assessments: projected.assessments.filter((assessment) => !discourse || !assessment.evidence.some((entry) => discourse.modelFailure([entry.evidenceId]))).map(({ discourse: _discourse, ...assessment }) => assessment) } : null;
+        };
         if (gated.publicationGate.schemaVersion === 1) gated.publicationGate.verification = project(gated.publicationGate.verification);
         else for (const batch of gated.publicationGate.batches) batch.verification = project(batch.verification);
         const eligibleIds = new Set([...gated.stories.flatMap((story) => story.claims.flatMap((claim) => claim.evidenceIds)), ...gated.publicationGate.unconfirmedItems.flatMap((item) => item.evidenceIds)]);
@@ -285,14 +326,14 @@ export function createObserver(options: ObserverOptions) {
           coverageGaps: Object.keys(editionNames).filter((edition) => !gated.stories.some((story) => story.edition === edition)).map((edition) => ({ edition, reason: "no-publishable-claims" })),
         } as ReportRecord;
         if (research) {
-          if (request.schemaVersion === 3 || request.schemaVersion === 4 || request.schemaVersion === 5) {
+          if (request.schemaVersion === 3 || request.schemaVersion === 4 || request.schemaVersion === 5 || request.schemaVersion === 6) {
             const legacyHistory: LegacyHistory = { versionIds: [], fingerprints: new Set() };
             const withheldHistory = new Set<string>();
             const history = database.prepare("SELECT id, payload FROM reports WHERE id < ? ORDER BY id").all(`${request.businessDate}-v1`).flatMap((row) => {
               const old = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
               if (!consistentArchive(old, String(row.id))) throw new ObserverError("history-integrity-failed");
               if (old.record.businessDate >= request.businessDate || old.version.publishedAtUtc > bundle.cutoffUtc || old.record.evidenceBundle.cutoffUtc > bundle.cutoffUtc) return [];
-              if (old.record.schemaVersion !== 4 && old.record.schemaVersion !== 5 && old.record.schemaVersion !== 6) {
+              if (old.record.schemaVersion !== 4 && old.record.schemaVersion !== 5 && (old.record.schemaVersion !== 6 && old.record.schemaVersion !== 7)) {
                 if (old.record.stories.some((story) => story.edition !== "github-projects")) legacyHistory.versionIds.push(old.version.id);
                 for (const story of old.record.stories) if (story.edition !== "github-projects") for (const claim of story.claims) {
                   const fingerprint = legacyFingerprint(claim, old.record.evidenceBundle.evidence);
@@ -309,8 +350,9 @@ export function createObserver(options: ObserverOptions) {
               }
               return [old.record];
             });
-            record = arrangeEvents(record as Parameters<typeof arrangeEvents>[0], research, history, legacyHistory, withheldHistory, interestProfile);
-            if (request.schemaVersion === 5 && record.schemaVersion === 5) record = { ...record, schemaVersion: 6, editorialContract: "observer-canonical-v4", domainRules: "observer-domain-evidence-v1" };
+            record = arrangeEvents({ ...record, stories: discourse ? record.stories.filter((story) => story.edition !== "social-discourse") : record.stories } as Parameters<typeof arrangeEvents>[0], research, history, legacyHistory, withheldHistory, interestProfile);
+            if (request.schemaVersion >= 5 && record.schemaVersion === 5) record = { ...record, schemaVersion: 6, editorialContract: "observer-canonical-v4", domainRules: "observer-domain-evidence-v1" };
+            if (request.schemaVersion === 6 && record.schemaVersion === 6) record = discourse!.project(record, gated.stories);
           } else record = arrangeEditions(record as Parameters<typeof arrangeEditions>[0], research);
         }
       } else {
@@ -318,8 +360,8 @@ export function createObserver(options: ObserverOptions) {
         record = commonRecord as ReportRecord;
       }
       record = ReportRecordSchema.parse(record);
-      if ((record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || record.schemaVersion === 6) && !consistentRecord(record)) throw new ObserverError("canonical-record-invalid");
-      if ((record.schemaVersion === 4 || record.schemaVersion === 5 || record.schemaVersion === 6) && !consistentEvents(record, historicalReport)) throw new ObserverError("canonical-event-record-invalid");
+      if ((record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) && !consistentRecord(record)) throw new ObserverError("canonical-record-invalid");
+      if ((record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) && !consistentEvents(record, historicalReport)) throw new ObserverError("canonical-event-record-invalid");
       const canonicalMarkdown = markdown(record);
       const report = PublishedReportSchema.parse({
         version: {
@@ -328,7 +370,7 @@ export function createObserver(options: ObserverOptions) {
           publishedAtUtc,
           revisionReason: "initial", previousVersionId: null, provenance: "test-fixture",
           reportRecordId: record.id, canonicalMarkdownSha256: digest(canonicalMarkdown),
-          ...(record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || record.schemaVersion === 6 ? { schemaVersion: record.schemaVersion - 1, editorialContract: record.editorialContract, reportRecordSha256: digest(JSON.stringify(record)) } : {}),
+          ...(record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7) ? { schemaVersion: record.schemaVersion - 1, editorialContract: record.editorialContract, reportRecordSha256: digest(JSON.stringify(record)) } : {}),
         },
         record, canonicalMarkdown,
       });
@@ -346,10 +388,10 @@ export function createObserver(options: ObserverOptions) {
       const report = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
       if (!consistentArchive(report, versionId)) throw new ObserverError("canonical-integrity-failed");
-      if ((report.record.schemaVersion === 4 || report.record.schemaVersion === 5 || report.record.schemaVersion === 6) && !consistentEvents(report.record, historicalReport)) throw new ObserverError("canonical-integrity-failed");
+      if ((report.record.schemaVersion === 4 || report.record.schemaVersion === 5 || (report.record.schemaVersion === 6 || report.record.schemaVersion === 7)) && !consistentEvents(report.record, historicalReport)) throw new ObserverError("canonical-integrity-failed");
       if (report.record.evidenceBundle.schemaVersion !== 1) {
         try {
-          const identities = report.record.evidenceBundle.schemaVersion === 2 ? report.record.evidenceBundle.evidence : [...report.record.evidenceBundle.evidence.flatMap((evidence) => evidence.origin.kind === "collected" ? [{ sourceId: evidence.sourceId, ...evidence.origin }] : []), ...(report.record.schemaVersion === 4 || report.record.schemaVersion === 5 || report.record.schemaVersion === 6 ? report.record.eventClusters.flatMap((cluster) => cluster.historyPolicies) : [])];
+          const identities = report.record.evidenceBundle.schemaVersion === 2 ? report.record.evidenceBundle.evidence : [...report.record.evidenceBundle.evidence.flatMap((evidence) => evidence.origin.kind === "collected" ? [{ sourceId: evidence.sourceId, ...evidence.origin }] : []), ...(report.record.schemaVersion === 4 || report.record.schemaVersion === 5 || (report.record.schemaVersion === 6 || report.record.schemaVersion === 7) ? report.record.eventClusters.flatMap((cluster) => cluster.historyPolicies) : [])];
           for (const evidence of identities) {
             const source = checkedPolicy(evidence);
             if (!source.distribution.enabled || !source.distribution.allowDerivedText || !source.distribution.allowPermanentArchive || !source.citation.enabled) throw new Error("revoked");

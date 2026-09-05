@@ -3,9 +3,10 @@ import type { Claim } from "./gate-contracts.ts";
 import { claimWording, escapeMarkdown, failureExplanations, inputDigest } from "./publication-gate.ts";
 import { consistentInterests } from "./interest-selection.ts";
 import { domainLabels } from "./domain-evidence.ts";
+import { consistentDiscourse } from "./discourse.ts";
 
 type RecordV3 = Extract<ReportRecord, { schemaVersion: 3 }>;
-type SixRecord = Extract<ReportRecord, { schemaVersion: 3 | 4 | 5 | 6 }>;
+type SixRecord = Extract<ReportRecord, { schemaVersion: 3 | 4 | 5 | 6 | 7 }>;
 function canonicalTitle(story: RecordV3["stories"][number]): string {
   const fact = story.claims.find((claim) => claim.kind === "fact");
   if (fact) return fact.text;
@@ -13,6 +14,32 @@ function canonicalTitle(story: RecordV3["stories"][number]): string {
   return leading ? claimWording(leading) : "已核验引语";
 }
 const gapExplanations: Record<string, string> = {
+  "social-no-eligible-source": "无合规社交来源：当前没有明确允许采样、模型处理、保留与不可撤回导出用途的来源；未将技术可访问视为用途许可。",
+  "social-insufficient-sample": "未达到预先固定的采样门槛：故事关联讨论至少 6 条、平台原生信号至少 12 条；不降低门槛补造观察。",
+  "social-below-target": "本栏合格话语观察不足约 7 组软目标；故事关联讨论不成为独立新闻事件。",
+  "social-skewed": "样本偏斜：重复比例过高，或缺少预先固定的原发根帖/时间桶覆盖；不推断总体意见。",
+  "social-rate-limited": "实例限流，采样或复查未完成；本轮未取得足够的合规观察。",
+  "social-unavailable": "样本在本实例复查不可用；可能已删除或访问条件改变，未将不可用断言为作者已删除。",
+  "social-access-unavailable": "实例当前未提供获准的公开访问，未改用账户或其他实例绕过。",
+  "social-changed": "截稿后的复查发现样本表示变化，旧分析已隔离，未替换成后来的正文。",
+  "social-recheck-incomplete": "样本复查未完成，无法继续采用旧分析。",
+  "social-pagination-incomplete": "分页边界缺失、异常或达到有界页数；未声称观察完整时间窗。",
+  "social-after-cutoff": "普通样本在截稿后才取得，未回填取得时间进入当期。",
+  "social-permission-changed": "来源许可已变化或撤回，对应社会材料和分析已隔离。",
+  "social-expired": "社会样本的获准短存期限已到，未继续送入模型或永久报告。",
+  "social-snapshot-unavailable": "本期没有可验证的采样收据；重启或快照丢失后明确缺样。",
+  "social-snapshot-invalid": "样本身份、配置、时间或计数不一致，对应组已隔离。",
+  "social-main-story-unavailable": "未找到本期通过核验且唯一入选的主 Event Cluster，故事关联观察未刊登。",
+  "social-analysis-unavailable": "样本分析缺失、未通过核验或组身份不唯一，未刊登观察。",
+  "social-interest-excluded": "平台原生观察被本期明确兴趣排除；它不取得 Global Baseline 或人口地域资格。",
+  "social-capacity-limit": "本期平台原生观察达到选题容量，未为数量目标扩展采样或改写阈值。",
+  "social-collected-bundle-required": "社会采样须与具有真实策略身份的 Collected Bundle 配合，未借旧固定证据壳伪造来源许可。",
+  "social-cancelled": "采样或复查已取消，本组材料不足。",
+  "social-timeout": "采样或复查达到有界时限，本组材料不足。",
+  "social-invalid-response": "平台响应结构或安全字段无法确认，本组材料不足。",
+  "social-sample-limit": "达到预先固定的样本预算，分页观察未完成。",
+  "social-response-too-large": "平台响应超过已配置字节上限，未处理超限材料。",
+  "social-unsafe-response": "平台响应改变了获准请求位置，本轮未采用材料。",
   "below-story-target": "通过发布门的候选不足约 7 条软目标，按实际内容刊登，不补造材料。",
   "below-interest-selection-target": "通过硬门、事件去重及兴趣与地域筛选后，本栏入选不足约 7 条软目标；按实际内容刊登，不补造材料。",
   "no-evidence": "未取得可用证据，未运行该栏研究。",
@@ -28,7 +55,8 @@ function gapText(reason: string): string {
 }
 
 export function consistentRecord(record: SixRecord): boolean {
-  if ((record.schemaVersion === 5 || record.schemaVersion === 6) && !consistentInterests(record)) return false;
+  if (record.schemaVersion === 7 && !consistentDiscourse(record)) return false;
+  if ((record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) && !consistentInterests(record)) return false;
   const gate = record.publicationGate;
   if (gate.schemaVersion === 2) {
     const identity = { taskId: record.taskId, evidenceBundleId: record.evidenceBundle.id, configurationId: record.configurationId };
@@ -93,9 +121,9 @@ export function sixEditionMarkdown(record: SixRecord): string {
     const url = evidence.url!.replace(/[<>\s]/g, (character) => encodeURIComponent(character));
     return `来源：${policy?.decision === "source-policy-v1" ? escapeMarkdown(policy.attribution) + " — " : ""}[直达原始材料](<${url}>) [${escapeMarkdown(id)}]`;
   }).join("\n\n");
-  const claimText = (claim: Claim, storyId: string) => `${escapeMarkdown(claimWording(claim))}${record.schemaVersion === 6 && domainLabels(record, storyId, claim.id) ? `\n\n${domainLabels(record, storyId, claim.id)}` : ""}\n\n${sources(claim.evidenceIds)}`;
+  const claimText = (claim: Claim, storyId: string) => `${escapeMarkdown(claimWording(claim))}${(record.schemaVersion === 6 || record.schemaVersion === 7) && domainLabels(record, storyId, claim.id) ? `\n\n${domainLabels(record, storyId, claim.id)}` : ""}\n\n${sources(claim.evidenceIds)}`;
   const storyClaimText = (storyId: string, claim: Claim) => {
-    const development = record.schemaVersion === 4 || (record.schemaVersion === 5 || record.schemaVersion === 6) ? record.eventClusters.flatMap((cluster) => cluster.developments).find((entry) => entry.storyId === storyId && entry.claimId === claim.id) : undefined;
+    const development = record.schemaVersion === 4 || (record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) ? record.eventClusters.flatMap((cluster) => cluster.developments).find((entry) => entry.storyId === storyId && entry.claimId === claim.id) : undefined;
     return `${development?.coverage === "late-discovered" ? `补报事实（Late-discovered Story）：首次公开披露 ${development.disclosure.atUtc}。\n\n` : ""}${claimText(claim, storyId)}`;
   };
   return [
@@ -103,7 +131,7 @@ export function sixEditionMarkdown(record: SixRecord): string {
     `版本：${record.businessDate}-v1 · 正文契约：${record.editorialContract}`,
     "> 自动化标注替身产物；未经过真实研究或生产准入。",
     "## Today Overview",
-    ...((record.schemaVersion === 5 || record.schemaVersion === 6) ? [`Interest Profile：v${record.interestProfile.profile.version}；本期开始时固定，后续导入仅用于下一次生成。`,
+    ...((record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) ? [`Interest Profile：v${record.interestProfile.profile.version}；本期开始时固定，后续导入仅用于下一次生成。`,
       "选题顺序：来源与发布门、事件窗口与去重、Global Baseline / 显式排除、偏好优先级；每栏约 7 条、3 条重点。",
       `覆盖范围：本期进入核验的获准证据 ${record.coverage.inputEvidenceCount} 条；以下地域为已核验事件涉及地域，语言为所见获准材料的标注语言。目标列表不代表采集或翻译能力，也不代表完整全球召回。`,
       `地域证据：${record.coverage.regions.map((entry) => `${entry.key} ${entry.evidenceIds.length}`).join("、")}；未知地域证据 ${record.coverage.unknownRegionEvidenceIds.length}。`,
@@ -115,12 +143,24 @@ export function sixEditionMarkdown(record: SixRecord): string {
     ...record.editions.map((entry) => {
       const leading = record.stories.find((story) => story.id === entry.storyIds[0]);
       const gaps = record.coverageGaps.filter((gap) => gap.edition === entry.edition);
-      return `- [${editionNames[entry.edition]}](#edition-${entry.edition})：${leading ? `[${escapeMarkdown(leading.title)}](#${anchor(leading.id)})` : "暂无可发布故事"}${gaps.map((gap) => `；Coverage Gap（${escapeMarkdown(gapText(gap.reason))}）`).join("")}`;
+      const social = record.schemaVersion === 7 && entry.edition === "social-discourse" ? `已核验 ${record.discourse.observations.length} 组样本观察` : null;
+      return `- [${editionNames[entry.edition]}](#edition-${entry.edition})：${social ?? (leading ? `[${escapeMarkdown(leading.title)}](#${anchor(leading.id)})` : "暂无可发布故事")}${gaps.map((gap) => `；Coverage Gap（${escapeMarkdown(gapText(gap.reason))}）`).join("")}`;
     }),
     ...record.editions.flatMap((entry) => [
       `<a id="edition-${entry.edition}"></a>`, `## ${editionNames[entry.edition]}`,
-      `本栏实际 ${entry.storyIds.length} 条 · 重点 ${entry.priorityStoryIds.length} 条。约 7 条、约 3 条重点均为软目标。`,
+      record.schemaVersion === 7 && entry.edition === "social-discourse" ? `本栏实际 ${record.discourse.observations.length} 组话语观察；约 7 组、约 3 组重点为软目标。故事关联讨论不占独立新闻事件位置。` : `本栏实际 ${entry.storyIds.length} 条 · 重点 ${entry.priorityStoryIds.length} 条。约 7 条、约 3 条重点均为软目标。`,
       ...record.coverageGaps.filter((gap) => gap.edition === entry.edition).map((gap) => `Coverage Gap：${escapeMarkdown(gapText(gap.reason))}`),
+      ...(record.schemaVersion === 7 && entry.edition === "social-discourse" ? record.discourse.groups.flatMap((group) => [
+        `平台：${group.platform}；查询：${group.query}；仅本实例公开本地帖子，未声称全网覆盖。`,
+        `观察窗口：${group.windowStartUtc} — ${group.cutoffUtc}；语言：${group.language ?? "未知"}；地域依据：未知；样本量：${group.sampleSize ?? "未知（未采集）"}。`,
+        ...(group.reason ? [`Coverage Gap：${gapText(group.reason)}`] : []),
+        ...(group.sampleSize !== null ? [`收到 ${group.receivedCount} 条；重复 ${group.duplicateCount} 条；隔离 ${group.isolatedCount} 条；不同原发根帖 ${group.rootCount} 个，两个预先固定时间桶 ${group.bucketCounts?.join(" / ")} 条。作者数未知；根帖不是独立可靠来源，未读取完整线程，不表示随机或代表性抽样。`] : []),
+        ...record.discourse.observations.filter((observation) => observation.groupId === group.id).flatMap((observation) => [
+          `### ${observation.priority ? "重点 · " : ""}${observation.kind === "story-linked" ? "Story-linked Discourse（故事关联讨论）" : "Platform-native Signal（平台原生信号候选，非新闻事实）"}`,
+          ...(observation.kind === "story-linked" ? [`主 Event Cluster：${observation.linkedClusterId}；[主栏全文](#${anchor(observation.primaryStoryId!)})；不作为主故事的独立事实证明。`] : []),
+          ...observation.story.claims.map((claim) => claimText(claim, observation.story.id)),
+        ]),
+      ]) : []),
       ...entry.storyIds.flatMap((id) => {
         const story = record.stories.find((story) => story.id === id)!;
         const priority = entry.priorityStoryIds.includes(id);
@@ -130,9 +170,9 @@ export function sixEditionMarkdown(record: SixRecord): string {
           ["意义", editorial.significanceClaimIds], ["影响路径", editorial.impactClaimIds], ["未知", editorial.uncertaintyClaimIds],
         ] as const;
         return [`<a id="${anchor(story.id)}"></a>`, `### ${priority ? "重点" : "关注"} · ${escapeMarkdown(story.title)}`,
-          ...((record.schemaVersion === 5 || record.schemaVersion === 6) ? record.interestSelections.filter((selection) => selection.storyId === story.id).map((selection) =>
+          ...((record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) ? record.interestSelections.filter((selection) => selection.storyId === story.id).map((selection) =>
             `选题依据：${selection.baseline ? "Global Baseline（经核验的全球或重大区域影响，保留跨兴趣排除的资格）" : "显式兴趣与常规地域策略"}；偏好优先级合计 ${selection.score}。`) : []),
-          ...(record.schemaVersion === 4 || (record.schemaVersion === 5 || record.schemaVersion === 6) ? record.eventClusters.filter((cluster) => cluster.primary.storyId === story.id).flatMap((cluster) => [
+          ...(record.schemaVersion === 4 || (record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) ? record.eventClusters.filter((cluster) => cluster.primary.storyId === story.id).flatMap((cluster) => [
             ...(cluster.eventKind === "publisher-statement" ? ["事件身份：发布者公开作出声明；声明内容不等同于已证事实。"] : []),
             ...(cluster.coverage === "material-update" ? [`实质新进展；前次报道：${cluster.previousCoverage!.versionId} / ${escapeMarkdown(cluster.previousCoverage!.storyId)}。`] : []),
             ...(cluster.coverage === "late-discovered" ? ["补报（Late-discovered Story）：披露早于本期窗口，当前仍具重大价值。"] : []),
@@ -142,14 +182,14 @@ export function sixEditionMarkdown(record: SixRecord): string {
           ]) : []),
           ...(priority ? sections.flatMap(([label, ids]) => [`#### ${label}`, ...(ids.length ? ids.map((id) => storyClaimText(story.id, story.claims.find((claim) => claim.id === id)!)) : [`内容缺口：未提供通过核验的${label}陈述。`])]) : story.claims.map((claim) => storyClaimText(story.id, claim))),
           ...(priority ? story.claims.filter((claim) => !sections.some(([, ids]) => ids.includes(claim.id))).map((claim) => storyClaimText(story.id, claim)) : []),
-          ...(record.schemaVersion === 4 || (record.schemaVersion === 5 || record.schemaVersion === 6) ? record.eventClusters.filter((cluster) => cluster.primary.storyId === story.id).flatMap((cluster) => cluster.supportingClaims.map((entry) => storyClaimText(entry.storyId, entry.claim))) : []),
+          ...(record.schemaVersion === 4 || (record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) ? record.eventClusters.filter((cluster) => cluster.primary.storyId === story.id).flatMap((cluster) => cluster.supportingClaims.map((entry) => storyClaimText(entry.storyId, entry.claim))) : []),
         ];
       }),
       ...record.storyEditorial.flatMap((editorial) => editorial.impactNotes.filter((note) => note.edition === entry.edition).flatMap((note) => {
         const primary = record.stories.find((story) => story.id === editorial.storyId)!;
         return ["### Impact Note（不占普通条目）", `[主栏全文：${escapeMarkdown(primary.title)}](#${anchor(primary.id)})`, ...note.claimIds.map((id) => claimText(primary.claims.find((claim) => claim.id === id)!, primary.id))];
       })),
-      ...(record.schemaVersion === 4 || (record.schemaVersion === 5 || record.schemaVersion === 6) ? record.eventClusters.filter((cluster) => cluster.primary.edition !== entry.edition && cluster.memberStoryIds.some((id) => entry.candidateStoryIds.includes(id)) && !record.storyEditorial.some((editorial) => editorial.storyId === cluster.primary.storyId && editorial.impactNotes.some((note) => note.edition === entry.edition))).flatMap((cluster) => {
+      ...(record.schemaVersion === 4 || (record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) ? record.eventClusters.filter((cluster) => cluster.primary.edition !== entry.edition && cluster.memberStoryIds.some((id) => entry.candidateStoryIds.includes(id)) && !record.storyEditorial.some((editorial) => editorial.storyId === cluster.primary.storyId && editorial.impactNotes.some((note) => note.edition === entry.edition))).flatMap((cluster) => {
         const primary = record.stories.find((story) => story.id === cluster.primary.storyId)!;
         const note = cluster.impactNotes.find((note) => note.edition === entry.edition)!;
         return ["### Impact Note（不占普通条目）", `[主栏全文：${escapeMarkdown(primary.title)}](#${anchor(primary.id)})`, `关联版本：${cluster.primary.versionId}。`,
@@ -157,7 +197,7 @@ export function sixEditionMarkdown(record: SixRecord): string {
       }) : []),
       ...record.publicationGate.unconfirmedItems.filter((item) => item.edition === entry.edition).flatMap((item) => [
         "### 待确认", `待确认说法（非已证事实）：${escapeMarkdown(item.description)}`,
-        ...(record.schemaVersion === 6 && domainLabels(record, item.storyId, item.claimId) ? [domainLabels(record, item.storyId, item.claimId)] : []),
+        ...((record.schemaVersion === 6 || record.schemaVersion === 7) && domainLabels(record, item.storyId, item.claimId) ? [domainLabels(record, item.storyId, item.claimId)] : []),
         ...item.evidenceIds.map((id) => {
           const evidence = record.evidenceBundle.evidence.find((entry) => entry.id === id)!;
           const gate = record.publicationGate;
