@@ -1,6 +1,6 @@
 # V1-08 执行与待验收记录
 
-状态：**已派发 fresh-context 作者，正在阅读与收敛首片方案，未冻结/验收**。GitHub #8 OPEN，已分配 yiwer。
+状态：**首片配置排序 T1 已 RED→GREEN，正在逐片实现后续约束，未冻结/验收**。GitHub #8 OPEN，已分配 yiwer。
 
 - 范围：[GitHub #8](https://github.com/yiwer/Observer/issues/8)、[本地票](../tickets/08-explicit-interest-and-global-coverage.md)；PRD US8/64–66、AC17、D1/D3/D6。
 - Fixed base：**`b1b6ac3ab557f0098ae5b133f20f4ca32b9182aa`**；包含 #7 最终实施7fae122、集成8e02377及关闭记录。
@@ -51,3 +51,15 @@ Root 保留 #5 producer 的 Record1/2（`accept-v1-05/data/root-v1-06-compat-4ca
 - baseline只保留资格，不强制凑数或保证入选；声明类条目只能依据已证声明行为，不能以未证承诺结果主张重大影响。覆盖统计区分本期可用证据、已核验标注和已选故事，未知/未标注单列，不宣称全球召回。
 
 第一个竖切：两份独立磁盘archive使用相同Evidence/空历史，仅显式priority不同，观察两候选排序交换及Report里的固定配置版本/hash。后续逐片加入invalid保持、文件往返/重启、在途冻结、baseline硬门、语言/地域缺口、旧档兼容。Root已批准先写此一片RED，不以计划描述充当实现或PASS。
+
+## 首片 TDD 与 Root 独立诊断（WIP）
+
+作者首个 `node --test tests/interest-profile.test.ts` 实际 **0/1 RED**（223.03 ms），公开 `importInterestProfile` 尚不存在。最小实现后 typecheck PASS、同文件 **1/1 GREEN**（258.16 ms）；request4/Record5/Version4/canonical-v3、显式文件导入、快照与最终截断前排序已贯通。版本错误、baseline、覆盖等后续规则此时尚未完成，不能将首片当整票通过。
+
+Root 实际读取首片测试与当时 diff、新的三个 interest 模块：测试经文件导入和公开 `produce → readReport`，比较两个独立archive中的实际顺序与配置快照，不使用内部SQL。已提醒作者把虚构来源正文与候选事实保持一致；annotated-fixture并非真实语义质量证据。
+
+Root 新建自有 ignored `O:/GenesisCode/Observer-worktrees/accept-v1-07/data/root-v1-08-review/selection-capacity-probe.ts`，九个独立虚构事件、实际正文包含全部事实，均有合格外部核验标注；只把第9项的显式优先级调高。对当时 #8 **WIP source** 运行 **1/1 PASS**（52.7749 ms）：最终7条依次为item-08、item-00至item-05，3条重点、7个Event Cluster，关闭writer/新reader读回完整JSON一致。该补充边界初跑即绿，不冒称新增RED；脚本/期望与新SQLite材料保留，冻结后必须对built重跑。
+
+同一阶段 Root 用既有不可变producer档案对新WIP source读取：Record1/2 **2/2**、Record3 **1/1**、两期Record4 **2/2**，合计**5/5**旧JSON/MD/摘要/身份与私有读取兼容。未重造旧档，未把Source reader诊断绑为当前HEAD基线的实现结果；作者此时HEAD仍b1b6ac3，代码尚未提交。
+
+Root capacity 脚本 SHA-256：`41d5883d4edc7cda3eb5e7db990f96b67c8b3cdf92459e7c35d8b277f020d827`。
