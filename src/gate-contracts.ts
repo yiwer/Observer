@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { CollectedEvidence, EvidenceBundle } from "./contracts.ts";
 import { EventAssessmentSchema, EventProjectionSchema } from "./event-contracts.ts";
+import { SelectionAssessmentSchema, SelectionProjectionSchema } from "./interest-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
@@ -33,6 +34,8 @@ export const AssessmentSchema = z.strictObject({
   // A malformed event judgment cannot invalidate otherwise usable claim receipts.
   event: EventAssessmentSchema.optional().catch(undefined),
   eventProjection: EventProjectionSchema.optional(),
+  selection: SelectionAssessmentSchema.optional().catch(undefined),
+  selectionProjection: SelectionProjectionSchema.optional(),
 });
 export const VerificationSchema = z.strictObject({
   schemaVersion: z.literal(1), inputSha256: sha256,

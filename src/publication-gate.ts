@@ -33,7 +33,7 @@ export async function evaluatePublication(options: EvaluationOptions) {
   const parsed = VerificationSchema.safeParse(output);
   const expected = reviewStories.flatMap((story) => story.claims.map((claim) => ({ storyId: story.id, claim })));
   const consistentReasons = { supported: ["supported-by-evidence"], insufficient: ["insufficient-evidence"], conflicting: ["source-conflict"], unsafe: ["unsafe-material", "irrelevant-evidence"] };
-  const valid = parsed.success && parsed.data.assessments.every((item) => item.eventProjection === undefined && consistentReasons[item.conclusion].includes(item.reason)) && parsed.data.inputSha256 === input.inputSha256 && parsed.data.assessments.length === expected.length && expected.every(({ storyId, claim }) => {
+  const valid = parsed.success && parsed.data.assessments.every((item) => item.eventProjection === undefined && item.selectionProjection === undefined && consistentReasons[item.conclusion].includes(item.reason)) && parsed.data.inputSha256 === input.inputSha256 && parsed.data.assessments.length === expected.length && expected.every(({ storyId, claim }) => {
     const matches = parsed.data.assessments.filter((item) => item.storyId === storyId && item.claimId === claim.id);
     return matches.length === 1 && matches[0]!.evidence.length === claim.evidenceIds.length &&
       new Set(matches[0]!.evidence.map((item) => item.evidenceId)).size === claim.evidenceIds.length &&

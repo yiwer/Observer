@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "version": 1,
+  "topics": [],
+  "entities": [],
+  "regions": [
+    { "key": "CN", "priority": 1 },
+    { "key": "US", "priority": 1 },
+    { "key": "EU", "priority": 1 }
+  ],
+  "exclusions": { "topics": [], "entities": [], "regions": [] },
+  "coverageLanguages": ["zh", "en", "fr", "de"]
+}

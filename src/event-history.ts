@@ -2,9 +2,11 @@ import type { EditionResearch, ReportRecord } from "./contracts.ts";
 import { editionNames } from "./contracts.ts";
 import { arrangeEditions } from "./six-edition.ts";
 import { inputDigest } from "./publication-gate.ts";
+import type { InterestSnapshot } from "./interest-contracts.ts";
+import { selectInterests, interestCoverage } from "./interest-selection.ts";
 
 type GatedRecord = Parameters<typeof arrangeEditions>[0];
-type EventRecord = Extract<ReportRecord, { schemaVersion: 4 }>;
+type EventRecord = Extract<ReportRecord, { schemaVersion: 4 | 5 }>;
 export interface LegacyHistory { versionIds: string[]; fingerprints: Set<string>; }
 export function legacyFingerprint(claim: { text: string; kind?: string; publisherSourceId?: string; evidenceIds: string[] }, evidence: ReadonlyArray<{ id: string; sourceId: string; url?: string | undefined; contentSha256?: string | undefined; publishedAtUtc?: string | null | undefined; eventTimeUtc?: string | null | undefined }>): string | null {
   if (claim.kind !== "fact" && claim.kind !== "statement" || claim.kind === "statement" && !claim.publisherSourceId) return null;
@@ -18,7 +20,7 @@ function identityClaims(story: GatedRecord["stories"][number]) {
   const facts = story.claims.filter((claim) => claim.kind === "fact");
   return facts.length ? facts : story.claims.filter((claim) => claim.kind === "statement");
 }
-export function arrangeEvents(record: GatedRecord, research: EditionResearch, history: EventRecord[] = [], legacyHistory: LegacyHistory = { versionIds: [], fingerprints: new Set() }, withheldHistory = new Set<string>()): EventRecord {
+export function arrangeEvents(record: GatedRecord, research: EditionResearch, history: EventRecord[] = [], legacyHistory: LegacyHistory = { versionIds: [], fingerprints: new Set() }, withheldHistory = new Set<string>(), interestProfile?: InterestSnapshot): EventRecord {
   const gate = record.publicationGate;
   const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
   const groups = new Map<string, typeof record.stories>();
@@ -114,7 +116,8 @@ export function arrangeEvents(record: GatedRecord, research: EditionResearch, hi
       })),
     });
   }
-  const arranged = arrangeEditions({ ...record, stories: selected }, research);
+  const interest = interestProfile ? selectInterests(record.publicationGate, selected, interestProfile, eventClusters) : undefined;
+  const arranged = arrangeEditions({ ...record, stories: interest?.stories ?? selected }, research);
   const retained = eventClusters.filter((cluster) => arranged.stories.some((story) => story.id === cluster.primary.storyId));
   const eventSelections: EventRecord["eventSelections"] = research.editions.flatMap((run) => run.status === "completed" && run.result.status === "succeeded" ? run.result.stories.map((story) => {
     const cluster = retained.find((cluster) => cluster.memberStoryIds.includes(story.id));
@@ -124,7 +127,10 @@ export function arrangeEvents(record: GatedRecord, research: EditionResearch, hi
       reason: story.edition === "github-projects" ? "github-rules-deferred" : cluster ? "verified-event-membership" : gap?.reason.slice(`event-selection:${story.id}:`.length) ?? "gate-or-capacity-unavailable",
     };
   }) : []);
-  return { ...arranged, schemaVersion: 4, editorialContract: "observer-canonical-v2", coverageGaps: [...arranged.coverageGaps, ...gaps,
+  const eventRecord: Extract<ReportRecord, { schemaVersion: 4 }> = { ...arranged, schemaVersion: 4, editorialContract: "observer-canonical-v2", coverageGaps: [...arranged.coverageGaps, ...gaps,
     ...(legacyHistory.versionIds.length ? Object.keys(editionNames).filter((edition) => edition !== "github-projects").map((edition) => ({ edition: edition as keyof typeof editionNames, reason: "legacy-history-unclassified" })) : []),
   ], eventClusters: retained, eventSelections, historyCoverage: { status: legacyHistory.versionIds.length ? "legacy-unclassified" : "classified", versionIds: legacyHistory.versionIds } };
+  return interestProfile && interest ? { ...eventRecord, schemaVersion: 5, editorialContract: "observer-canonical-v3", interestProfile,
+    coverageGaps: eventRecord.coverageGaps.map((gap) => gap.reason === "below-story-target" ? { ...gap, reason: "below-interest-selection-target" } : gap),
+    interestSelections: interest.interestSelections, coverage: interestCoverage(eventRecord, interestProfile) } : eventRecord;
 }

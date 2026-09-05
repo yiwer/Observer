@@ -2,7 +2,7 @@ import type { PublishedReport, ReportRecord } from "./contracts.ts";
 import type { Claim } from "./gate-contracts.ts";
 import { inputDigest } from "./publication-gate.ts";
 
-type EventRecord = Extract<ReportRecord, { schemaVersion: 4 }>;
+type EventRecord = Extract<ReportRecord, { schemaVersion: 4 | 5 }>;
 export function consistentEvents(record: EventRecord, lookup: (versionId: string) => PublishedReport | undefined): boolean {
   const versionId = `${record.businessDate}-v1`;
   const gate = record.publicationGate;
@@ -11,7 +11,7 @@ export function consistentEvents(record: EventRecord, lookup: (versionId: string
   const validClaim = (storyId: string, claim: Claim) => gate.decisions.some((decision) => decision.storyId === storyId && decision.claimId === claim.id && decision.outcome === "published" && decision.inputClaimSha256 === inputDigest(claim)) && claim.evidenceIds.every((id) => record.evidenceBundle.evidence.some((evidence) => evidence.id === id && evidence.url && evidence.title));
   const earlier = (id: string) => {
     const report = lookup(id);
-    return report?.record.schemaVersion === 4 && report.version.id === id && report.record.businessDate < record.businessDate && report.version.publishedAtUtc <= record.evidenceBundle.cutoffUtc && report.record.evidenceBundle.cutoffUtc <= record.evidenceBundle.cutoffUtc ? report.record : undefined;
+    return (report?.record.schemaVersion === 4 || report?.record.schemaVersion === 5) && report.version.id === id && report.record.businessDate < record.businessDate && report.version.publishedAtUtc <= record.evidenceBundle.cutoffUtc && report.record.evidenceBundle.cutoffUtc <= record.evidenceBundle.cutoffUtc ? report.record : undefined;
   };
   const validTime = (time: EventRecord["eventClusters"][number]["occurrence"], field: "eventTimeUtc" | "publishedAtUtc") => {
     if (time.atUtc === null) return time.evidenceIds.length === 0;
