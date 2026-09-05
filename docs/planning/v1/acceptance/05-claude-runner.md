@@ -1,6 +1,6 @@
 # V1-05 审查与验收记录
 
-状态：**第三候选冻结验收通过，待本地集成基线复跑**。GitHub #5 OPEN，assignee=yiwer；最终候选 `177cfbbddf08e507c448e76dbe23ebc31a2ef617` 已通过两轴独立审查及 Root 冻结验收，此前 3 项 Spec P2 均已关闭。集成验收未完成前，不得关闭 #5 或启动 #6 实施。
+状态：**开发验收通过，已本地集成；GitHub #5 已读回 CLOSED**。最终实施 `177cfbbddf08e507c448e76dbe23ebc31a2ef617`；集成 `ed2f705f8381a2f8543e48f21266affe252b9ea4`。两轴独立审查、Root 冻结及集成基线检查均完成，此前 3 项 Spec P2 均关闭。仅为固定真实 CLI + 无凭证模型替身资格，未推送本票，不代表真实模型或生产准入。
 
 - 范围：[GitHub #5](https://github.com/yiwer/Observer/issues/5)、[本地票](../tickets/05-claude-runner.md)。
 - 固定 base：`8e35d12470c14f2638d3adbcd1901935feeaa593`；branch `ticket/v1-05`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`。
@@ -124,6 +124,16 @@ Root 捕获完整非空 `git diff 8e35d12470c14f2638d3adbcd1901935feeaa593...HEA
 
 最终两轴计数：Standards 硬违反 0、启发式建议 2、最严重 P3；Spec 0、无最严重项。Root 接受非阻断维护建议，准许将该 SHA 本地集成后复跑；不把冻结检查直接当作集成基线结果。
 
+## 集成与关闭
+
+Root 提交最终冻结审查记录 `17ff642`，再以 `--no-ff` 将实施 SHA 集成到 master，得到 `ed2f705f8381a2f8543e48f21266affe252b9ea4`。只读比较确认与冻结实施的 `src/tests/config/scripts/package.json/package-lock.json` 无差异，没有冲突解决或产品改写。
+
+在该集成 SHA 实跑 `npm run check` **104/104、0 failed/skipped/cancelled**（109537.3097ms），包含 typecheck/build；`npm run smoke` **3/3**（1374.5443ms，旧子集）。前后 SHA 不变，tracked clean；用户未跟踪 `.idea/` 保持原样未提交；结束查询无 `observer.task` 容器。
+
+[验收关闭回写](https://github.com/yiwer/Observer/issues/5#issuecomment-5551208771)后实际读回 `state=CLOSED`、`closedAt=2026-09-05T10:36:06Z`。本地 manifest 记录实施、集成 SHA 与 `local-cli-and-model-protocol-fixture-only`；没有以测试替身跳过外部真实/人工门槛。下一张为 #6。
+
+最终检查时 Windows 宿主 `C:/Users/16348/.local/bin/claude.exe --version` 已为 **2.1.261**，Root 与 Spec reviewer 分别观察到；本次未升级宿主，也不确定更新来源。它不同于早先宿主预检 2.1.252，不改写历史记录。产品测试实际固定 Linux 镜像内 **2.1.252**，镜像身份与 worker 版本门仍为验收依据，不能把宿主帮助或版本替代它。
+
 ## 外部门槛
 
-本票没有真实模型、Provider 认证、地域资格、费用、质量、生产 Linux 或人工验收证据。Owner 后续已明确延期 Claude 真实环境测试，离线实现与协议验收继续；本机单封 [QQ SMTP 预检](qq-smtp-preflight-2026-09-05.md) 独立记录，不作为本票或产品投递器通过证据。生产发布/fixture 隔离继续保留；未知不记 PASS。Root 后来实际读到远端 master=`e475bc1`（含 #1–#4），这次 orchestrator 没有执行 push；#5 候选仍未集成、未推送，远端无 `ticket/v1-05`。
+本票没有真实模型、Provider 认证、地域资格、费用、质量、生产 Linux 或人工验收证据。Owner 后续已明确延期 Claude 真实环境测试，离线实现与协议验收已完成；本机单封 [QQ SMTP 预检](qq-smtp-preflight-2026-09-05.md) 独立记录，不作为本票或产品投递器通过证据。生产发布/fixture 隔离继续保留；未知不记 PASS。最终再次读回 `origin/master` 和 `git ls-remote` 均为 `e475bc18620d1d052f6effcb648fbc4ec66150d2`（含 #1–#4），本次没有执行 push；#5 已本地集成、未推送，远端无 `ticket/v1-05`。

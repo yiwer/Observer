@@ -15,8 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 已完成票：#1、#2、#3、#4，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
-- 当前票：V1-05 / GitHub #5，进行中；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。fresh-context implement agent `/root/implement_v1_05` 已派发，base `8e35d12470c14f2638d3adbcd1901935feeaa593`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`，branch `ticket/v1-05`；[启动回写](https://github.com/yiwer/Observer/issues/5#issuecomment-5550574214)已读回 OPEN、assignee=yiwer，详见 [#5 执行边界](acceptance/05-claude-runner.md)。
+- 已完成票：#1、#2、#3、#4、#5，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。下一票 #6，原生依赖 #3 已重新读回 CLOSED，待 fresh-context 派发。
+- #5 已验收：最终实施 `177cfbbddf08e507c448e76dbe23ebc31a2ef617`、本地集成 `ed2f705f8381a2f8543e48f21266affe252b9ea4`；[关闭回写](https://github.com/yiwer/Observer/issues/5#issuecomment-5551208771)实际读回 CLOSED。以下 #5 冻结/整改条目为历史过程，当前状态以本条与 [验收记录](acceptance/05-claude-runner.md) 为准；不得把此前 P2 或待验收状态当作仍然开放。
 - #5 首个冻结候选 `0b967c6273b2d768f46df4ce8b546508a0d41784`（26 files，+1023/-57）；作者 check 94/94、smoke 3/3，工作树干净。Root 已固定非空三点 diff，派发 fresh Standards / Spec 两轴，在 detached `O:/GenesisCode/Observer-worktrees/accept-v1-05` 独立复跑；未出最终验收结论，不启动 #6 实施。
 - #5 首轮结果：Root 冻结 check 94/94、smoke 3/3，但 Standards 2 项 P3 非阻断维护建议、Spec 2 项 P2 阻断（SSE 未完整终帧仍出版；合法多次 message_delta 误拒/丢量）；Root 自有公开 seam 专项 3 RED 重现，已交原 implement agent 修复，旧候选不得集成。新 SHA / 全量检查 / 两轴复审 / Root 验收尚待完成。
 - #5 第二个冻结候选 `de63459f3f496374cde58eca8c250c25e01354de`：作者 check 101/101、smoke 3/3；Root detached 独立 check 101/101（128.522 秒）、smoke 3/3（1.315 秒）。Standards 硬违反 0、原 2 项 P3；Spec 关闭原 2 P2，但新增“首次输出用量更新之前截流，未知输出误记为 0”P2。Root 自有专项 3 PASS / 1 RED（5.225 秒）复现。仍不得集成或开始 #6；原作者会话已不在 live inventory，已派发 fresh-context `/root/implement_v1_05_usage_fix` 在原分支作窄范围 TDD 修复，下一冻结后重验。
@@ -25,7 +25,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；预检时未实施/触发模型/升级，现已交给 #5 fresh 实施 agent，仍须实测目标 Linux CLI 和完整隔离契约。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
-- 最新已验收集成提交：f59bcad37f200e848eff305c6aeff0a5f1cb22e9。
+- 最新已验收集成提交：ed2f705f8381a2f8543e48f21266affe252b9ea4。
 - 2026-09-05 17:59:25 +08:00 后读到 `origin/master` 与 `git ls-remote` 均为 `e475bc18620d1d052f6effcb648fbc4ec66150d2`；已确认 #1–#4 实施和集成提交都可从该远端提交到达。该 push 不是本次 orchestrator 执行；#5 候选仍未集成、未推送（远端无 ticket/v1-05）。远端代码存在不代表生产部署或模型资格通过。Root 新出现未跟踪 `.idea/`，保留不纳入任务提交。
 - #3 首轮测试虽通过，但两轴及 Root 额外发现阻断；最终重新冻结、复审关闭全部发现，再集成验收。Root 在最终工作区及 master 均复跑 check 52/52、smoke 3/3；smoke 属于总测试子集。详见 [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)。
 
@@ -35,6 +35,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - [V1-02 验收记录](acceptance/02-policy-bound-collection.md)：最终实施 2931098，集成 7fdef67；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、32/32 测试及 3/3 smoke。两轴原 3 项阻断和 root 删除准入发现均修复；余 1 项非阻塞维护建议。
 - [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)：最终实施 67401ac，集成 a83cf2a；orchestrator 冻结和集成各复跑 typecheck/build、52/52 与 3/3 smoke；Standards、Spec 最终各 0 项；Root 矛盾回执及 24 场景 TTL 回归通过。只有标注语义替身证据。
 - [V1-04 验收记录](acceptance/04-codex-runner.md)：最终实施 139dc13，集成 f59bcad；冻结和集成各 check 74/74、smoke 3/3；Root 首次发送 TTL 与拒绝用量专项 3/3。Standards 留 1 项非阻断 P3，Spec 原 P2 关闭、最终 0。真实 CLI + 无凭证模型替身，不是模型/地区/生产资格。
+- [V1-05 验收记录](acceptance/05-claude-runner.md)：最终实施 177cfbb，集成 ed2f705；Root 冻结和集成各 check **104/104**、smoke **3/3**，自有专项 **4/4**，独立 Spec 专项 **7/7**。Standards 硬违反 0、2 项非阻断 P3；Spec 原 3 P2 全关闭、最终 0。固定 Linux Claude 2.1.252 CLI 与无凭证模型替身；后查宿主已 2.1.261，不混作同一资格。#5 代码未 push。
 
 ## 协作容量
 
