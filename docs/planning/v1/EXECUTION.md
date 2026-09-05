@@ -16,7 +16,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - 已完成票：#1、#2、#3，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
 - 当前票：V1-04 / GitHub #4，进行中；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。fresh-context 实施 agent 为 `/root/implement_v1_04`。
 - #4 固定起点：320ab620a2d3f22c09e13334a68f06a3b664af05；worktree：`O:/GenesisCode/Observer-worktrees/v1-04`；分支：`ticket/v1-04`；[启动回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550300477)，已读回 OPEN 且 assignee=yiwer。
-- #4 候选已冻结为 `f836d7d49bb907b4b36a3843932e7b4e6297c403`；Root 独立 detached 工作树 check **70/70**、smoke **3/3**（旧子集）和首次模型发送 TTL 正反例 **2/2** 通过。Standards / Spec 两个 fresh reviewer 并行审查中，尚未验收/集成；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI 0.153.4 + 无凭证模型协议替身已独立回归，不代表真实模型或生产资格；代码变化将重新冻结重跑。
+- #4 候选 `f836d7d49bb907b4b36a3843932e7b4e6297c403` 的 Root 独立 check **70/70**、smoke **3/3**（旧子集）和首次发送 TTL 正反例 **2/2** 通过；但 Spec 发现策略拒绝时丢失已收到模型 token 用量，Root 额外公开 seam 实测 **expected 12 / actual null** 红灯。Standards 0 项；等待 Spec 收尾后交作者修复，尚未验收/集成。详见 [V1-04 记录](acceptance/04-codex-runner.md)。新代码须重新冻结重跑；CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；未启动 #5 实施、触发模型或升级。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
 - 最新已验收集成提交：a83cf2a08b8db8b9b960f059e2a3653cc01c3935。

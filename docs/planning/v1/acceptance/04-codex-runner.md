@@ -1,6 +1,6 @@
 # V1-04 审查与验收记录
 
-状态：**候选已冻结，双轴审查中，尚未验收**。GitHub #4 OPEN；Root 独立自动化已通过，双轴尚无最终结论，不能据此关闭票或宣告生产通过。
+状态：**候选审查发现缺陷，尚未验收**。GitHub #4 OPEN；原产品测试通过，但 Spec 负例已由 Root 复现，须修复后重新冻结，不能关闭票或宣告生产通过。
 
 - 范围：[GitHub #4](https://github.com/yiwer/Observer/issues/4)、[本地票](../tickets/04-codex-runner.md)。
 - 固定起点：`320ab620a2d3f22c09e13334a68f06a3b664af05`；fresh agent `/root/implement_v1_04`。
@@ -88,11 +88,17 @@ Root 实际打开 Docker 官方 [network create](https://docs.docker.com/referen
 
 ## Standards
 
-已固定上述非空三点 diff，独立 reviewer 正在审查；当前没有最终结论。
+`/root/review_v1_04_standards` 针对 `f836d7d` 检查完整 18 文件差异及 CONTEXT、README、PRD D6/D7/T1、指定 ADR，报告 **0 项**有充分证据的标准违反或 Fowler smell；最高严重性：无。该轴仅执行只读 diff/状态检查，没有重复运行产品测试，也不把作者 70/70 当作其独立实测。
+
+Reviewer 初步提出 `codex-container.ts` 可能 Divergent Change，最终未保留。Root 提醒实现说明中的职责描述本身不能把任何复杂模块自动视作被标准认可；当前没有独立可操作的维护成本证据，故仍不列额外发现。
 
 ## Spec
 
-已固定上述非空三点 diff，独立 reviewer 正在审查；当前没有最终结论。
+`/root/review_v1_04_spec` 已实测确认 **P2：拒绝模型工具时丢失已取得用量**，正式轴报告待收尾。#4 AC5 要求“保留……可取得的用量；取不到的用量明确未知”。`src/codex-container.ts:76` 在拿到带 usage 的 HTTP 200 完成响应后因 function_call 立即拒绝，`src/codex-runner.ts:46` 仅采用尚未产生的 CLI usage，故已取得的 input/output/cached/reasoning tokens 都变为 null。
+
+Root 在同冻结 SHA 的独立工作树以公开 `produce` → 错误/私有读取 seam 复现：ignored `data/root-acceptance/codex-rejected-usage.test.ts`，真实固定 CLI + 自有模型替身返回 response.completed 含禁止工具和 tokens 12/21/2/3，任务正确拒绝 `agent-policy-violation`、cleanup=removed，但用量断言 **expected 12 / actual null** 红灯。应保留有明确来源的已观察用量，不把 transport 与 CLI 两份重复累加，未知字段仍 null；没有真实模型或凭证参与。
+
+当前不得沿用产品 70/70 宣告验收。修复后需新 SHA、两轴复审和 Root 再跑完整及专项回归。
 
 ## 外部门槛
 
