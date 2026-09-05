@@ -297,10 +297,10 @@
       "githubState": "open",
       "dependenciesVerified": true,
       "execution": {
-        "implementationCommit": "63e93dc29f83ae3e0f010e2051dc2e162eaf8f1b",
+        "implementationCommit": "7fae122cbe1d7abf1ebd12615091221abb6d7fda",
         "integrationCommit": null,
         "acceptanceFile": "acceptance/07-event-history-and-updates.md",
-        "qualification": "changes-required",
+        "qualification": "review-in-progress",
         "pushed": false
       }
     },

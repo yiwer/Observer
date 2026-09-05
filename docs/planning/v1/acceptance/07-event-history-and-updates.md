@@ -1,6 +1,6 @@
 # V1-07 执行与待验收记录
 
-状态：**首个冻结候选被双轴 review 拒绝，4 项阻断交回原作者 TDD 修复，未接受/集成**。GitHub #7 OPEN，assignee=yiwer。下方 WIP/冻结进行中条目保留为历史过程，以本文最后的审查记录为准。
+状态：**第二冻结 7fae122 已进入独立双轴复审，Root built 专项 14/14、旧档 3/3；完整测试仍待通过，未接受/集成**。GitHub #7 OPEN，assignee=yiwer。首个候选 63e93dc 的拒绝和失败证据保留为历史过程，以本文最后的审查记录为准。
 
 - 范围：[GitHub #7](https://github.com/yiwer/Observer/issues/7)、[本地票](../tickets/07-event-history-and-updates.md)。
 - Fixed base：`5da81976dd2ba166066977c038e6f46451890283`，包含 #6 最终接受、集成与关闭记录。
@@ -146,3 +146,30 @@ Spec 自有 T1：`O:/GenesisCode/Observer-worktrees/v1-07/data/spec-v1-07-c9a641
 其余整改：完整版本关联校验先于因果过滤；对每条实际刊登的漏采事实标明补报；当前 firstDisclosure 取可分发历史与当前证据中的最早真实披露。修复后必须新提交、新 full check/smoke、两轴复审和 Root 独立验收，不能复用被拒绝候选的计数。
 
 [GitHub 首轮不接受回写](https://github.com/yiwer/Observer/issues/7#issuecomment-5551655286)已发布并实际读回正文；#7 仍 OPEN、assignee=yiwer。仅状态与证据回写，没有 push 或生产操作。
+
+## 第二冻结与复验：7fae122
+
+作者已逐片修复四项阻断，并增加“同模板、静态 URL、相同正文 hash、不同发布/事件期次”的误杀反例；作者 RED→GREEN 和冻结前 59/59 文件回归记录在实施说明中，不替代以下新冻结结果。
+
+- 固定实施 SHA：`7fae122cbe1d7abf1ebd12615091221abb6d7fda`；保留父提交 63e93dc，未 amend/rebase。Root 实际核对 author clean、base 可解析、两条 commit list，以及非空 `git diff 5da81976dd2ba166066977c038e6f46451890283...HEAD`：**13 files、+945/-25**，完整捕获 103398 chars；相对首候选增量 **8 files、+159/-33**。
+- 同两位独立 reviewer 实际并行重新启动 Standards / Spec，各自对固定新 SHA 复审完整和增量差异、不交换另一轴结论；Spec 需复跑其既有 3 个业务 RED。当前结果尚待返回。
+- Root 先确认自有 detached `accept-v1-07` clean，再切换该 SHA 并 build PASS；没有重建依赖、镜像或修改作者源码。
+- Root 原脚本及预期未改，对 **7fae122 built**：注解保留 **4/4**（86.2372 ms）、因果/同候选多事实 **3/3**（135.3917 ms）、声明组合 **3/3**（88.8644 ms）、五期传递撤权 **1/1**（126.0677 ms）、版本时间完整性 **3/3**（120.8787 ms），合计 **14/14 PASS**。两种时间损坏均实际返回 `history-integrity-failed`，未损坏对照仍正确去重。之前 63e93dc 的 1 PASS / 2 RED 保留。
+- 原 #5 producer 的 Record v1/v2 与 #6 producer 的 Record v3 **3/3** 兼容：新 built reader 读取，完整 JSON、原 Markdown 和哈希、身份/私有读取边界不变；没有用新实现重造旧档预期。
+- 作者该 SHA 首次 full check 已实际终态 **151/152 PASS、1 FAIL**（133959.3282 ms），typecheck/build PASS；唯一失败为首个 Claude 固定 tag inspect `No such image`（194.1602 ms）。随后只读 tag 与 exact ID 均正确，无环境改变；同 SHA 定向该项 **1/1 PASS**（1872.4576 ms）、smoke **3/3 PASS**（1332.9856 ms）。首个 full 仍记 FAIL、根因未知；第二次 full 等待复审主要结论后再运行，不拼接为首跑通过。
+
+Root 完整 check/smoke、双轴结论及实际 master 集成复验仍缺；当前不接受、不关闭 #7、不实施 #8，无 push、真实 Provider 或 SMTP 重发。
+
+### 第二轮 Standards
+
+独立 reviewer 已完成新 SHA 全量与增量静态复审，实际确认 clean。**hard 0、heuristic 1，worst P3**；原 P2 关闭：`archive-integrity.ts:13` 的 Version/Gate 时间一致性校验在 `observer.ts:283` 因果过滤前调用，历史查找 `:92` 和普通读取 `:337` 复用，符合实施说明:73。作者时间故障回归也已静态核对；本轴未执行测试，动态证据以上述 Root built 3/3 为准。
+
+原非阻断 **possible Duplicated Code** 保留：`event-history.ts:23`、`event-integrity.ts:9` 与 `six-edition.ts:148` 分别展开单/多批回执。是未来结构漂移的维护判断，不是硬违规，不要求扩大重构。Spec 结论仍待独立返回，两轴不合并或重排。
+
+### 第二轮 Spec
+
+独立 reviewer 已完整核对票:15–20、PRD US11–14 / AC02–03 / D3 / D5、新 SHA 的完整差异和 8 文件增量，以及 clean / GitHub OPEN。**0 项，worst 无**；原全局停报、混合事实补报、首次披露更新三项均关闭，未发现新的缺失、错误实现或范围扩张。
+
+其自有 `data/spec-v1-07-c9a641/probe.test.mjs` 原三例在新 SHA **3/3 PASS**；追加静态页面不同发布时间/期次、完全相同旧事实抑制、旧发布时间未知三个正反例后，同一公开 T1 套件 **6/6 PASS**（315.6102 ms）。真实 SQLite、外部 Runner/Verifier/时钟、重启后旧刊字节不变、实际旧版本 ID 和未分类状态均有断言。Root 已完整阅读修订后的脚本；未修改作者源码/测试，也未把作者 full 结果算作本轴证据。本地标注替身不证明真实模型或生产质量。
+
+两个轴的原阻断已关闭；Root 已通知作者在不修改 SHA/环境的前提下运行第二次完整 check，随后才做 Root 独立完整验收与 master 集成。此前失败仍保留，不提前宣告最终通过。
