@@ -72,6 +72,10 @@ _Avoid_: News item, fact
 A group of source reports and candidate stories about the same underlying event, assigned a primary Edition for full coverage.
 _Avoid_: Duplicate article, collection of similar headlines
 
+**Event Identity**:
+The evidence-supported distinction of an underlying occurrence by its subject, action, object, and specific scope. A publisher making a statement is distinct from the occurrence asserted by that statement.
+_Avoid_: Suggested cluster identifier, headline similarity
+
 **Impact Note**:
 A brief cross-reference explaining an Event Cluster's relevance to another Edition without repeating the primary story or consuming a normal story slot.
 _Avoid_: Independent story, duplicate coverage
@@ -171,6 +175,10 @@ _Avoid_: Latest-report folder, raw source archive
 **Material Story Update**:
 Newly disclosed facts or substantive developments that justify renewed coverage of an existing Event Cluster.
 _Avoid_: Reworded headline, repeated coverage without new evidence
+
+**Development Identity**:
+The distinction of a particular disclosed fact within an Event Cluster, preserved across repeated wording and later coverage.
+_Avoid_: New headline, new source URL, discovery date
 
 **Late-discovered Story**:
 A previously missed disclosure reported later because it retains material relevance, with the delayed discovery explicitly identified.
