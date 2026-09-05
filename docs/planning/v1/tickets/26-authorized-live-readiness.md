@@ -46,3 +46,4 @@
 ## External prerequisites
 
 - Owner-authorized environment, accounts, sources, credentials, costs and test recipient
+- 2026-09-05 更新：[Owner 最新输入](../OWNER-INPUTS.md)已批准本机 Codex 真实测试且不设额度上限；Claude 外部测试延期、由 Owner 后续提供环境；邮件已选 QQ SMTP 授权码、同一发件收件邮箱，授权码未提供。本机地区资格与产品实际运行边界仍须独立验证，不能仅因额度获批将本门记 PASS。
