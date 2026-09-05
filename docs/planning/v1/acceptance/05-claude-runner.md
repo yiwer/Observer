@@ -19,6 +19,20 @@ Root 已交付本机现有 Docker 测试环境与固定 Python/Codex 镜像身�
 
 作者 provisional commit 后冻结写入；Root 固定非空三点 diff、独立 Standards / Spec 两轴审查、detached 复跑及集成复跑，未关闭阻断发现不得验收。
 
+## 固定依赖与 Root 预检（未冻结）
+
+实施 agent 正准备真实 Claude 2.1.252 Linux CLI → 无凭证 Messages 替身 → Gate → SQLite 的首条正常路径；准备脚本及初始测试尚未冻结。没有模型调用资格结论。
+
+Root 独立打开官方[签名核验说明](https://code.claude.com/docs/en/setup#binary-integrity-and-code-signing)，确认受信指纹 `31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE` 与先验证 manifest、再比对二进制 SHA-256 的校验链。Web 工具读取版本 manifest 一度返回 Internal Error，未把观察失败当作下载失败；随后读取 agent 实际已下载的公开文件并独立核验：
+
+- 官方版本 manifest：`https://downloads.claude.ai/claude-code-releases/2.1.252/manifest.json`，版本 2.1.252，commit `c0778c45886d8f1ed8bd5e7c972b8507d299a548`，buildDate `2026-08-31T16:11:11Z`。
+- Linux-x64 二进制实际 **214371672 bytes**，Root `Get-FileHash` SHA-256 为 `a715a45105e593fc9808d035d77781f88480b9897975a9df41837f0c591bd4b3`，与该签名 manifest 一致。
+- Root 使用已有 `E:/facility/Git/usr/bin/gpg.exe`，独立 ignored keyring `O:/GenesisCode/Observer/data/claude-root-verification-59bece1f867e481dbf86418cb21c9ba8`，`--no-options --batch --no-auto-key-retrieve`；实际 verify 返回 `VALIDSIG 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE`，没有读取个人 keyring 或认证。
+- 发现 Git 的 MSYS GPG 将直接传入的 Windows homedir 错解成 cwd 相对路径；改传已存在目录对应的 `/o/GenesisCode/...` 后成功。此前是路径语法错误，不是执行策略拒绝。已交作者按实际 GPG 实现处理路径，不把所有 Windows GPG 当成同一种。未改 agent 的包或 keyring。
+- 此次最后的镜像 inspect 为 `No such image: observer-v1-05-claude:2.1.252`，只说明当时尚未构建；签名/hash 已分别成功，不把整条 shell 的末尾 exit 1 误报为签名失败。准备工具 session 由创建它的 agent 核实，不凭观察超时重启。
+
+Root 另查官方[结构化输出说明](https://code.claude.com/docs/en/agent-sdk/structured-outputs)：SDK 校验 draft-07，应显式处理 Zod 默认 draft-2020-12 差异；subtype success 但没有 structured_output 仍不能视作结构成功，先前完成输出也可能被 fallback 撤回。已提示作者用目标 CLI 验证这些契约，不能仅沿用 Codex Schema/事件规则。这些是实现前提，不是实际拒绝测试的通过结论。
+
 ## Standards
 
 待冻结后独立审查，无结论。
