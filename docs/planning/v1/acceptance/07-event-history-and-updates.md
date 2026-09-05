@@ -91,3 +91,14 @@ Root 未改探针或预期，直接针对整改后 WIP source reader 重跑：�
 历史来源另做两阶段 T1：D1 旧源有效，D2 用新源报道更新且借入 D1 的时间；重开后撤销 D1 源，公开读取 D1/D2 均 `not-found`；D3 仅凭仍有效新源继续产生更新，不输出受限旧时间并明确 `source-policy-withheld`。作者先取得 RED（236.2916 ms，Missing expected exception），再以 EventCluster 的 `historyPolicies` 记录借入元数据所依赖的来源 policy/version/hash，在读与新生产时重新核对传递依赖；不覆写已发表正文、不将历史原文发模型。以上仍为作者 WIP 结果，Root 未以此替代独立冻结验收。
 
 Root 已要求冻结清单明确合法发布者声明的覆盖边界：不能因 event-aware 暂只接受 kind=fact 身份锚而无意缩窄 PRD D5 的正确归因声明；可确认“声明被发布”事件，但不得将声明内容升级事实。作者仍在核对这一边界、reader 事件关系一致性及实施判定表，尚未给最终提交、full check 或 review 结果。
+
+### 声明组合与传递撤权的独立诊断
+
+作者确认 fact-only 锚会缩窄原本允许的正确归因声明，已增加与 observed-event 分开的 publisher-statement 身份空间；锚定实际 publisherSourceId 与“发布声明”动作，声明内容继续保留归因而不是转为事实，未知发生时间不推造。混合报道中的已证事件与辅助声明区分处理。
+
+Root 新增自有公开 T1 探针，仍位于 `accept-v1-06/data/root-v1-07-review`，对当时 WIP source 实际执行：
+
+- `statement-composition-probe.ts` **3/3 PASS**（67.576 ms）：纯合法声明、已证事实 + 无单独事件注解的辅助声明、已证事实 + 有声明事件注解的辅助声明。均关闭 writer 后新 reader 读取，确认声明归因可读、观察事实仍在正确事件中、没有把所宣称结果升级事实。SHA-256 `7cb72d2f7376d773c33af65fcfc63a1c87653d34379091bfb9dc55e50e451d9a`。
+- `transitive-policy-probe.ts` **1/1 PASS**（113.8449 ms）：五期、三来源；D1 来源 A 的时间经来源 B/C 的 D2/D3 借用；重开撤销 A/B 后 D1–D3 均拒读；D4 以有效 C 源发布独立新进展，受限旧时间不在新 Record/MD；再次重开 D5 对 D2 已报道事实仍以历史指纹抑制重复。SHA-256 `4ab0ba7dd52af9d65185c3391f76ee33855c1825b2aaaa3ffd3e6765980f1a9b`。
+
+这些新测试与目录保留；加上原因果 3、注解保留 4，Root 当前有 **11 个独立专项场景**，另有 **3 份旧归档**。它们并非同一最终冻结的全量结果，正式验收时需全部对 fixed built 与集成基线复跑。#7 此时尚未冻结，不能因为 WIP 诊断通过而关票。
