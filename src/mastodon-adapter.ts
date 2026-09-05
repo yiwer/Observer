@@ -172,6 +172,8 @@ export function createMastodonAdapter(options: { clock?: () => string; read?: (u
           if (current.id !== record.id || current.fingerprint !== record.fingerprint) throw new Error("social-changed");
         }
         if (signal?.aborted) throw new Error("social-cancelled");
+        if (Date.now() >= deadline) throw new Error("social-timeout");
+        if (receipt.expiresAtUtc <= clock()) throw new Error("social-expired");
         return null;
       } catch (error) { receipts.delete(sample.receiptId); return failure(error); }
     },

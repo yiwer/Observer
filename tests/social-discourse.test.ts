@@ -693,3 +693,72 @@ test("Mastodon creation and edit times require real calendar instants with expli
   Object.assign(app.statuses[0]!, { edited_at: "2026-09-04" });
   assert.equal(await app.adapter.revalidate(sample, app.source), "social-invalid-response");
 });
+
+test("Current source authority blocks unsampled social material disguised as ordinary evidence even without startup policies or groups", async (t) => {
+  for (const startup of ["present", "missing", "stale"] as const) {
+    const app = await fixture(t);
+    const source = app.options.sourcePolicies[0]!;
+    const news: SourcePolicy = { ...policy(), sourceId: "source-fixture", edition: "world-affairs" };
+    const current = [source, news];
+    app.options.sourcePolicies.splice(0, app.options.sourcePolicies.length, ...(startup === "missing" ? [] : [startup === "stale" ? { ...source, edition: "world-affairs" as const } : source, news]));
+    Object.assign(app.options, { sourcePolicyReader: () => current });
+    app.options.discourse.configuration.groups = [];
+    const marker = "UNPROJECTED-SOCIAL-AUTHORITY-CANARY";
+    const evidence = { ...app.task.evidenceBundle.evidence[0]!, policyVersion: news.version, policySha256: policyDigest(news), trust: "untrusted-source-data",
+      expiresAtUtc: "2026-09-05T22:06:00.000Z" };
+    const socialEvidence = { ...evidence, id: "disguised-social", sourceId: source.sourceId, policySha256: policyDigest(source),
+      content: marker, contentSha256: createHash("sha256").update(marker).digest("hex") };
+    const task = { ...app.task, evidenceBundle: { ...app.task.evidenceBundle, schemaVersion: 2, coverageGaps: [], evidence: [evidence, socialEvidence] },
+      editions: app.task.editions.map((entry) => ({ ...entry, evidenceIds: entry.edition === "world-affairs" ? ["evidence-1", "disguised-social"] : [] })) };
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(task)).id, ownerToken);
+    assert.ok(!JSON.stringify([...app.runnerInputs, ...app.verifierInputs, report]).includes(marker), startup);
+    assert.equal(app.sampleReads, 0);
+    assert.deepEqual(report.record.stories.map((story) => story.id), ["news"]);
+    assert.match(report.canonicalMarkdown, /无合规社交来源/);
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+  const app = await sampleFixture(t);
+  const registered: SourcePolicy = { ...policy(), sourceId: "registered-during-read", edition: "social-discourse" };
+  const initial = structuredClone(app.options.sourcePolicies);
+  let current = initial;
+  app.options.sourcePolicies.splice(0);
+  Object.assign(app.options, { sourcePolicyReader: () => current });
+  app.hooks.status = async () => { current = [...initial, registered]; };
+  const marker = "LATE-REGISTERED-UNPROJECTED-SOCIAL-CANARY";
+  app.task.evidenceBundle.evidence.push({ ...app.task.evidenceBundle.evidence[0]!, id: "late-social", sourceId: registered.sourceId,
+    policySha256: policyDigest(registered), content: marker, contentSha256: createHash("sha256").update(marker).digest("hex") });
+  app.task.editions.find((entry) => entry.edition === "world-affairs")!.evidenceIds.push("late-social");
+  app.restart();
+  const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+  assert.ok(!JSON.stringify([...app.runnerInputs, ...app.verifierInputs, report]).includes(marker), "A source registered during sample I/O uses the same current classification as model permission checks");
+  assert.deepEqual(report.record.stories.map((story) => story.id), ["news"]);
+  assert.equal(report.record.schemaVersion, 7);
+  if (report.record.schemaVersion === 7) assert.equal(report.record.discourse.observations.length, 1);
+  app.restart();
+  assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+});
+
+test("Public sample revalidation cannot return unchanged after its last read crosses TTL and never revives the receipt", async (t) => {
+  for (const ending of ["stable", "expired", "cancelled-and-expired", "timeout-and-expired"] as const) {
+    const app = await sampleFixture(t, 6);
+    app.hooks.now = "2026-09-05T23:19:59.000Z";
+    const controller = new AbortController();
+    app.hooks.status = async () => {
+      if (app.calls.at(-1)!.endsWith("/fixture-5") && ending !== "stable") {
+        app.hooks.now = "2026-09-05T23:20:00.000Z";
+        if (ending === "cancelled-and-expired") controller.abort();
+        if (ending === "timeout-and-expired") await new Promise<void>(() => {});
+      }
+    };
+    const result = await app.adapter.revalidate(app.snapshot, app.source, controller.signal);
+    assert.equal(result, ending === "stable" ? null : ending === "expired" ? "social-expired" : ending === "cancelled-and-expired" ? "social-cancelled" : "social-timeout");
+    if (ending !== "stable") {
+      const calls = app.calls.length;
+      app.hooks.now = "2026-09-05T23:19:59.000Z";
+      assert.equal(await app.adapter.revalidate(app.snapshot, app.source), "social-snapshot-unavailable");
+      assert.equal(app.calls.length, calls, "A failed receipt cannot authorize another status read even when the clock moves back");
+    }
+  }
+});

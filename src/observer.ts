@@ -72,8 +72,8 @@ export function createObserver(options: ObserverOptions) {
   const interest = interestConfiguration(options.databasePath);
   const policies = (options.sourcePolicies ?? []).map((source) => SourcePolicySchema.parse(source));
   const currentPolicies = () => options.sourcePolicyReader ? SourcePolicySchema.array().parse(options.sourcePolicyReader()) : policies;
-  function checkedPolicy(evidence: { sourceId: string; policyVersion: number; policySha256: string }) {
-    const source = currentPolicies().find((source) => source.sourceId === evidence.sourceId);
+  function checkedPolicy(evidence: { sourceId: string; policyVersion: number; policySha256: string }, authority = currentPolicies()) {
+    const source = authority.find((source) => source.sourceId === evidence.sourceId);
     if (!source || source.review.status !== "approved" || !source.collection.enabled || source.version !== evidence.policyVersion || policyDigest(source) !== evidence.policySha256) throw new ObserverError("source-policy-invalid");
     return source;
   }
@@ -116,7 +116,7 @@ export function createObserver(options: ObserverOptions) {
       if (request.schemaVersion === 6) {
         // Ordinary Evidence cannot declare itself an eligible social sample. Only the
         // separately captured, policy-bound sample path can populate this Edition.
-        const socialSourceIds = new Set([...policies.filter((source) => source.edition === "social-discourse").map((source) => source.sourceId), ...discourseConfiguration!.groups.map((group) => group.sourceId)]);
+        const socialSourceIds = new Set([...currentPolicies().filter((source) => source.edition === "social-discourse").map((source) => source.sourceId), ...discourseConfiguration!.groups.map((group) => group.sourceId)]);
         const socialIds = new Set([...request.editions.filter((entry) => entry.edition === "social-discourse").flatMap((entry) => entry.evidenceIds), ...request.evidenceBundle.evidence.filter((evidence) => socialSourceIds.has(evidence.sourceId)).map((evidence) => evidence.id)]);
         if (request.evidenceBundle.schemaVersion === 1) request.evidenceBundle.evidence = request.evidenceBundle.evidence.filter((evidence) => !socialIds.has(evidence.id));
         else request.evidenceBundle.evidence = request.evidenceBundle.evidence.filter((evidence) => !socialIds.has(evidence.id));
@@ -128,6 +128,16 @@ export function createObserver(options: ObserverOptions) {
         request.evidenceBundle.evidence.push(...discourse.evidence);
         request.editions.find((entry) => entry.edition === "social-discourse")!.evidenceIds.push(...discourse.evidence.map((evidence) => evidence.id));
       }
+      const modelPolicies = request.schemaVersion === 6 ? currentPolicies() : undefined;
+      if (request.schemaVersion === 6) {
+        // Classification and grants share the final pre-model authority after sample I/O.
+        const capturedIds = new Set(discourse!.evidence.map((evidence) => evidence.id));
+        const socialSources = new Set(modelPolicies!.filter((source) => source.edition === "social-discourse").map((source) => source.sourceId));
+        const rejectedIds = new Set(request.evidenceBundle.evidence.filter((evidence) => socialSources.has(evidence.sourceId) && !capturedIds.has(evidence.id)).map((evidence) => evidence.id));
+        if (request.evidenceBundle.schemaVersion === 1) request.evidenceBundle.evidence = request.evidenceBundle.evidence.filter((evidence) => !rejectedIds.has(evidence.id));
+        else request.evidenceBundle.evidence = request.evidenceBundle.evidence.filter((evidence) => !rejectedIds.has(evidence.id));
+        request.editions = request.editions.map((entry) => ({ ...entry, evidenceIds: entry.evidenceIds.filter((id) => !rejectedIds.has(id)) }));
+      }
       if (request.schemaVersion === 1 ? !options.runner : request.evidenceBundle.evidence.length > 0 && !options.editionRunner) throw new ObserverError("runner-unavailable");
       const bundle = request.evidenceBundle;
       const modelRequest = structuredClone(request);
@@ -136,7 +146,7 @@ export function createObserver(options: ObserverOptions) {
       if (request.schemaVersion !== 1 && (new Set(request.editions.map((entry) => entry.edition)).size !== 6 || request.editions.some((entry) => new Set(entry.evidenceIds).size !== entry.evidenceIds.length || entry.evidenceIds.some((id) => !bundle.evidence.some((evidence) => evidence.id === id))))) throw new ObserverError("invalid-edition-input");
       if (modelRequest.evidenceBundle.schemaVersion === 2) {
         for (const evidence of modelRequest.evidenceBundle.evidence) {
-          const source = checkedPolicy(evidence);
+          const source = checkedPolicy(evidence, modelPolicies);
           if (!source.model.enabled) throw new ObserverError("model-forbidden");
           if (evidence.expiresAtUtc <= (options.clock ?? (() => new Date().toISOString()))()) throw new ObserverError("evidence-expired");
           for (const field of sourceFields) if (!source.collection.fields.includes(field) || !source.storage.fields.includes(field) || !source.model.fields.includes(field)) delete evidence[field];
