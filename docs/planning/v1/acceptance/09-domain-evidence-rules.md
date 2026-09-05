@@ -53,4 +53,4 @@ Root已实际阅读当时`domain-contracts.ts`、`domain-evidence.ts`与首片�
 
 Root用当前 **WIP source** reader实际读取6份旧producer档案：Record1/2 2/2、Record3 1/1、两期Record4 2/2、Record5 1/1，全部原MD/完整JSON/摘要及鉴权隔离保持；各脚本和固定预期未改。此时作者HEAD仍df63b788，WIP尚未提交，不能将结果绑作该HEAD已有新功能；最终冻结built和实际master仍须重跑。
 
-作者已实际派独立`/root/implement_v1_09/source_research`，完成待审[来源提案](../../../research/domain-evidence-source-proposals-2026-09-05.md)：OCHA oPt、Eurostat、Fed、arXiv、Anthropic、NASA六条，均pending/所有使用开关false，仅文档、不自动授权或采集；Root已读产物，官方引用及许可边界尚待整票独立审查。文档明确不是可导入SourcePolicy，未知feed保留unknown，不以伪URL通过Schema。真实接入/许可/全球覆盖尚未验证。
+作者已实际派独立`/root/implement_v1_09/source_research`，完成待审[来源提案](O:/GenesisCode/Observer-worktrees/v1-09/docs/research/domain-evidence-source-proposals-2026-09-05.md)：OCHA oPt、Eurostat、Fed、arXiv、Anthropic、NASA六条，均pending/所有使用开关false，仅文档、不自动授权或采集；Root已读产物，官方引用及许可边界尚待整票独立审查。该文件当前仅在作者WIP工作树，尚未集成至master。文档明确不是可导入SourcePolicy，未知feed保留unknown，不以伪URL通过Schema。真实接入/许可/全球覆盖尚未验证。
