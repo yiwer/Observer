@@ -17,7 +17,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - 当前票：V1-04 / GitHub #4，进行中；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。fresh-context 实施 agent 为 `/root/implement_v1_04`。
 - #4 固定起点：320ab620a2d3f22c09e13334a68f06a3b664af05；worktree：`O:/GenesisCode/Observer-worktrees/v1-04`；分支：`ticket/v1-04`；[启动回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550300477)，已读回 OPEN 且 assignee=yiwer。
 - #4 阶段报告已跑通隔离协议进程到 Gate/正文，以及 12 类终态失败；当前修复后代管道悬挂。尚无冻结候选，Root 未做最终复跑/双轴验收；[阶段回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550338282)。
-- 并行只读预检 `/root/research_v1_05_preflight` 使用 research skill 核对 Claude 当前帮助/官方协议；只写增量研究说明，不启动 #5 实施、不触发模型/升级。
+- 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；未启动 #5 实施、触发模型或升级。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
 - 最新已验收集成提交：a83cf2a08b8db8b9b960f059e2a3653cc01c3935。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
