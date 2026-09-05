@@ -24,6 +24,13 @@ function gapText(reason: string): string {
 
 export function consistentRecord(record: RecordV3): boolean {
   const gate = record.publicationGate;
+  if (gate.schemaVersion === 2) {
+    const identity = { taskId: record.taskId, evidenceBundleId: record.evidenceBundle.id, configurationId: record.configurationId };
+    if (gate.input.inputSha256 !== inputDigest({ schemaVersion: 2, ...identity, batchInputSha256s: gate.batches.map((batch) => batch.input.inputSha256) }) ||
+      gate.batches.some((batch, index) => batch.input.taskId !== `verification-${inputDigest([record.taskId, index])}` ||
+        batch.input.evidenceBundleId !== record.evidenceBundle.id || batch.input.configurationId !== record.configurationId || batch.checkedAtUtc > gate.checkedAtUtc ||
+        batch.verification !== null && batch.verification.inputSha256 !== batch.input.inputSha256)) return false;
+  }
   if (gate.input.taskId !== record.taskId || gate.input.evidenceBundleId !== record.evidenceBundle.id || gate.input.configurationId !== record.configurationId ||
     record.editions.some((entry, index) => entry.edition !== Object.keys(editionNames)[index]) || new Set(record.stories.map((story) => story.id)).size !== record.stories.length) return false;
   if (!record.editions.every((entry) => entry.storyIds.length === new Set(entry.storyIds).size && entry.storyIds.every((id) => record.stories.some((story) => story.id === id && story.edition === entry.edition)) && entry.priorityStoryIds.every((id) => entry.storyIds.includes(id)))) return false;
@@ -37,7 +44,7 @@ export function consistentRecord(record: RecordV3): boolean {
   });
 }
 
-export function arrangeEditions(record: Extract<ReportRecord, { schemaVersion: 2 }>, research: EditionResearch): RecordV3 {
+export function arrangeEditions(record: Omit<Extract<ReportRecord, { schemaVersion: 2 }>, "publicationGate"> & Pick<RecordV3, "publicationGate">, research: EditionResearch): RecordV3 {
   const { agentResult: _agentResult, ...base } = record;
   const editions = (Object.keys(editionNames) as Array<keyof typeof editionNames>).map((edition) => {
     const run = research.editions.find((entry) => entry.edition === edition)!;
@@ -116,7 +123,9 @@ export function sixEditionMarkdown(record: RecordV3): string {
         "### 待确认", `待确认说法（非已证事实）：${escapeMarkdown(item.description)}`,
         ...item.evidenceIds.map((id) => {
           const evidence = record.evidenceBundle.evidence.find((entry) => entry.id === id)!;
-          const relation = record.publicationGate.verification?.assessments.find((entry) => entry.storyId === item.storyId && entry.claimId === item.claimId)?.evidence.find((entry) => entry.evidenceId === id)?.relation;
+          const gate = record.publicationGate;
+          const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
+          const relation = assessments.find((entry) => entry.storyId === item.storyId && entry.claimId === item.claimId)?.evidence.find((entry) => entry.evidenceId === id)?.relation;
           return `${escapeMarkdown(evidence.sourceId)}（${relation === "contradicts" ? "提供相反材料" : relation === "supports" ? "提供支持材料" : "关系未确认"}）\n\n${sources([id])}`;
         }),
       ]),

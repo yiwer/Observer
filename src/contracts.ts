@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CandidateV2Schema, PublicationGateSchema } from "./gate-contracts.ts";
+import { BatchedPublicationGateSchema, CandidateV2Schema, PublicationGateSchema } from "./gate-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const utc = z.iso.datetime({ precision: 3, offset: false });
@@ -139,8 +139,12 @@ export const SixEditionRequestSchema = ProduceRequestSchema.extend({
   editions: z.array(z.strictObject({ edition, evidenceIds: z.array(id) })).length(6),
 });
 export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema>;
+// Six-Edition research appends a known Edition suffix to the unchanged 200-character input ID.
+// This bounded envelope extension does not alter the legacy AgentRunner/CLI contract.
+const editionTaskId = z.string().min(1).max(200 + 1 + Math.max(...Object.keys(editionNames).map((name) => name.length)));
 const EditionAgentResultSchema = z.discriminatedUnion("status", [
-  AgentResultSchema.options[0].extend({ stories: z.array(CandidateV2Schema).max(50) }), AgentResultSchema.options[1],
+  AgentResultSchema.options[0].extend({ taskId: editionTaskId, stories: z.array(CandidateV2Schema).max(50) }),
+  AgentResultSchema.options[1].extend({ taskId: editionTaskId }),
 ]);
 const StoryEditorialSchema = z.strictObject({
   storyId: id, significanceClaimIds: z.array(id), impactClaimIds: z.array(id), uncertaintyClaimIds: z.array(id),
@@ -191,11 +195,12 @@ const GatedReportRecordSchema = LegacyReportRecordSchema.extend({
 const SixEditionRecordSchema = GatedReportRecordSchema.omit({ agentResult: true }).extend({
   schemaVersion: z.literal(3),
   editorialContract: z.literal("observer-canonical-v1"),
+  publicationGate: z.union([PublicationGateSchema, BatchedPublicationGateSchema]),
   // Derived attribution labels may extend a bounded 4000-character Claim.
   stories: z.array(CandidateV2Schema.extend({ title: z.string().min(1).max(4500) })),
   editionRuns: z.array(z.discriminatedUnion("status", [
     z.strictObject({ edition, status: z.literal("completed"), result: z.discriminatedUnion("status", [
-      z.strictObject({ ...agentMetadata, status: z.literal("succeeded") }), AgentResultSchema.options[1],
+      EditionAgentResultSchema.options[0].omit({ stories: true }), EditionAgentResultSchema.options[1],
     ]) }),
     z.strictObject({ edition, status: z.literal("no-evidence") }),
     z.strictObject({ edition, status: z.literal("invalid-output") }),

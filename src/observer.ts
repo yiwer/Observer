@@ -9,6 +9,7 @@ import {
 import { SourcePolicySchema, policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
 import type { Claim, SemanticVerifier } from "./gate-contracts.ts";
 import { evaluatePublication, gatedMarkdown } from "./publication-gate.ts";
+import { evaluateBatchedPublication } from "./batched-publication-gate.ts";
 import { arrangeEditions, sixEditionMarkdown, consistentRecord } from "./six-edition.ts";
 
 export class ObserverError extends Error {
@@ -236,7 +237,7 @@ export function createObserver(options: ObserverOptions) {
           }
           return null;
         };
-        const { completedAtUtc, ...gated } = await evaluatePublication({ request: { ...modelRequest, schemaVersion: 1 }, stories, verifier: options.verifier,
+        const { completedAtUtc, ...gated } = await (research ? evaluateBatchedPublication : evaluatePublication)({ request: { ...modelRequest, schemaVersion: 1 }, stories, verifier: options.verifier,
           clock: options.clock ?? (() => new Date().toISOString()), modelPolicyCheck, publicationPolicyCheck: policyCheck });
         publishedAtUtc = completedAtUtc;
         const eligibleIds = new Set([...gated.stories.flatMap((story) => story.claims.flatMap((claim) => claim.evidenceIds)), ...gated.publicationGate.unconfirmedItems.flatMap((item) => item.evidenceIds)]);
@@ -258,7 +259,7 @@ export function createObserver(options: ObserverOptions) {
           coverageGaps: Object.keys(editionNames).filter((edition) => !gated.stories.some((story) => story.edition === edition)).map((edition) => ({ edition, reason: "no-publishable-claims" })),
         } as ReportRecord;
         if (research) {
-          record = arrangeEditions(record as Extract<ReportRecord, { schemaVersion: 2 }>, research);
+          record = arrangeEditions(record as Parameters<typeof arrangeEditions>[0], research);
         }
       } else {
         if (stories.some((story) => story.schemaVersion !== 1)) throw new ObserverError("agent-invalid-output");

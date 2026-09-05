@@ -57,6 +57,28 @@ test("A full six-Edition brief is privately readable with seven stories and thre
   assert.throws(() => observer.readReport(version.id, "incorrect"), { code: "unauthorized" });
 });
 
+test("A maximum-length six-Edition task preserves correlated successful and failed derived task identities", async (t) => {
+  for (const failed of [false, true]) {
+    const task = { ...input(), taskId: "t".repeat(200) };
+    const output = research(1);
+    const derived = { ...output, taskId: task.taskId, editions: output.editions.map((entry) => {
+      const { stories, ...metadata } = entry.result;
+      return { ...entry, result: failed && entry.edition === "frontier-technology"
+        ? { ...metadata, taskId: `${task.taskId}:${entry.edition}`, status: "failed", failure: { category: "timeout", retryable: true } }
+        : { ...metadata, taskId: `${task.taskId}:${entry.edition}`, stories } };
+    }) };
+    const { observer } = await fixture(t, derived);
+    const report = observer.readReport((await observer.produce(task)).id, ownerToken);
+    if (report.record.schemaVersion !== 3) assert.fail("Expected six-Edition Report Record");
+    assert.equal(report.record.stories.length, failed ? 5 : 6);
+    for (const entry of report.record.editionRuns) {
+      if (entry.status !== "completed") assert.fail("Expected real correlated run metadata");
+      assert.equal(entry.result.taskId, `${task.taskId}:${entry.edition}`);
+      assert.equal(entry.result.status, failed && entry.edition === "frontier-technology" ? "failed" : "succeeded");
+    }
+  }
+});
+
 test("Sparse research preserves actual counts and known source gaps in the Edition and Overview", async (t) => {
   const source = policy(); source.sourceId = "source-fixture";
   const task = { ...input(), evidenceBundle: { ...request.evidenceBundle, schemaVersion: 2, evidence: [{ ...request.evidenceBundle.evidence[0]!,
@@ -321,4 +343,105 @@ test("Statement-only leading stories keep meaningful attributed titles in the Ov
   assert.ok(report.canonicalMarkdown.split("## 世界要闻")[0]!.includes(`发布者声明（source-fixture）：${statement}`));
   assert.equal(report.canonicalMarkdown.includes("事实："), false);
   }
+});
+
+test("Six Editions retain all 42 selected stories across the 500-receipt boundary and full 15000-claim input", async (t) => {
+  for (const count of [500, 501, 504, 15000]) {
+    const output = research(count === 15000 ? 50 : 7);
+    let remaining = count;
+    for (const entry of output.editions) for (const story of entry.result.stories) {
+      const size = Math.min(count === 15000 ? 50 : 12, remaining);
+      story.claims = Array.from({ length: size }, (_, index) => ({ ...story.claims[0]!, id: `claim-${index}`, text: `${story.edition}第 ${index + 1} 项固定观测记录。` }));
+      remaining -= size;
+    }
+    const { observer } = await fixture(t, output);
+    const version = await observer.produce(input());
+    const report = observer.readReport(version.id, ownerToken);
+    assert.equal(report.record.stories.length, 42, `${count} claims`);
+    assert.equal(report.record.stories.reduce((total, story) => total + story.claims.length, 0), count === 15000 ? 2100 : count);
+    if (report.record.schemaVersion !== 3 || report.record.publicationGate.schemaVersion !== 2) assert.fail("Expected explicit batch ledger");
+    const gate = report.record.publicationGate;
+    assert.equal(gate.verification, null, "No fabricated aggregate verification");
+    assert.equal(gate.decisions.filter((decision) => decision.outcome === "published").length, count);
+    assert.equal(gate.batches.reduce((total, batch) => total + (batch.verification?.assessments.length ?? 0), 0), count);
+    assert.ok(gate.batches.length <= 30);
+    for (const batch of gate.batches) {
+      assert.ok(batch.verification!.assessments.length <= 500);
+      assert.equal(batch.verification!.inputSha256, batch.input.inputSha256);
+    }
+    assert.equal(new Set(gate.batches.map((batch) => batch.input.inputSha256)).size, gate.batches.length);
+    assert.equal(new Set(gate.batches.map((batch) => batch.input.taskId)).size, gate.batches.length);
+  }
+});
+
+test("Local duplicate claim, story and evidence-reference identities cannot poison unaffected stories or Editions", async (t) => {
+  for (const fault of ["claim", "story-within", "story-across", "evidence-reference"]) {
+    const output = research(7);
+    const ai = output.editions[1]!.result.stories;
+    if (fault === "claim") ai[0]!.claims.push(structuredClone(ai[0]!.claims[0]!));
+    if (fault === "story-within") ai[1]!.id = ai[0]!.id;
+    if (fault === "story-across") ai[0]!.id = output.editions[0]!.result.stories[0]!.id;
+    if (fault === "evidence-reference") ai[0]!.claims[0]!.evidenceIds.push("evidence-1");
+    const { observer } = await fixture(t, output);
+    const version = await observer.produce(input());
+    const report = observer.readReport(version.id, ownerToken);
+    assert.equal(report.record.stories.length, fault.startsWith("story-") ? 40 : 41, fault);
+    if (report.record.schemaVersion !== 3) assert.fail("Expected six-Edition Record");
+    assert.equal(report.record.publicationGate.decisions.filter((decision) => decision.reason === "invalid-verifier-receipt").length, 0, fault);
+    assert.ok(report.record.publicationGate.decisions.some((decision) => decision.reason === "ambiguous-claim-identity"));
+    assert.match(report.canonicalMarkdown, /GitHub 热门项目示例观测站新增了 12 个观测点/);
+  }
+});
+
+test("A replayed or miscorrelated batch receipt rejects only its own Edition at 504 claims", async (t) => {
+  const output = research(7);
+  for (const entry of output.editions) for (const story of entry.result.stories) {
+    story.claims = Array.from({ length: 12 }, (_, index) => ({ ...story.claims[0]!, id: `claim-${index}` }));
+  }
+  let previous: unknown;
+  const { observer } = await fixture(t, output, { verifier: { verify: async (task) => {
+    if (task.stories[0]?.edition === "ai") return previous;
+    const receipt = verification(task);
+    previous = receipt;
+    return receipt;
+  } } });
+  const version = await observer.produce(input());
+  const report = observer.readReport(version.id, ownerToken);
+  assert.equal(report.record.stories.length, 35);
+  assert.equal(report.record.stories.reduce((total, story) => total + story.claims.length, 0), 420);
+  if (report.record.schemaVersion !== 3 || report.record.publicationGate.schemaVersion !== 2) assert.fail("Expected batch ledger");
+  const gate = report.record.publicationGate;
+  assert.equal(gate.batches.filter((batch) => batch.verification === null).length, 1);
+  assert.equal(gate.decisions.filter((decision) => decision.reason === "invalid-verifier-receipt").length, 84);
+  assert.equal(report.record.stories.some((story) => story.edition === "ai"), false);
+});
+
+test("Later batches recheck model TTL and the final publication instant revokes an earlier supported batch", async (t) => {
+  const source = policy(); source.sourceId = "source-fixture";
+  const expiry = "2026-09-04T23:41:00.000Z";
+  const task = { ...input(), editions: editions.map((edition) => ({ edition, evidenceIds: [edition === "world-affairs" ? "evidence-1" : "evidence-2"] })),
+    evidenceBundle: { ...request.evidenceBundle, schemaVersion: 2, coverageGaps: [], evidence: ["evidence-1", "evidence-2"].map((id) => ({ ...request.evidenceBundle.evidence[0]!, id,
+      policyVersion: source.version, policySha256: policyDigest(source), trust: "untrusted-source-data", expiresAtUtc: id === "evidence-1" ? expiry : "2026-09-05T23:00:00.000Z" })) } };
+  const output = research(7);
+  for (const entry of output.editions) for (const story of entry.result.stories) {
+    story.claims = Array.from({ length: 12 }, (_, index) => ({ ...story.claims[0]!, id: `claim-${index}`, evidenceIds: [entry.edition === "world-affairs" ? "evidence-1" : "evidence-2"] }));
+  }
+  let now = clock();
+  const { observer } = await fixture(t, output, { clock: () => now, sourcePolicies: [source], verifier: { verify: async (task) => {
+    if (now >= expiry) assert.equal(task.evidence.some((item) => item.id === "evidence-1"), false, "Expired evidence must not enter a later model send");
+    if (task.stories[0]?.edition === "ai") now = "2026-09-04T23:42:00.000Z";
+    return verification(task);
+  } } });
+  const version = await observer.produce(task);
+  const report = observer.readReport(version.id, ownerToken);
+  assert.equal(report.record.stories.length, 35);
+  assert.equal(report.record.stories.reduce((total, story) => total + story.claims.length, 0), 420);
+  assert.deepEqual(report.record.evidenceBundle.evidence.map((item) => item.id), ["evidence-2"]);
+  assert.equal(version.publishedAtUtc, now);
+  if (report.record.schemaVersion !== 3 || report.record.publicationGate.schemaVersion !== 2) assert.fail("Expected batch ledger");
+  assert.equal(report.record.publicationGate.checkedAtUtc, now);
+  assert.equal(report.record.publicationGate.batches[0]!.checkedAtUtc, clock());
+  assert.equal(report.record.publicationGate.batches[0]!.verification!.assessments.length, 84, "The first batch was actually verified before expiry");
+  assert.equal(report.record.publicationGate.decisions.filter((decision) => decision.policy.reason === "evidence-expired").length, 84);
+  assert.equal(report.canonicalMarkdown.includes("世界要闻示例观测站新增了 12"), false);
 });

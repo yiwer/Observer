@@ -4,9 +4,11 @@ import { editionNames, type ProduceRequest, type ReportRecord } from "./contract
 
 export const inputDigest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-interface EvaluationOptions {
+export interface EvaluationOptions {
   request: ProduceRequest;
   stories: CandidateV2[];
+  // Batched evaluation retains the complete identity scope for structural checks.
+  structuralStories?: CandidateV2[];
   verifier: SemanticVerifier | undefined;
   clock: () => string;
   modelPolicyCheck: (evidenceIds: string[], atUtc: string) => string | null;
@@ -15,10 +17,14 @@ interface EvaluationOptions {
 
 export async function evaluatePublication(options: EvaluationOptions) {
   const { request, stories, verifier } = options;
+  const structuralReason = (story: CandidateV2, claim: Claim) =>
+    claim.evidenceIds.some((id) => !request.evidenceBundle.evidence.some((evidence) => evidence.id === id)) ? "unknown-evidence-reference" :
+    new Set(claim.evidenceIds).size !== claim.evidenceIds.length || story.claims.filter((item) => item.id === claim.id).length !== 1 ||
+    (options.structuralStories ?? stories).filter((item) => item.id === story.id).length !== 1 ? "ambiguous-claim-identity" : null;
   const beforeVerifierUtc = options.clock();
   const modelFailures = new Map(request.evidenceBundle.evidence.map((item) => [item.id, options.modelPolicyCheck([item.id], beforeVerifierUtc)]));
   const permitted = new Set([...modelFailures].filter(([, reason]) => reason === null).map(([id]) => id));
-  const reviewStories = stories.map((story) => ({ ...story, title: "陈述级核验", claims: story.claims.filter((claim) => claim.evidenceIds.every((id) => permitted.has(id))) })).filter((story) => story.claims.length > 0);
+  const reviewStories = stories.map((story) => ({ ...story, title: "陈述级核验", claims: story.claims.filter((claim) => !structuralReason(story, claim) && claim.evidenceIds.every((id) => permitted.has(id))) })).filter((story) => story.claims.length > 0);
   const context = { schemaVersion: 1 as const, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId, stories: reviewStories, evidence: request.evidenceBundle.evidence.filter((evidence) => permitted.has(evidence.id)) };
   const input: VerificationInput = { ...context, inputSha256: inputDigest(context) };
   let output: unknown;
@@ -48,11 +54,10 @@ export async function evaluatePublication(options: EvaluationOptions) {
           unconfirmedItems.push({ storyId: story.id, claimId: claim.id, edition: story.edition, description: claim.text, evidenceIds: claim.evidenceIds });
         }
       };
-      const structuralReason = claim.evidenceIds.some((id) => !request.evidenceBundle.evidence.some((evidence) => evidence.id === id)) ? "unknown-evidence-reference" :
-        new Set(claim.evidenceIds).size !== claim.evidenceIds.length || story.claims.filter((item) => item.id === claim.id).length !== 1 || stories.filter((item) => item.id === story.id).length !== 1 ? "ambiguous-claim-identity" : null;
-      if (structuralReason) {
-        decide("quarantined", structuralReason, {
-          structure: { status: "failed", reason: structuralReason }, policy: { status: "not-evaluated", reason: "structure-failed" },
+      const structureFailure = structuralReason(story, claim);
+      if (structureFailure) {
+        decide("quarantined", structureFailure, {
+          structure: { status: "failed", reason: structureFailure }, policy: { status: "not-evaluated", reason: "structure-failed" },
           semantic: { status: "not-evaluated", reason: "structure-failed" } });
         return false;
       }
