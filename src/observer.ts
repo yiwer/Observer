@@ -120,6 +120,13 @@ export function createObserver(options: ObserverOptions) {
       }
       if (result.stories.some((story) => story.quotations?.some((quote) => !evidenceIds.has(quote.evidenceId)))) throw new ObserverError("unknown-evidence-reference");
       if (bundle.schemaVersion === 2) {
+        const quotationTotals = new Map<string, number>();
+        for (const quotation of result.stories.flatMap((story) => story.quotations ?? [])) {
+          const evidence = bundle.evidence.find((item) => item.id === quotation.evidenceId)!;
+          const total = (quotationTotals.get(evidence.sourceId) ?? 0) + [...quotation.text].length;
+          if (total > checkedPolicy(evidence).citation.maxCharacters) throw new ObserverError("citation-limit");
+          quotationTotals.set(evidence.sourceId, total);
+        }
         for (const evidence of bundle.evidence) {
           const source = checkedPolicy(evidence);
           if (!source.distribution.enabled || !source.distribution.allowDerivedText) throw new ObserverError("distribution-forbidden");
@@ -128,7 +135,6 @@ export function createObserver(options: ObserverOptions) {
           const quotations = result.stories.flatMap((story) => story.quotations ?? []).filter((quote) => quote.evidenceId === evidence.id);
           const researchContent = modelRequest.evidenceBundle.evidence.find((item) => item.id === evidence.id)?.content;
           if (quotations.some((quote) => !evidence.content?.includes(quote.text) || !researchContent?.includes(quote.text))) throw new ObserverError("quotation-unverified");
-          if (quotations.reduce((count, quote) => count + [...quote.text].length, 0) > source.citation.maxCharacters) throw new ObserverError("citation-limit");
           for (const field of sourceFields) if (!source.collection.fields.includes(field) || !source.storage.fields.includes(field) || !source.distribution.fields.includes(field)) delete evidence[field];
           // The mutable source cache is the only place that retains source body text.
           delete evidence.content;

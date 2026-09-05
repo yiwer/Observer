@@ -33,7 +33,7 @@ const ProposalSchema = z.strictObject({ sourceId: text, feedUrl: z.url({ protoco
 export type SourceProposal = z.infer<typeof ProposalSchema>;
 export interface CoverageGap { sourceId: string; edition: SourcePolicy["edition"]; reason: string }
 
-export interface SourceResponse { status: number; body: string; headers: Record<string, string> }
+export interface SourceResponse { status: number; body: string; headers: Record<string, string>; finalUrl?: string }
 export interface SourceReadRequest { source: SourcePolicy; headers: Record<string, string>; signal: AbortSignal }
 export interface CollectionOptions {
   databasePath: string; sources: unknown; clock?: () => string;
@@ -52,7 +52,7 @@ async function boundedRead(read: NonNullable<CollectionOptions["read"]>, url: st
   } finally { clearTimeout(timer); }
 }
 
-function feedItems(xml: string, source: SourcePolicy) {
+function feedItems(xml: string, source: SourcePolicy, feedUrl: string) {
   if (Buffer.byteLength(xml) > source.limits.maxResponseBytes) throw new SourceReadError("response-too-large");
   const parser = new SaxesParser({ xmlns: true });
   const stack: Array<{ name: string; value: string; base: string }> = [];
@@ -69,7 +69,7 @@ function feedItems(xml: string, source: SourcePolicy) {
       else if (tag.local === "feed" && tag.uri === "http://www.w3.org/2005/Atom") format = "atom";
       else throw new SourceReadError("invalid-feed");
     }
-    const parentBase = stack.at(-1)?.base ?? source.feedUrl;
+    const parentBase = stack.at(-1)?.base ?? feedUrl;
     const base = tag.attributes["xml:base"] ? new URL(tag.attributes["xml:base"].value, parentBase).href : parentBase;
     stack.push({ name: tag.local, value: "", base });
     if ((format === "rss" && tag.local === "item" && tag.uri === "" && stack.length === 3 && stack[1]?.name === "channel") ||
@@ -120,6 +120,7 @@ export function createCollection(options: CollectionOptions) {
     CREATE TABLE IF NOT EXISTS source_state (source TEXT PRIMARY KEY, next_poll TEXT NOT NULL, validators TEXT NOT NULL DEFAULT '{}');
     CREATE TABLE IF NOT EXISTS policies (source TEXT PRIMARY KEY, version INTEGER NOT NULL, digest TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS proposals (source TEXT PRIMARY KEY, payload TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS source_gaps (source TEXT PRIMARY KEY, payload TEXT NOT NULL);
     PRAGMA application_id = 1329746755; PRAGMA user_version = 1;
   `);
   for (const source of sources) {
@@ -132,11 +133,12 @@ export function createCollection(options: CollectionOptions) {
     if (!source || source.review.status !== "approved" || !source.collection.enabled || policyDigest(source) !== row.digest) {
       database.prepare("DELETE FROM evidence WHERE source = ?").run(row.source!);
       database.prepare("DELETE FROM source_state WHERE source = ?").run(row.source!);
+      database.prepare("DELETE FROM source_gaps WHERE source = ?").run(row.source!);
     }
   }
   for (const source of sources) database.prepare("INSERT OR REPLACE INTO policies VALUES (?, ?, ?)").run(source.sourceId, source.version, policyDigest(source));
   database.exec("COMMIT");
-  let lastGaps: CoverageGap[] = [];
+  let lastGaps: CoverageGap[] = database.prepare("SELECT payload FROM source_gaps ORDER BY rowid").all().map((row) => JSON.parse(String(row.payload)) as CoverageGap);
   let lastOutcomes: Array<{ sourceId: string; reason: string }> = [];
   function purge() {
     database.prepare("DELETE FROM evidence WHERE json_extract(payload, '$.expiresAtUtc') <= ?").run(clock());
@@ -161,7 +163,12 @@ export function createCollection(options: CollectionOptions) {
         if (!source.collection.enabled) { coverageGaps.push({ sourceId: source.sourceId, edition: source.edition, reason: "collection-forbidden" }); continue; }
         const now = clock();
         const state = database.prepare("SELECT next_poll, validators FROM source_state WHERE source = ?").get(source.sourceId);
-        if (state && String(state.next_poll) > now) { outcomes.push({ sourceId: source.sourceId, reason: "poll-not-due" }); continue; }
+        if (state && String(state.next_poll) > now) {
+          outcomes.push({ sourceId: source.sourceId, reason: "poll-not-due" });
+          const unresolved = lastGaps.find((gap) => gap.sourceId === source.sourceId);
+          if (unresolved) coverageGaps.push(unresolved);
+          continue;
+        }
         database.prepare("INSERT INTO source_state (source, next_poll) VALUES (?, ?) ON CONFLICT(source) DO UPDATE SET next_poll = excluded.next_poll").run(source.sourceId, new Date(Date.parse(now) + source.limits.pollIntervalSeconds * 1000).toISOString());
         try {
         const response = await boundedRead(read, source.feedUrl, source, state ? JSON.parse(String(state.validators)) as Record<string, string> : {});
@@ -179,7 +186,7 @@ export function createCollection(options: CollectionOptions) {
         if (!source.storage.fields.length || source.storage.retentionHours === 0) {
           coverageGaps.push({ sourceId: source.sourceId, edition: source.edition, reason: "storage-forbidden" }); continue;
         }
-        for (const item of feedItems(response.body, source)) {
+        for (const item of feedItems(response.body, source, response.finalUrl ?? source.feedUrl)) {
           const publishedAtRaw = item.pubDate ?? item.published ?? null;
           if (!item.link || !/^https?:$/.test(new URL(item.link).protocol)) throw new SourceReadError("invalid-item");
           let content = item.content ?? item.description ?? item.summary;
@@ -218,6 +225,9 @@ export function createCollection(options: CollectionOptions) {
         }
       }
       lastGaps = coverageGaps;
+      database.exec("BEGIN IMMEDIATE; DELETE FROM source_gaps;");
+      for (const gap of coverageGaps) database.prepare("INSERT INTO source_gaps VALUES (?, ?)").run(gap.sourceId, JSON.stringify(gap));
+      database.exec("COMMIT");
       lastOutcomes = outcomes;
       return { added, updated, duplicates, coverageGaps, outcomes };
     },

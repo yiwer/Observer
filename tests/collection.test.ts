@@ -275,3 +275,39 @@ test("Invalid calendar dates retain the publisher's raw value without inventing 
   assert.equal(evidence.publishedAtRaw, "Mon, 30 Feb 2026 10:00:00 GMT");
   assert.equal(evidence.publishedAtUtc, null);
 });
+
+test("A source's quotation allowance is shared across all of its Evidence records", async (t) => {
+  const source = policy(); source.citation.maxCharacters = 5;
+  const body = rss.replace("</channel>", rss.slice(rss.indexOf("<item>"), rss.indexOf("</channel>")).replaceAll("item-42", "item-43") + "</channel>");
+  const collection = await setup(t, [source], async () => ({ status: 200, body, headers: {} }));
+  await collection.collect(); const bundle = collection.bundle(window, "storage");
+  const directory = await mkdtemp(join(tmpdir(), "observer-source-quote-total-"));
+  const observer = createObserver({ databasePath: join(directory, "archive.sqlite"), ownerToken, mode: "test-fixture", clock, sourcePolicies: [source], runner: { run: async () => {
+    const output = successfulResult(); output.evidenceBundleId = bundle.id; output.configurationId = window.configurationId;
+    return { ...output, stories: [{ ...output.stories[0], claims: [{ text: "Original observation", evidenceIds: bundle.evidence.map((evidence) => evidence.id) }], quotations: bundle.evidence.map((evidence) => ({ evidenceId: evidence.id, text: "12 个" })) }] };
+  } } });
+  t.after(async () => { observer.close(); await rm(directory, { recursive: true, force: true }); });
+  await assert.rejects(observer.produce({ ...request, configurationId: window.configurationId, evidenceBundle: bundle }), { code: "citation-limit" });
+  assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { code: "not-found" });
+});
+
+test("A failed source retains its gap through skipped polls and process restart until an observed recovery", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "observer-persistent-gap-"));
+  let now = "2026-09-04T22:06:00.000Z";
+  let failing = false;
+  const options = { databasePath: join(directory, "collection.sqlite"), sources: [policy()], clock: () => now, read: async () => {
+    if (failing) throw new Error("timeout");
+    return { status: 200, body: rss, headers: {} };
+  } };
+  let collection = createCollection(options);
+  t.after(async () => { collection.close(); await rm(directory, { recursive: true, force: true }); });
+  await collection.collect();
+  now = "2026-09-04T22:07:00.000Z"; failing = true; await collection.collect();
+  now = "2026-09-04T22:07:01.000Z"; await collection.collect();
+  assert.equal(collection.bundle(window, "model").coverageGaps[0]?.reason, "timeout");
+  collection.close(); collection = createCollection(options);
+  assert.equal(collection.bundle(window, "model").coverageGaps[0]?.reason, "timeout");
+  now = "2026-09-04T22:08:00.000Z"; failing = false; await collection.collect();
+  assert.equal(collection.bundle(window, "model").coverageGaps.length, 0);
+  assert.equal(collection.bundle(window, "model").evidence.length, 1);
+});

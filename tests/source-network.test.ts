@@ -93,3 +93,26 @@ test("DNS rebinding, mixed private addresses, redirect loops, encoded or stalled
     } finally { collection.close(); }
   }
 });
+
+test("Relative Atom links and body reads resolve against the feed's final permitted redirect URL", async (t) => {
+  const { policy } = await import("./helpers/source-fixtures.ts");
+  const directory = await mkdtemp(join(tmpdir(), "observer-redirect-base-"));
+  const server = createServer((request, response) => {
+    if (request.url === "/old/feed") { response.writeHead(302, { location: "/new/feed" }).end(); return; }
+    if (request.url === "/new/feed") { response.end('<feed xmlns="http://www.w3.org/2005/Atom"><entry><id>redirected</id><title>移転した情報源</title><link href="article"/><content>Feed summary</content></entry></feed>'); return; }
+    if (request.url === "/new/article") { response.end("Correct body from the relocated source"); return; }
+    response.writeHead(404).end("wrong relative target");
+  });
+  server.listen(0, "127.0.0.1"); await once(server, "listening");
+  const address = server.address(); assert.ok(address && typeof address !== "string");
+  const source = policy(); source.feedUrl = "https://source.example/old/feed"; source.collection.readBody = true;
+  const collection = createCollection({ databasePath: join(directory, "collection.sqlite"), sources: [source], clock: () => "2026-09-04T22:06:00.000Z", read: createSourceReader({
+    resolve: async () => ["93.184.215.14"],
+    request: (url, options, callback) => httpRequest(`http://127.0.0.1:${address.port}${url.pathname}`, { ...options, agent: false }, callback),
+  }) });
+  t.after(async () => { collection.close(); server.closeAllConnections(); await new Promise<void>((resolve) => server.close(() => resolve())); await rm(directory, { recursive: true, force: true }); });
+  assert.equal((await collection.collect()).added, 1);
+  const evidence = collection.bundle({ businessDate: "2026-09-05", configurationId: "redirect-v1", windowStartUtc: "2026-09-03T23:30:00.000Z", cutoffUtc: "2026-09-04T23:30:00.000Z" }, "model").evidence[0]!;
+  assert.equal(evidence.url, "https://source.example/new/article");
+  assert.equal(evidence.content, "Correct body from the relocated source");
+});

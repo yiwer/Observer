@@ -64,7 +64,7 @@ export function createSourceReader(io: SourceNetworkIO = network) {
         outbound.on("error", () => reject(new SourceReadError(request.signal.aborted ? "timeout" : "source-failed")));
         outbound.end();
       });
-      if (![301, 302, 303, 307, 308].includes(response.status)) return response;
+      if (![301, 302, 303, 307, 308].includes(response.status)) return { ...response, finalUrl: url.href };
       if (hop >= request.source.limits.maxRedirects || !response.headers.location) throw new SourceReadError("redirect-limit");
       try { url = new URL(response.headers.location, url); }
       catch { throw new SourceReadError("target-forbidden"); }
