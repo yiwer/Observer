@@ -77,3 +77,9 @@ Root 新建自有 ignored `accept-v1-06/data/root-v1-07-review`，仅用虚构�
 - 已交原作者用 TDD 窄范围修复：最终门槛后的 event 派生文本不得保留被隔离内容；检查跨批最终 TTL 和同样接受 optional event 的 request v1/v2 路径；不能把本地归档投影伪称完整原始模型回执。
 
 双轴正式 code-review、完整 check/smoke、冻结/集成复验尚未开始，#7 仍 OPEN。
+
+### 归档注解整改后的 WIP 复验
+
+作者报告已用自己的公开 T1 先 RED→GREEN，覆盖 request v1/v2/v3 × 禁止分发/禁止永久归档/核验后过期/unsafe/允许来源 **15 种组合**，当时文件 **11/11 PASS**（645.2856 ms）及 typecheck PASS。新增 `event-projection.ts`，先完成 Gate（含最终跨批检查），统一剥离 Verifier `event` 自由文本；只有最终可发布 fact 保留明确标为 `observer-final-event-projection-v1` 的摘要、枚举和合格引用，不把本地投影冒充原始响应。外部回填本地投影字段不能获得授权。此为作者实施报告，不替代 Root 复验。
+
+Root 未改探针或预期，直接针对整改后 WIP source reader 重跑：原归档注解 **4/4 PASS**（100.4523 ms），因果/同候选多 fact **3/3 PASS**（114.0533 ms）；固定 #5 的 Record v1/v2 与 #6 的 Record v3 **3/3** 全 JSON、MD、身份与鉴权兼容通过。最初 0/4 RED 证据与 SQLite 保留，不覆盖。当前 WIP 复现已转绿，但正式关闭仍待冻结 SHA、独立双轴与 built/master 重验；其它时间/关联/源权限场景继续实施。
