@@ -1,6 +1,6 @@
 # V1-09 执行与待验收记录
 
-状态：**恢复作者继续逐片实施；Root 公司能力独立性探针 0/1 RED 已交修复；未冻结/验收**。GitHub #9 OPEN、assignee yiwer。
+状态：**恢复作者继续逐片实施；Root 公司能力独立性探针 0/1 RED → 1/1 GREEN；未冻结/验收**。GitHub #9 OPEN、assignee yiwer。
 
 - [本地票](../tickets/09-domain-evidence-rules.md) / [GitHub #9](https://github.com/yiwer/Observer/issues/9)全文与空评论已实际读取；原生唯一依赖API返回#6closed，顺序前票#8亦已CLOSED。
 - 固定base **df63b78875a1fb8b4c85389ac6797ddfc5e75400**，包含#8最终06fc8b3、master集成8079271与验收关闭记录。
@@ -76,3 +76,5 @@ Root 再次实时读回 #9 全文及其启动评论（OPEN / yiwer），原生 b
 作者其后报告单文件 **13/13 PASS，1195.6541 ms**、typecheck exit0；媒体/unsafe 优先级、跨 kind/领域一致性、六栏坏注解局部隔离、旧 request1–4 剥离均已加入。Root 随后按已批准 T1 另写 ignored `data/root-v1-09-review/company-independence-probe.ts`（SHA-256 `ad4db2f684ce8185f9bb3d0ed735c5076ecb5382f8a37e057e36a848d2d32905`），只调用公开文件 Profile / produce / 鉴权 readReport、真实独立 SQLite/重启；Runner/Verifier/clock 是外部固定替身，不使用私有函数或 SQL 侧读。
 
 实际命令：`node data/root-v1-09-review/company-independence-probe.ts O:/GenesisCode/Observer-worktrees/v1-09/src/observer.ts`，**0/1 RED，64.7319 ms，exit1**。真正不同 Source/Upstream 的基准先通过；接着 same-origin 场景得到 `published` 而非预期 `unconfirmed`。该材料明确为公司说明的转载，Verifier receipt 的上游身份与公司材料相同，却又给了 `independentValidation=yes`；当前公司能力判断接受该标签而未核对可确定的来源身份矛盾。已交作者作原范围内的单片修复。后续 same-source 场景因前面断言失败未执行，不声称已复现；本次绑定 WIP，不冒充 clean base 或最终冻结。Root 探针与失败证据保留，修复后另行独立重跑。
+
+作者窄修后，Root 以同一命令和**未改动探针**实际独立重跑 **1/1 GREEN，82.896 ms，exit0**；independent / same-origin / same-source 三个场景均执行，并分别验证重启后完整 Report 与鉴权结果。探针 SHA 仍为上述 `ad4db2f...32905`。作者自己的四模式回归另包含 unknown-origin，报告 336.7304 ms RED → 321.9277 ms GREEN、typecheck exit0；不将作者的第四模式计入 Root 三模式探针。这个窄缺口在 WIP 层已回归，代码仍未提交；最终冻结 built 与实际 master 仍须重跑。
