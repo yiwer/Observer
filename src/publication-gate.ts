@@ -10,6 +10,7 @@ export interface EvaluationOptions {
   // Batched evaluation retains the complete identity scope for structural checks.
   structuralStories?: CandidateV2[];
   verifier: SemanticVerifier | undefined;
+  recordVerifierDispatch?: boolean;
   clock: () => string;
   modelPolicyCheck: (evidenceIds: string[], atUtc: string) => string | null;
   publicationPolicyCheck: (evidenceIds: string[], claim: Claim, atUtc: string) => string | null;
@@ -28,7 +29,14 @@ export async function evaluatePublication(options: EvaluationOptions) {
   const context = { schemaVersion: 1 as const, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId, stories: reviewStories, evidence: request.evidenceBundle.evidence.filter((evidence) => permitted.has(evidence.id)) };
   const input: VerificationInput = { ...context, inputSha256: inputDigest(context) };
   let output: unknown;
-  try { output = verifier && reviewStories.length ? await verifier.verify(structuredClone(input)) : undefined; } catch { /* External error text is never retained. */ }
+  let dispatchedEvidenceIds: string[] = [];
+  try {
+    if (verifier && reviewStories.length) {
+      const dispatched = structuredClone(input);
+      dispatchedEvidenceIds = dispatched.evidence.map((evidence) => evidence.id);
+      output = await verifier.verify(dispatched);
+    }
+  } catch { /* External error text is never retained. */ }
   const completedAtUtc = options.clock();
   const parsed = VerificationSchema.safeParse(output);
   const expected = reviewStories.flatMap((story) => story.claims.map((claim) => ({ storyId: story.id, claim })));
@@ -102,6 +110,7 @@ export async function evaluatePublication(options: EvaluationOptions) {
   return { stories: published, completedAtUtc, publicationGate: { schemaVersion: 1 as const, checkedAtUtc: completedAtUtc, decisions, verification, unconfirmedItems, input: {
     inputSha256: input.inputSha256, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId,
     verificationEvidenceIds: context.evidence.map((evidence) => evidence.id),
+    ...(options.recordVerifierDispatch ? { dispatchedEvidenceIds } : {}),
     evidence: request.evidenceBundle.evidence.map((evidence) => ({ evidenceId: evidence.id, sourceId: evidence.sourceId, sourceType: evidence.sourceType, retrievedAtUtc: evidence.retrievedAtUtc,
       ...("policyVersion" in evidence ? { policyVersion: evidence.policyVersion, policySha256: evidence.policySha256 } : {}),
     })),

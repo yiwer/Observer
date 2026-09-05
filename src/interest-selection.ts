@@ -55,7 +55,7 @@ export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 
   const gate = record.publicationGate;
   const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
   const permitted = new Set(record.evidenceBundle.evidence.map((evidence) => evidence.id));
-  const inputIds = [...new Set(gate.input.verificationEvidenceIds)];
+  const inputIds = [...new Set(gate.input.dispatchedEvidenceIds ?? [])];
   const regions = new Map<string, Set<string>>();
   const languages = new Map<string, Set<string>>();
   for (const assessment of assessments) {
@@ -94,6 +94,11 @@ export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 
 export function consistentInterests(record: Extract<ReportRecord, { schemaVersion: 5 }>): boolean {
   if (interestHash(record.interestProfile.profile) !== record.interestProfile.sha256 || new Set(record.interestSelections.map((entry) => entry.storyId)).size !== record.interestSelections.length) return false;
   const gate = record.publicationGate;
+  const receipts = gate.schemaVersion === 1 ? [gate] : gate.batches;
+  if (gate.input.dispatchedEvidenceIds === undefined || receipts.some((receipt) => receipt.input.dispatchedEvidenceIds === undefined ||
+    receipt.input.dispatchedEvidenceIds.some((id) => !receipt.input.verificationEvidenceIds.includes(id)) ||
+    new Set(receipt.input.dispatchedEvidenceIds).size !== receipt.input.dispatchedEvidenceIds.length) ||
+    interestHash(gate.input.dispatchedEvidenceIds) !== interestHash([...new Set(receipts.flatMap((receipt) => receipt.input.dispatchedEvidenceIds ?? []))])) return false;
   const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
   if (assessments.some((assessment) => assessment.selection !== undefined || assessment.selectionProjection && (
     !gate.decisions.some((decision) => decision.storyId === assessment.storyId && decision.claimId === assessment.claimId && decision.outcome === "published") ||

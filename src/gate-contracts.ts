@@ -75,6 +75,8 @@ export const PublicationGateSchema = z.strictObject({
   input: z.strictObject({
     inputSha256: sha256, taskId: id, evidenceBundleId: id, configurationId: id,
     verificationEvidenceIds: z.array(id),
+    // Optional on legacy records; request 4 records actual Verifier calls separately.
+    dispatchedEvidenceIds: z.array(id).optional(),
     evidence: z.array(z.strictObject({ evidenceId: id, sourceId: id, sourceType: z.enum(["primary", "secondary"]), retrievedAtUtc: z.iso.datetime({ precision: 3, offset: false }), policyVersion: z.number().int().positive().optional(), policySha256: sha256.optional() })),
   }),
   verification: VerificationSchema.nullable(),

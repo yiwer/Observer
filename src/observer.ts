@@ -258,6 +258,7 @@ export function createObserver(options: ObserverOptions) {
           return null;
         };
         const { completedAtUtc, ...gated } = await (research ? evaluateBatchedPublication : evaluatePublication)({ request: { ...modelRequest, schemaVersion: 1 }, stories, verifier: options.verifier,
+          ...(request.schemaVersion === 4 ? { recordVerifierDispatch: true } : {}),
           clock: options.clock ?? (() => new Date().toISOString()), modelPolicyCheck, publicationPolicyCheck: policyCheck });
         publishedAtUtc = completedAtUtc;
         const project = (verification: Parameters<typeof projectEventReceipt>[0]) => projectSelectionReceipt(projectEventReceipt(verification, gated.stories, request.schemaVersion === 3 || request.schemaVersion === 4), gated.stories, request.schemaVersion === 4, modelRequest.evidenceBundle.evidence);

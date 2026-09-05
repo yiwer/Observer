@@ -44,6 +44,7 @@ export async function evaluateBatchedPublication(options: EvaluationOptions) {
     unconfirmedItems: results.flatMap((result) => result.publicationGate.unconfirmedItems).filter((item) => outcome(item.storyId, item.claimId) === "unconfirmed"),
     input: { ...identity, inputSha256: inputDigest({ schemaVersion: 2, ...identity, batchInputSha256s: receipts.map((receipt) => receipt.input.inputSha256) }),
       verificationEvidenceIds: [...new Set(receipts.flatMap((receipt) => receipt.input.verificationEvidenceIds))],
+      ...(options.recordVerifierDispatch ? { dispatchedEvidenceIds: [...new Set(receipts.flatMap((receipt) => receipt.input.dispatchedEvidenceIds ?? []))] } : {}),
       evidence: options.request.evidenceBundle.evidence.map((evidence) => ({ evidenceId: evidence.id, sourceId: evidence.sourceId, sourceType: evidence.sourceType, retrievedAtUtc: evidence.retrievedAtUtc,
         ...("policyVersion" in evidence ? { policyVersion: evidence.policyVersion, policySha256: evidence.policySha256 } : {}),
       })),

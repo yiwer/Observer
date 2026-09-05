@@ -80,6 +80,39 @@ test("Owner file priorities change story order with identical Evidence and histo
   assert.equal(a.record.editorialContract, "observer-canonical-v3");
 });
 
+test("Coverage counts actual Verifier input delivery, excluding prepared-only inputs while retaining thrown or invalid dispatched receipts", async (t) => {
+  for (const mode of ["absent", "duplicate-claim", "throws", "invalid-receipt", "two-batches", "mixed-batches"] as const) {
+    const app = await fixture(t);
+    app.candidates.splice(1);
+    if (mode === "two-batches" || mode === "mixed-batches") {
+      app.candidates.push(candidate("second", "evidence-1", "ai"));
+      app.annotations.second = labels("second");
+    }
+    await app.import(profile());
+    const sent: string[][] = [];
+    const verifier = app.options.verifier!;
+    if (mode === "absent") delete app.options.verifier;
+    else app.options.verifier = { verify: async (input) => {
+      sent.push(input.evidence.map((evidence) => evidence.id));
+      if (mode === "throws") throw new Error("fixture transport failed after accepting input");
+      if (mode === "invalid-receipt") return { schemaVersion: 1, inputSha256: "0".repeat(64) };
+      return verifier.verify(input);
+    } };
+    if (mode === "duplicate-claim" || mode === "mixed-batches") app.candidates[0]!.claims[1]!.id = "fact";
+    app.restart();
+    const report = await app.publish();
+    if (report.record.schemaVersion !== 5) assert.fail("Expected interest record");
+    const dispatched = mode !== "absent" && mode !== "duplicate-claim";
+    assert.deepEqual(sent, mode === "two-batches" ? [["evidence-1"], ["evidence-1"]] : dispatched ? [["evidence-1"]] : [], mode);
+    assert.equal(report.record.coverage.inputEvidenceCount, dispatched ? 1 : 0, mode);
+    assert.deepEqual(report.record.coverage.unknownLanguageEvidenceIds, mode === "throws" || mode === "invalid-receipt" ? ["evidence-1"] : [], mode);
+    assert.deepEqual(report.record.publicationGate.input.verificationEvidenceIds, ["evidence-1"], "Legacy prepared-input identity remains unchanged");
+    assert.ok(report.canonicalMarkdown.includes(`本期进入核验的获准证据 ${dispatched ? 1 : 0} 条`), mode);
+    app.restart();
+    assert.equal(JSON.stringify(app.observer.readReport(report.version.id, ownerToken)), JSON.stringify(report));
+  }
+});
+
 test("The news region policy does not exclude GitHub projects by geography or grant them news baseline authority", async (t) => {
   const app = await fixture(t);
   app.candidates.splice(0, app.candidates.length, candidate("repository", "evidence-1", "github-projects"));
