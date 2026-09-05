@@ -103,15 +103,15 @@ export async function evaluatePublication(options: EvaluationOptions) {
   } } };
 }
 
-function claimWording(claim: Claim): string {
+export function claimWording(claim: Claim): string {
   if (claim.kind === "quotation") return `引语（${claim.translated ? `译文 · ${claim.language}` : "原文"}）：${claim.text}${claim.translated ? `\n\n原文：${claim.originalText}` : ""}`;
   const label = claim.kind === "statement" ? `发布者声明（${claim.publisherSourceId}）` : claim.kind === "analysis" ? `分析（${claim.mode === "scenario" ? "情景" : "解释"}）` : "事实";
   return `${label}：${claim.text}`;
 }
 
-const escapeMarkdown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+export const escapeMarkdown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   .replace(/[\\`*_{}\[\]()#+!|~]/g, "\\$&").replace(/[\r\n]+/g, " ");
-const failureExplanations: Record<string, string> = {
+export const failureExplanations: Record<string, string> = {
   "unknown-evidence-reference": "引用的 Evidence 不在本次材料中，已隔离该陈述。",
   "ambiguous-claim-identity": "陈述或证据标识重复，无法建立唯一核验关系。",
   "invalid-verifier-receipt": "语义核验未返回完整且关联正确的结果，尚不能发布。",
