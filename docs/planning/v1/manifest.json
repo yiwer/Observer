@@ -374,7 +374,13 @@
       "issueUrl": "https://github.com/yiwer/Observer/issues/9",
       "issueDatabaseId": 5355738961,
       "githubState": "open",
-      "dependenciesVerified": true
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "57e9686a14003055f6c9e51483cd7e0cd4393663",
+        "acceptanceFile": "acceptance/09-domain-evidence-rules.md",
+        "qualification": "frozen-offline-checks-only-full-suite-pending",
+        "pushed": false
+      }
     },
     {
       "id": "V1-10",

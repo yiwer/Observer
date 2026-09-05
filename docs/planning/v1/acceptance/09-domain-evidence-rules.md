@@ -1,6 +1,6 @@
 # V1-09 执行与待验收记录
 
-状态：**恢复作者继续逐片实施；Root 公司能力独立性探针 0/1 RED → 1/1 GREEN；未冻结/验收**。GitHub #9 OPEN、assignee yiwer。
+状态：**候选 57e9686 已 clean 冻结，双轴及离线检查完成；完整 Docker 回归待环境，未接受/集成**。GitHub #9 OPEN、assignee yiwer，#10 未开始。下文早期 WIP 记录是历史过程，最新结论见“首个冻结候选”。
 
 - [本地票](../tickets/09-domain-evidence-rules.md) / [GitHub #9](https://github.com/yiwer/Observer/issues/9)全文与空评论已实际读取；原生唯一依赖API返回#6closed，顺序前票#8亦已CLOSED。
 - 固定base **df63b78875a1fb8b4c85389ac6797ddfc5e75400**，包含#8最终06fc8b3、master集成8079271与验收关闭记录。
@@ -29,7 +29,7 @@ Root持有不可变旧档：Record1/2 `accept-v1-05/data/root-v1-06-compat-4ca1d
 
 测试只用自己新唯一目录，保留证据，不清理他人或既有材料。绝对禁止触碰/换工具清理：`C:/Users/16348/AppData/Local/Temp/observer-codex-O2hbGJ`、`O:/GenesisCode/Observer-worktrees/v1-05/data/spec-review-9f568c`、`C:/Users/16348/AppData/Local/Temp/observer-six-ip5kK3`。
 
-截至最初启动点尚无本票测试结果；其后开发期结果见下文，仍无实现提交或冻结。代码未push，生产仍禁用。
+截至最初启动点尚无本票测试结果；其后开发期与冻结结果见下文。代码未push，生产仍禁用。
 
 ## 首片方案确认
 
@@ -78,3 +78,51 @@ Root 再次实时读回 #9 全文及其启动评论（OPEN / yiwer），原生 b
 实际命令：`node data/root-v1-09-review/company-independence-probe.ts O:/GenesisCode/Observer-worktrees/v1-09/src/observer.ts`，**0/1 RED，64.7319 ms，exit1**。真正不同 Source/Upstream 的基准先通过；接着 same-origin 场景得到 `published` 而非预期 `unconfirmed`。该材料明确为公司说明的转载，Verifier receipt 的上游身份与公司材料相同，却又给了 `independentValidation=yes`；当前公司能力判断接受该标签而未核对可确定的来源身份矛盾。已交作者作原范围内的单片修复。后续 same-source 场景因前面断言失败未执行，不声称已复现；本次绑定 WIP，不冒充 clean base 或最终冻结。Root 探针与失败证据保留，修复后另行独立重跑。
 
 作者窄修后，Root 以同一命令和**未改动探针**实际独立重跑 **1/1 GREEN，82.896 ms，exit0**；independent / same-origin / same-source 三个场景均执行，并分别验证重启后完整 Report 与鉴权结果。探针 SHA 仍为上述 `ad4db2f...32905`。作者自己的四模式回归另包含 unknown-origin，报告 336.7304 ms RED → 321.9277 ms GREEN、typecheck exit0；不将作者的第四模式计入 Root 三模式探针。这个窄缺口在 WIP 层已回归，代码仍未提交；最终冻结 built 与实际 master 仍须重跑。
+
+## 首个冻结候选
+
+作者提交 **57e9686a14003055f6c9e51483cd7e0cd4393663**（`Implement domain evidence rules and research maturity for #9`），固定 base **df63b78875a1fb8b4c85389ac6797ddfc5e75400**。Root 实际验证 clean、两个 ref、唯一 commit 及 `git diff <base>...HEAD` 非空：14 files，+793/-35。完整 diff 采集 98,736 字符；初次工具展示截断后按 docs/src/tests 补读，完整内容另保存在下述 `full-diff.patch`，不是只读 diff stat。
+
+Root 新建 detached `O:/GenesisCode/Observer-worktrees/accept-v1-09` 于同一 SHA，安装锁定 7 包，实际 Node **v24.18.0**；检查后工作树仍 clean。作者 [实施说明](O:/GenesisCode/Observer-worktrees/v1-09/docs/implementation/v1-09.md) 和来源提案均随候选提交。OCHA/NASA/Eurostat 文档修订及新旧研究日期边界已核对；Root 独立来源审查在 master，作者相对链接由后续集成共同提供，来源开关没有改变。
+
+### 冻结验证
+
+| 执行者 / 范围 | 实际结果 |
+|---|---|
+| 作者 typecheck / build / smoke | exit0；smoke 3/3，1347.3425 ms |
+| 作者领域单文件 / 相关五文件 | 19/19，2437.9667 ms；102/102，3992.7334 ms |
+| Root detached typecheck / build / smoke | exit0；smoke 3/3，1340.7761 ms |
+| Root detached 领域单文件 / 相关五文件 | 19/19，1612.5303 ms；102/102，4298.693 ms |
+| Root 自有公司来源探针 / built 模块 | 1/1（包含三模式及重启），110.8934 ms，原探针未改 |
+| Root 既有 #8 / #7 自有探针 / built 模块 | 兴趣/覆盖/实际发送 6/6；事件/归因保留/因果/历史授权 14/14 |
+| Root 旧 producer 档案 / built reader | Record1/2、Record3、两期Record4、Record5，共6份原MD/完整Report及鉴权隔离一致；未改写旧基准 |
+| 四栏三态产物检查 | Root 专项生成的12份 replay：正文与 Report/摘要一致，已逐栏阅读允许/隔离/待确认主体，支持与相反来源及成熟度标签可见；不是12次真实新闻采集 |
+
+19 项已包含于 102 项，smoke 是全检子集，以上不相加冒称全套测试数。Root 领域/相关五文件测试使用冻结 source；明确标为 built 的探针和旧档读取使用该 SHA 的 `dist/observer.js`。
+
+作者日志索引：`O:/GenesisCode/Observer-worktrees/v1-09/data/v1-09-57e9686-author-20260906/freeze.md`，Root 已实际读取。Root 完整已取回输出保存于 `O:/GenesisCode/Observer-worktrees/accept-v1-09/data/root-acceptance-57e9686-19b7/`（仅规范化行尾），含 smoke/domain19/related102、自有探针、6份旧档观察、12份正文主体检查及 full diff；没有伪造不存在的 `check.log`。
+
+关键 SHA-256：`full-diff.patch` = `913337cbc9cdb065bfee58e6bafb994a22c6d36401300670af4a73a3de84ba39`；`related102.log` = `4b610c8eda288f513da593563e2b8ff08d400474dc55b0da42ec94c5a115d741`；`domain19.log` = `43188ad70387a8a3d430dfe248c8abb78872199e0e26569e37e90ce1dbf89ff4`；`smoke.log` = `7c361786e7e5caaab568af90a66d4e95fda31d1d7f1097d86392df7ed2fd54c9`。
+
+### Standards
+
+fresh `/root/review_v1_09_standards` 完整读冻结 diff、CONTEXT、ADR0001/0004/0005、README/package/tsconfig 与 PRD T1。明确文档规范违例 **0**。以下均为 Fowler 启发式维护判断，不是硬违例：
+
+- **P3 possible Duplicated Code**：`src/domain-evidence.ts:45/58` 重复 `some((a) => …some((b) => a.upstreamOriginId !== b.upstreamOriginId && …sourceId !== …sourceId))`。动态数字和高风险事实各维护相同来源独立性定义，建议提取共享配对谓词，各自保留证据筛选。
+- **P3 possible Repeated Switches**：`src/observer.ts:322` 与 `event-integrity.ts:14`、`six-edition.ts:98/135/145/152` 等处继续扩展 `schemaVersion === 4 || ... === 5 || ... === 6`，建议集中具类型收窄能力的语义谓词，持久化 Schema 的显式版本仍保留。
+
+本轴没有运行测试；T1 边界、原文/永久档案分离与生产 fixture 隔离未发现新增硬违例。合计 **0 hard / 2 维护性判断，最高 P3**。
+
+### Spec
+
+fresh `/root/review_v1_09_spec` 独立读完整 diff、#9/PRD/ADR/说明，结论 **0 项发现**：未发现票内要求缺失/部分实现、范围扩张或已确认规格行为错误。逐 Claim 领域规则、财经核验、统计归因、研究成熟度、隔离投影、Request5→Record6/Version5 及六条 pending 来源符合所述契约。
+
+其自有 built T1 探针 **3/3，273.3337 ms**，覆盖冲突数字的分别统计时点/来源、GitHub 栏非 fact kind 的财经高风险门、同上游公司转载的未知标签。Root 亲读 `data/review-v1-09-spec-57e9686/probe.mjs` 后独立复跑 **3/3，225.1315 ms**，重新生成自有目录并验证重启/鉴权；探针 SHA-256 `6dad8f32e095d046c5c89aeadd777da2dd2d4114af741cae253a52dde270cd9e`，不把两次运行加成6个独立场景。合计 **0 项，最高严重度无**。
+
+### 处置与未完成门槛
+
+Standards 两项 P3 保留为非阻断维护建议，不为此改变冻结；Spec 无阻断。这只完成双轴审查和上述离线范围。Root 再次只读查询固定 Linux Docker daemon，仍因命名管道不存在 exit1；**作者和 Root 的完整 `npm run check` 均未执行**，不是 PASS，也没有产品全套失败结论。仍待 Owner 启动环境或批准 Root 后台启动 Docker Desktop；不得通过跳过 Docker 测试、改镜像或启动其他环境替代。
+
+因此当前**不接受、不合并、不关闭 #9、不开始 #10**。Docker 就绪后先核对既有固定镜像身份，在同一冻结 SHA 完成作者/Root 全检；如代码有变须新冻结复审。冻结验收满足后再本地集成，并在实际 master 重跑完整检查与相应 probes/旧档读取。真实 Provider、来源许可、目标部署、产品 SMTP/PDF 与14天人工质量仍分别验收；Owner 新确认的单封 SMTP 收件/中文显示只关闭对应预检。
+
+Root 已将上述冻结进展[回写 GitHub #9](https://github.com/yiwer/Observer/issues/9#issuecomment-5554274086)（`2026-09-05T19:33:58Z`），通过独立 API 实际读回完整评论、ID 与 URL，并另读 Issue 仍为 OPEN / yiwer。评论明确候选及本轮文档未 push、全检未执行与不关闭票；不是远端代码交付或最终验收。
