@@ -39,10 +39,27 @@ Root/其它 reviewer 的各工作区 `data/` 证据也不归本作者所有，�
 
 ## 后续验收
 
-作者先回报契约/判定表思路和首片 RED→GREEN；定期 typecheck/单文件验证，代码与实施说明一起提交冻结，再运行完整 check/smoke。Root 固定非空三点 diff，独立 Standards/Spec 双轴、detached 专项与历史兼容、实际 master 集成复跑后才接受/关票。当前没有 #7 测试计数或最终提交，不拿 #6 130/130 代替。
+作者先回报契约/判定表思路和首片 RED→GREEN；定期 typecheck/单文件验证，代码与实施说明一起提交冻结，再运行完整 check/smoke。Root 固定非空三点 diff，独立 Standards/Spec 双轴、detached 专项与历史兼容、实际 master 集成复跑后才接受/关票。当前没有 #7 最终测试计数或冻结提交，不拿 #6 130/130 代替；下列单片结果仅是实施进展。
 
 ## 已沟通的技术方向（尚未冻结或验证）
 
 作者已亲读所需指导与项目规范，提出沿用现有 SemanticVerifier，在明确版本的回执中增加与事实 Claim/输入摘要关联的 event assessment，研究输出只建议 Claim 引用和主栏。确定性流程核对已通过 Gate 的事实/来源时间及关联，再从不可变已发布 SQLite 行重建本地历史、比较事件与进展；不将历史原文重新发给模型，也不增加测试专用业务入口或无必要的存储迁移。拟用新的六栏请求 v3 选择事件感知语义，保留既有输入与 canonical-v1 读取；具体 Schema/规则待首片验证，不能将此方向当成已经落地的事实。
 
 Root 允许在当前票范围内按 T1 竖切推进，并要求：事实性的身份/时间不能只凭分析或自报布尔值授权；未知时间保持未知，不用发现时间冒充首次披露；缺失/错配/冲突的事件评估不能回退到任意 candidate.eventClusterId；历史回放不能偷用未来日报，有界截断不能被解释为“未报道”；错误合并的后续可追踪处置不重写旧正文，正式 Correction 仍属后续票；历史数据不能绕过来源模型许可。先跨栏同事件的一条 RED→GREEN，再逐片补判定表，不预先横铺全部测试。
+
+## 首片实施进展（未冻结）
+
+作者首个 T1 场景为两个来源、两个 Edition 的同事件：出版一条主故事，保留两份关联证据，另一栏有 Impact Note 且普通/重点数均为 0。首次命令因缺少本 worktree 的 node_modules 报 `ERR_MODULE_NOT_FOUND zod`（117.3774 ms），属于环境 setup；作者运行锁文件约束的 `npm ci --ignore-scripts`，未改变依赖或全局环境。随后业务 RED 为 `invalid-request`，**0/1**（214.6951 ms）；最小实现后 **1/1 GREEN**（218.7474 ms），typecheck PASS，均由作者报告。新增 request v3 / Record v4 / Version v3 / canonical-v2 的初步形态，旧六栏 request v2 仍用 Record v3 / canonical-v1；后续时间、历史、冲突守卫尚在逐片实现，不视作完成。
+
+## Root 独立历史兼容基线
+
+2026-09-05，Root 在 clean detached `O:/GenesisCode/Observer-worktrees/accept-v1-06` 的已接受 #6 SHA `af18a4b6276f3c5254474c1e676e5e88b2eaaa07`，通过公开 `produce → readReport` 实际生成新的 **Record v3 / Version v2 / canonical-v1** SQLite 归档。含六栏六条故事、重点分析和世界要闻→AI Impact Note；关闭 writer 后新 reader 读回完全一致。使用虚构自有素材及标注 Verifier，无真实模型或来源调用。
+
+- Root 自有 ignored 目录：`O:/GenesisCode/Observer-worktrees/accept-v1-06/data/root-v1-07-compat-a913cb`。
+- `generate-baseline.ts` 检查 producer SHA 与 tracked clean、拒绝覆盖既存数据库；SHA-256 `a5816eaf862fc5b5252008d09cb2600226733016c87acb7e0c1be8e986f39efd`。
+- `record-v3.sqlite` / `baseline.json` 固定出版物 `2026-09-05-v1`；MD **8418 bytes**，SHA-256 `978a3ccd1eded8ebc2d1995f72586f53dab64e3685ee8de03317f82c48c10b38`；Record SHA-256 `1b1ac746a1176012097c8f71ae4598315807547208dd46eff802529e0a108b05`；完整 JSON SHA-256 `ecc58624e53b6a697e1123907af38e2279273b081e4c293ed5690639767d9092`。
+- `verify-reader.ts` SHA-256 `9a3354b346fff1f9fa36979b3a9b42c6eeaa6b0928ed4de5ec81255ae5c9baa2`；接受固定绝对 module 路径，公开读取并核对 Schema、六故事、原字节/完整 JSON/版本哈希、错误 Owner 拒绝，以及 production 不可读取 fixture。无 SQL 旁路业务断言。
+- 已接受 #6 built reader 自检 **1/1**；#7 当时未冻结的 source reader 诊断 **1/1**。后者只是早期兼容诊断，不能当最终 #7 证据；待冻结后以及实际 master 集成后都必须复跑。
+- 已有 #5 producer 的 Record v1/v2 两份历史基线继续保留在 `accept-v1-05/data/root-v1-06-compat-4ca1d8`，不重新生成、不用新实现反造旧版预期。
+
+复跑：`node O:/GenesisCode/Observer-worktrees/accept-v1-06/data/root-v1-07-compat-a913cb/verify-reader.ts <绝对路径/dist/observer.js>`。此目录是独立验收证据，不归作者或其它 reviewer 清理。
