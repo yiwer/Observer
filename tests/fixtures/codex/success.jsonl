@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"redacted-fixture-thread"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"{\"schemaVersion\":1,\"taskId\":\"task-fixture-2026-09-05\",\"evidenceBundleId\":\"bundle-fixture-2026-09-05\",\"configurationId\":\"fixture-config-v1\",\"stories\":[{\"schemaVersion\":2,\"id\":\"story-1\",\"eventClusterId\":\"event-1\",\"edition\":\"frontier-technology\",\"title\":\"示例观测站\",\"claims\":[{\"id\":\"claim-1\",\"kind\":\"fact\",\"text\":\"示例观测站新增了 12 个观测点。\",\"evidenceIds\":[\"evidence-1\"]}]}]}"}}
+{"type":"turn.completed","usage":{"input_tokens":12,"cached_input_tokens":2,"cache_write_input_tokens":0,"output_tokens":21,"reasoning_output_tokens":0}}

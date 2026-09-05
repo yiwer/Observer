@@ -4,7 +4,7 @@ import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
   AgentResultSchema, ProduceRequestSchema, PublishedReportSchema,
-  editionNames, type AgentRunner, type PublishedReport, type ReportRecord,
+  editionNames, type AgentRunner, type AgentResult, type PublishedReport, type ReportRecord,
 } from "./contracts.ts";
 import { SourcePolicySchema, policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
 import type { Claim, SemanticVerifier } from "./gate-contracts.ts";
@@ -12,7 +12,11 @@ import { evaluatePublication, gatedMarkdown } from "./publication-gate.ts";
 
 export class ObserverError extends Error {
   code: string;
-  constructor(code: string) { super(code); this.code = code; }
+  agentRun?: AgentResult;
+  constructor(code: string, agentRun?: AgentResult) {
+    super(code); this.code = code;
+    if (agentRun) this.agentRun = agentRun;
+  }
 }
 
 export interface ObserverOptions {
@@ -74,7 +78,7 @@ export function createObserver(options: ObserverOptions) {
   }
 
   return {
-    async produce(input: unknown) {
+    async produce(input: unknown, runOptions?: { signal?: AbortSignal }) {
       if (options.mode !== "test-fixture") throw new ObserverError("publication-disabled");
       if (!options.runner) throw new ObserverError("runner-unavailable");
       const parsedRequest = ProduceRequestSchema.safeParse(input);
@@ -104,20 +108,21 @@ export function createObserver(options: ObserverOptions) {
         throw new ObserverError("evidence-integrity-failed");
       }
       let runnerOutput: unknown;
-      try { runnerOutput = await options.runner.run(structuredClone(modelRequest)); }
+      try { runnerOutput = await options.runner.run(structuredClone(modelRequest), runOptions); }
       catch { throw new ObserverError("agent-unknown"); }
       const parsedResult = AgentResultSchema.safeParse(runnerOutput);
       if (!parsedResult.success) throw new ObserverError("agent-invalid-output");
       const result = parsedResult.data;
       let publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
-      if (result.provider !== "fixture" || result.startedAtUtc < bundle.cutoffUtc ||
+      const protocolFixture = result.provider === "codex" && result.execution?.provenance === "protocol-fixture" && options.verifier;
+      if ((result.provider !== "fixture" && !protocolFixture) || result.startedAtUtc < bundle.cutoffUtc ||
         result.startedAtUtc > result.finishedAtUtc || result.finishedAtUtc > publishedAtUtc) {
         throw new ObserverError("invalid-fixture-run");
       }
       if (result.taskId !== request.taskId || result.evidenceBundleId !== request.evidenceBundle.id || result.configurationId !== request.configurationId) {
         throw new ObserverError("uncorrelated-agent-result");
       }
-      if (result.status !== "succeeded") throw new ObserverError(`agent-${result.failure.category}`);
+      if (result.status !== "succeeded") throw new ObserverError(`agent-${result.failure.category}`, result);
       if (options.verifier && result.stories.some((story) => story.schemaVersion === 1)) throw new ObserverError("legacy-candidate-disabled");
       const evidenceIds = new Set(request.evidenceBundle.evidence.map((evidence) => evidence.id));
       if (result.stories.some((story) => story.schemaVersion === 1 && story.claims.some((claim) => claim.evidenceIds.some((id) => !evidenceIds.has(id))))) {
