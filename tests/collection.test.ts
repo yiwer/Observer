@@ -311,3 +311,20 @@ test("A failed source retains its gap through skipped polls and process restart 
   assert.equal(collection.bundle(window, "model").coverageGaps.length, 0);
   assert.equal(collection.bundle(window, "model").evidence.length, 1);
 });
+
+test("An unsupported deletion obligation cannot be approved into collection or model evidence", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "observer-deletion-admission-"));
+  t.after(async () => { await rm(directory, { recursive: true, force: true }); });
+  const source = policy(); source.deletion.mode = "unsupported";
+  const options = { databasePath: join(directory, "collection.sqlite"), sources: [source], read: async () => ({ status: 200, body: rss, headers: {} }) };
+  let wronglyAdmitted: ReturnType<typeof createCollection> | undefined;
+  try { assert.throws(() => { wronglyAdmitted = createCollection(options); }, /Unsupported deletion obligations cannot be approved/); }
+  finally { wronglyAdmitted?.close(); }
+  source.review.status = "pending";
+  const proposal = createCollection(options);
+  try {
+    assert.equal((await proposal.collect()).added, 0);
+    assert.equal(proposal.status().proposals[0]?.sourceId, source.sourceId);
+    assert.equal(proposal.bundle(window, "model").evidence.length, 0);
+  } finally { proposal.close(); }
+});

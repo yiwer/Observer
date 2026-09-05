@@ -26,7 +26,8 @@ export const SourcePolicySchema = z.strictObject({
     pollIntervalSeconds: z.number().int().min(1).max(86400), timeoutMs: z.number().int().min(20).max(30000),
     maxResponseBytes: z.number().int().min(64).max(1048576), maxItems: z.number().int().min(1).max(1000), maxRedirects: z.number().int().min(0).max(5),
   }),
-}).refine((source) => source.review.status !== "approved" || source.review.reviewedAtUtc !== null, "Approved policies need an Owner review date");
+}).refine((source) => source.review.status !== "approved" || source.review.reviewedAtUtc !== null, "Approved policies need an Owner review date")
+  .refine((source) => source.review.status !== "approved" || source.deletion.mode !== "unsupported", "Unsupported deletion obligations cannot be approved");
 export type SourcePolicy = z.infer<typeof SourcePolicySchema>;
 export const SourceConfigurationSchema = z.strictObject({ schemaVersion: z.literal(1), configurationId: z.string().min(1).max(200), sources: z.array(SourcePolicySchema).max(100) });
 const ProposalSchema = z.strictObject({ sourceId: text, feedUrl: z.url({ protocol: /^https$/ }), reason: text });
