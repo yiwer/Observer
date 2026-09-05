@@ -16,7 +16,7 @@ export function discoursePermission(source: SourcePolicy | undefined, tag: strin
     !!source.social && source.social.allowedTags.includes(tag) && source.social.allowApiResponseProcessing && source.social.allowStatusKeys && source.social.allowAnonymousText &&
     source.social.irrevocableExportAllowed && source.social.deletionScope === "raw-only";
 }
-const statusSchema = z.object({ id: z.string().min(1).max(200).refine((id) => id !== "." && id !== ".." && !/[\\/%?#\u0000-\u0020]/.test(id)), created_at: z.string(), edited_at: z.string().nullable(),
+const statusSchema = z.object({ id: z.string().min(1).max(200).refine((id) => id !== "." && id !== ".." && !/[\\/%?#\u0000-\u0020]/.test(id)), created_at: z.iso.datetime({ offset: true }), edited_at: z.iso.datetime({ offset: true }).nullable(),
   visibility: z.literal("public"), sensitive: z.literal(false), spoiler_text: z.literal(""), content: z.string().min(1).max(8000), language: z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2,8})?$/).nullable().catch(null),
   media_attachments: z.array(z.unknown()).length(0), card: z.null(), poll: z.null(), reblog: z.null(), quote: z.null().optional(), in_reply_to_id: z.null(),
 });

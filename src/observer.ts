@@ -177,7 +177,12 @@ export function createObserver(options: ObserverOptions) {
         }) };
         if (research.taskId !== request.taskId || research.evidenceBundleId !== bundle.id || research.configurationId !== request.configurationId ||
           new Set(research.editions.map((entry) => entry.edition)).size !== 6 || new Set(request.editions.map((entry) => entry.edition)).size !== 6) throw new ObserverError("uncorrelated-agent-result");
-        research.editions = research.editions.map((entry) => {
+        research.editions = research.editions.map((inputEntry) => {
+          const entry = discourse && inputEntry.edition === "social-discourse" && inputEntry.status === "completed" && inputEntry.result.status === "succeeded" ? {
+            ...inputEntry, result: { ...inputEntry.result, stories: inputEntry.result.stories.filter((story) => !(story.schemaVersion === 2 && story.edition === "social-discourse" &&
+              story.claims.every((claim) => claim.kind === "analysis" && claim.evidenceIds.length === 1 && claim.evidenceIds[0] === `discourse-${story.eventClusterId}`) &&
+              discourse.modelFailure([`discourse-${story.eventClusterId}`]))) },
+          } : inputEntry;
           const assigned = request.editions.find((item) => item.edition === entry.edition)!;
           const invalid = { edition: entry.edition, status: "invalid-output" as const };
           if (entry.status === "no-evidence") return assigned.evidenceIds.length ? invalid : entry;
@@ -290,20 +295,22 @@ export function createObserver(options: ObserverOptions) {
           ...(discourse ? { beforeVerification: discourse.refresh, afterVerification: discourse.refresh, claimEligibility: discourse.claimEligibility, semanticEligibility: discourse.semanticEligibility } : {}),
           clock: options.clock ?? (() => new Date().toISOString()), modelPolicyCheck, publicationPolicyCheck: policyCheck });
         publishedAtUtc = completedAtUtc;
+        const finalPolicyFailures = new Set<string>();
         if (discourse) {
           await discourse.refresh();
           publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
           gated.publicationGate.checkedAtUtc = publishedAtUtc;
           for (const decision of gated.publicationGate.decisions) {
-            const failure = discourse.modelFailure(decision.evidenceIds);
-            if (failure) { decision.outcome = "quarantined"; decision.reason = failure; decision.policy = { status: "failed", reason: failure }; decision.semantic = { status: "not-evaluated", reason: "policy-failed" }; }
+            const claim = stories.find((story) => story.id === decision.storyId)?.claims.find((claim) => claim.id === decision.claimId);
+            const failure = discourse.modelFailure(decision.evidenceIds) ?? (decision.outcome !== "quarantined" && claim ? policyCheck(decision.evidenceIds, claim, publishedAtUtc) : null);
+            if (failure) { finalPolicyFailures.add(JSON.stringify([decision.storyId, decision.claimId])); decision.outcome = "quarantined"; decision.reason = failure; decision.policy = { status: "failed", reason: failure }; decision.semantic = { status: "not-evaluated", reason: "policy-failed" }; }
           }
-          gated.stories = gated.stories.flatMap((story) => { const claims = story.claims.filter((claim) => gated.publicationGate.decisions.some((decision) => decision.storyId === story.id && decision.claimId === claim.id && decision.outcome === "published")); return claims.length ? [{ ...story, claims }] : []; });
-          gated.publicationGate.unconfirmedItems = gated.publicationGate.unconfirmedItems.filter((item) => !discourse.modelFailure(item.evidenceIds));
+          gated.stories = gated.stories.flatMap((story) => { const claims = story.claims.filter((claim) => gated.publicationGate.decisions.some((decision) => decision.storyId === story.id && decision.claimId === claim.id && decision.outcome === "published")); return claims.length ? [{ ...story, claims, title: claims.find((claim) => claim.kind === "fact")?.text ?? "陈述级核验" }] : []; });
+          gated.publicationGate.unconfirmedItems = gated.publicationGate.unconfirmedItems.filter((item) => gated.publicationGate.decisions.some((decision) => decision.storyId === item.storyId && decision.claimId === item.claimId && decision.outcome === "unconfirmed"));
         }
         const project = (verification: Parameters<typeof projectEventReceipt>[0]) => {
           const projected = projectDomainReceipt(projectSelectionReceipt(projectEventReceipt(verification, gated.stories, request.schemaVersion >= 3), gated.stories, request.schemaVersion >= 4, modelRequest.evidenceBundle.evidence, discourse?.nativeStoryIds(gated.stories)), gated.publicationGate.decisions, request.schemaVersion >= 5, modelRequest.evidenceBundle.evidence);
-          return projected ? { ...projected, assessments: projected.assessments.filter((assessment) => !discourse || !assessment.evidence.some((entry) => discourse.modelFailure([entry.evidenceId]))).map(({ discourse: _discourse, ...assessment }) => assessment) } : null;
+          return projected ? { ...projected, assessments: projected.assessments.filter((assessment) => !finalPolicyFailures.has(JSON.stringify([assessment.storyId, assessment.claimId])) && (!discourse || !assessment.evidence.some((entry) => discourse.modelFailure([entry.evidenceId])))).map(({ discourse: _discourse, ...assessment }) => assessment) } : null;
         };
         if (gated.publicationGate.schemaVersion === 1) gated.publicationGate.verification = project(gated.publicationGate.verification);
         else for (const batch of gated.publicationGate.batches) batch.verification = project(batch.verification);

@@ -536,3 +536,160 @@ test("A policy change during awaited pre-Runner revalidation is observed before 
   assert.equal(report.record.discourse.groups[0]!.reason, "social-permission-changed");
   assert.ok(!JSON.stringify([...app.runnerInputs, ...app.verifierInputs]).includes("新观点"));
 });
+
+test("Ordinary evidence expiring during the final social read is quarantined at the same final publication time", async (t) => {
+  for (const expire of [false, true]) for (const confirmed of [false, true]) {
+    const app = await sampleFixture(t);
+    app.task.evidenceBundle.evidence[0]!.expiresAtUtc = "2026-09-04T23:41:00.000Z";
+    app.hooks.now = "2026-09-04T23:40:00.000Z";
+    app.options.clock = () => app.hooks.now;
+    let lastVerifierReturned = false;
+    let subsequentRounds = 0;
+    const original = app.options.verifier.verify;
+    app.options.verifier.verify = async (input) => {
+      const result = await original(input);
+      for (const assessment of result.assessments) if (assessment.storyId === "news") {
+        if (!confirmed) { assessment.conclusion = "insufficient"; assessment.reason = "insufficient-evidence"; }
+        assessment.evidence[0]!.upstreamOriginId = "EXPIRED-FREE-RECEIPT";
+      }
+      if (input.stories.some((story) => story.edition === "social-discourse")) lastVerifierReturned = true;
+      return result;
+    };
+    app.hooks.status = async () => {
+      if (lastVerifierReturned && app.calls.at(-1)!.endsWith("/fixture-0")) {
+        subsequentRounds++;
+        if (expire && subsequentRounds === 2) app.hooks.now = "2026-09-04T23:42:00.000Z";
+      }
+    };
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+    assert.equal(subsequentRounds, 2);
+    assert.equal(report.record.schemaVersion, 7);
+    if (report.record.schemaVersion !== 7) return;
+    const decision = report.record.publicationGate.decisions.find((entry) => entry.storyId === "news" && entry.claimId === "fact")!;
+    assert.equal(decision.outcome, expire ? "quarantined" : confirmed ? "published" : "unconfirmed");
+    if (expire) {
+      assert.equal(decision.reason, "evidence-expired");
+      assert.equal(report.version.publishedAtUtc, "2026-09-04T23:42:00.000Z");
+      assert.equal(report.record.stories.length, 0);
+      assert.ok(!report.canonicalMarkdown.includes("示例观测站发布了更新"));
+      assert.ok(!JSON.stringify(report).includes("EXPIRED-FREE-RECEIPT"));
+      assert.equal(report.record.publicationGate.unconfirmedItems.length, 0);
+    }
+    assert.equal(report.record.publicationGate.checkedAtUtc, report.version.publishedAtUtc);
+    assert.equal(report.record.discourse.observations.length, 1);
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+});
+
+test("Ambiguous native groups are isolated before priority ranking and cannot displace a valid group's publication", async (t) => {
+  for (const ambiguous of [false, true]) {
+    const app = await sampleFixture(t);
+    const configuration = { ...app.options.discourse.configuration, groups: [app.options.discourse.configuration.groups[0]!, { ...app.options.discourse.configuration.groups[0]!, id: "valid" }] };
+    app.options.discourse.configuration = configuration;
+    app.task.discourseSamples = [];
+    for (const group of configuration.groups) app.task.discourseSamples.push(await app.adapter.capture({ sourcePolicy: app.source, configuration, groupId: group.id,
+      businessDate: app.task.businessDate, windowStartUtc: app.task.evidenceBundle.windowStartUtc, cutoffUtc: app.task.evidenceBundle.cutoffUtc }));
+    const sampleStory = app.socialStories[0]!;
+    app.socialStories.splice(0, app.socialStories.length,
+      ...["a-first", ...(ambiguous ? ["b-second", "c-third"] : [])].map((id) => ({ ...structuredClone(sampleStory), id })),
+      { ...structuredClone(sampleStory), id: "z-valid", eventClusterId: "valid", claims: sampleStory.claims.map((claim) => ({ ...claim, evidenceIds: ["discourse-valid"] })) });
+    app.task.evidenceBundle.evidence = [];
+    app.task.editions = app.task.editions.map((entry) => ({ ...entry, evidenceIds: [] }));
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+    assert.equal(report.record.schemaVersion, 7);
+    if (report.record.schemaVersion !== 7) return;
+    assert.equal(report.record.discourse.observations.length, ambiguous ? 1 : 2);
+    assert.equal(report.record.discourse.observations.find((entry) => entry.groupId === "valid")!.priority, true);
+    if (ambiguous) {
+      assert.equal(report.record.discourse.groups.find((entry) => entry.id === "linked")!.reason, "social-analysis-unavailable");
+      assert.deepEqual(report.record.interestSelections.map((entry) => entry.storyId), ["z-valid"]);
+    }
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+});
+
+test("Cross-group revocation in either direction isolates only the revoked group and prevents its next HTTP read", async (t) => {
+  for (const revoke of [false, true]) for (const reverse of [false, true]) for (const unknownEvidence of [false, true]) {
+    if (unknownEvidence && (!revoke || reverse)) continue;
+    const app = await sampleFixture(t);
+    const second: SourcePolicy = { ...app.source, sourceId: "second-source", feedUrl: "https://second.example/feed" };
+    app.options.sourcePolicies.push(second);
+    let current = structuredClone(app.options.sourcePolicies);
+    Object.assign(app.options, { sourcePolicyReader: () => current });
+    const configuration = { ...app.options.discourse.configuration, groups: [app.options.discourse.configuration.groups[0]!, { ...app.options.discourse.configuration.groups[0]!, id: "valid", sourceId: second.sourceId }] };
+    app.options.discourse.configuration = configuration;
+    const deniedOrigin = reverse ? "https://second.example" : "https://source.example";
+    const triggerOrigin = reverse ? "https://source.example" : "https://second.example";
+    const deniedSourceId = reverse ? second.sourceId : app.source.sourceId;
+    let revoked = false;
+    let forbiddenReads = 0;
+    const adapter = createMastodonAdapter({ clock: () => "2026-09-04T23:20:00.000Z", read: async (url) => {
+      const target = new URL(url);
+      const records = app.statuses.map((status) => ({ ...status, content: status.content.replaceAll("https://source.example", target.origin).replace("新观点", target.origin === deniedOrigin ? "REVOKED-GROUP-TEXT" : "仍合格观点") }));
+      if (target.pathname.startsWith("/api/v1/statuses/")) {
+        if (revoked && target.origin === deniedOrigin) forbiddenReads++;
+        if (revoke && target.origin === triggerOrigin) { revoked = true; current = current.map((source) => source.sourceId === deniedSourceId ? { ...source, collection: { ...source.collection, enabled: false } } : source); }
+        return { status: 200, headers: {}, body: JSON.stringify(records.find((status) => status.id === target.pathname.split("/").at(-1))) };
+      }
+      const page = target.searchParams.has("max_id") ? [] : records;
+      return { status: 200, body: JSON.stringify(page), headers: page.length ? { link: `<${target.origin}/api/v1/timelines/tag/observatory?max_id=fixture-11>; rel="next"` } : {} };
+    } });
+    app.options.discourse.adapter = adapter;
+    app.task.discourseSamples = [];
+    for (const group of configuration.groups) app.task.discourseSamples.push(await adapter.capture({ sourcePolicy: group.id === "linked" ? app.source : second,
+      configuration, groupId: group.id, businessDate: app.task.businessDate, windowStartUtc: app.task.evidenceBundle.windowStartUtc, cutoffUtc: app.task.evidenceBundle.cutoffUtc }));
+    const sampleStory = app.socialStories[0]!;
+    app.socialStories.push({ ...structuredClone(sampleStory), id: "z-valid", eventClusterId: "valid", claims: sampleStory.claims.map((claim) => ({ ...claim, evidenceIds: ["discourse-valid"] })) });
+    if (unknownEvidence) sampleStory.claims[0]!.evidenceIds = ["unknown-evidence"];
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+    assert.equal(forbiddenReads, 0, "A grant revoked during the previous group cannot authorize the next group's HTTP");
+    assert.deepEqual(report.record.stories.map((story) => story.id), ["news"]);
+    assert.equal(report.record.schemaVersion, 7);
+    if (report.record.schemaVersion !== 7) return;
+    assert.equal(report.record.discourse.observations.length, unknownEvidence ? 0 : revoke ? 1 : 2, JSON.stringify({ groups: report.record.discourse.groups, gaps: report.record.coverageGaps, decisions: report.record.publicationGate.decisions }));
+    if (unknownEvidence) assert.ok(report.record.coverageGaps.some((gap) => gap.edition === "social-discourse" && gap.reason === "agent-invalid-output"));
+    else assert.equal(report.record.discourse.observations.find((entry) => entry.groupId === (reverse ? "linked" : "valid"))!.priority, true);
+    if (revoke) {
+      assert.equal(report.record.discourse.groups.find((entry) => entry.id === (reverse ? "valid" : "linked"))!.reason, "social-permission-changed");
+      assert.ok(!JSON.stringify([...app.runnerInputs, ...app.verifierInputs, report]).includes("REVOKED-GROUP-TEXT"));
+    }
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+});
+
+test("Mastodon creation and edit times require real calendar instants with explicit zones before window membership is decided", async (t) => {
+  const app = await sampleFixture(t, 6);
+  const capture = () => app.adapter.capture({ sourcePolicy: app.source, configuration: app.options.discourse.configuration, groupId: "linked",
+    businessDate: app.task.businessDate, windowStartUtc: "2026-01-01T00:00:00.000Z", cutoffUtc: app.task.evidenceBundle.cutoffUtc });
+  for (const entry of [
+    { created: "2026-09-04T01:00:00.000Z", edited: null, valid: true },
+    { created: "2026-09-04T03:00:00+02:00", edited: "2026-09-03T23:00:00-03:00", valid: true },
+    { created: "2026-09-04", edited: null, valid: false },
+    { created: "2026-09-04T01:00:00", edited: null, valid: false },
+    { created: "2026-02-29T01:00:00.000Z", edited: null, valid: false },
+    { created: "2026-09-04T01:00:00.000Z", edited: "2026-09-04", valid: false },
+    { created: "2026-09-04T01:00:00.000Z", edited: "2026-09-04T02:00:00", valid: false },
+    { created: "2026-02-28T01:00:00.000Z", edited: "2026-02-29T02:00:00.000Z", valid: false },
+  ]) {
+    for (const status of app.statuses) Object.assign(status, { created_at: entry.created, edited_at: entry.edited });
+    const sample = await capture();
+    assert.equal(sample.receivedCount, 6);
+    assert.equal(sample.records.length, entry.valid ? 6 : 0, JSON.stringify(entry));
+    assert.equal(sample.isolatedCount, entry.valid ? 0 : 6);
+    if (entry.valid) {
+      assert.equal(sample.records[0]!.createdAtUtc, "2026-09-04T01:00:00.000Z");
+      assert.equal(sample.records[0]!.editedAtUtc, entry.edited === null ? null : "2026-09-04T02:00:00.000Z");
+    }
+  }
+  for (const status of app.statuses) Object.assign(status, { created_at: "2026-09-04T01:00:00.000Z", edited_at: null });
+  const sample = await capture();
+  assert.equal(await app.adapter.revalidate(sample, app.source), null);
+  Object.assign(app.statuses[0]!, { edited_at: "2026-09-04" });
+  assert.equal(await app.adapter.revalidate(sample, app.source), "social-invalid-response");
+});

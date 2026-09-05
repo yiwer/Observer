@@ -51,9 +51,9 @@ export async function prepareDiscourse(input: { request: Extract<SixEditionReque
   }
   const refresh = async () => {
     let current: SourcePolicy[];
-    try { current = input.policies(); } catch { current = []; }
     for (const group of configuration.groups) {
       if (failed.has(group.id)) continue;
+      try { current = input.policies(); } catch { current = []; }
       const source = current.find((source) => source.sourceId === group.sourceId);
       const sample = samples.get(group.id)!;
       if (!discoursePermission(source, group.tag, input.clock()) || policyDigest(source!) !== sample.policySha256) { failed.set(group.id, "social-permission-changed"); continue; }
@@ -67,6 +67,17 @@ export async function prepareDiscourse(input: { request: Extract<SixEditionReque
           else if (sample.expiresAtUtc <= input.clock()) failed.set(group.id, "social-expired");
         }
       } catch { failed.set(group.id, "social-recheck-incomplete"); }
+    }
+    // A later group's await may revoke or expire an earlier group's source.
+    // Close the whole round synchronously: no more source I/O after this sweep.
+    try { current = input.policies(); } catch { current = []; }
+    const finalAtUtc = input.clock();
+    for (const group of configuration.groups) {
+      if (failed.has(group.id)) continue;
+      const source = current.find((source) => source.sourceId === group.sourceId);
+      const sample = samples.get(group.id)!;
+      if (!discoursePermission(source, group.tag, finalAtUtc) || policyDigest(source!) !== sample.policySha256) failed.set(group.id, "social-permission-changed");
+      else if (sample.expiresAtUtc <= finalAtUtc) failed.set(group.id, "social-expired");
     }
   };
   await refresh();
@@ -99,20 +110,21 @@ export async function prepareDiscourse(input: { request: Extract<SixEditionReque
     },
     project(record: Extract<ReportRecord, { schemaVersion: 6 }>, candidates: CandidateV2[]): Extract<ReportRecord, { schemaVersion: 7 }> {
       const observations: Discourse["observations"] = [];
-      const nativeCandidates = candidates.filter((story) => story.edition === "social-discourse" && configuration.groups.some((group) => group.id === story.eventClusterId && group.kind === "platform-native"));
-      const selected = selectInterests(record.publicationGate, nativeCandidates, record.interestProfile, []);
-      const selectedNativeIds = selected.stories.slice(0, 7).map((story) => story.id);
-      for (const group of configuration.groups) {
-        if (failed.has(group.id)) continue;
+      const eligibleGroups = configuration.groups.flatMap((group) => {
+        if (failed.has(group.id)) return [];
         const stories = candidates.filter((story) => story.edition === "social-discourse" && story.eventClusterId === group.id);
         const clusters = record.eventClusters.filter((cluster) => cluster.primary.edition !== "social-discourse" && group.linkedEvidenceIds.length > 0 && group.linkedEvidenceIds.every((id) => cluster.evidenceIds.includes(id)));
-        if (group.kind === "story-linked" && clusters.length !== 1) { failed.set(group.id, "social-main-story-unavailable"); continue; }
-        if (stories.length !== 1) { failed.set(group.id, "social-analysis-unavailable"); continue; }
+        if (group.kind === "story-linked" && clusters.length !== 1) { failed.set(group.id, "social-main-story-unavailable"); return []; }
+        if (stories.length !== 1) { failed.set(group.id, "social-analysis-unavailable"); return []; }
         const story = stories[0]!;
+        if (!story.claims.length || story.claims.some((claim) => !record.publicationGate.decisions.some((decision) => decision.storyId === story.id && decision.claimId === claim.id && decision.outcome === "published"))) { failed.set(group.id, "social-analysis-unavailable"); return []; }
+        return [{ group, story, cluster: group.kind === "story-linked" ? clusters[0]! : null }];
+      });
+      const selected = selectInterests(record.publicationGate, eligibleGroups.filter(({ group }) => group.kind === "platform-native").map(({ story }) => story), record.interestProfile, []);
+      const selectedNativeIds = selected.stories.slice(0, 7).map((story) => story.id);
+      for (const { group, story, cluster } of eligibleGroups) {
         if (group.kind === "platform-native" && !selected.stories.some((candidate) => candidate.id === story.id)) { failed.set(group.id, "social-interest-excluded"); continue; }
         if (group.kind === "platform-native" && !selectedNativeIds.includes(story.id)) { failed.set(group.id, "social-capacity-limit"); continue; }
-        if (!story.claims.length || story.claims.some((claim) => !record.publicationGate.decisions.some((decision) => decision.storyId === story.id && decision.claimId === claim.id && decision.outcome === "published"))) { failed.set(group.id, "social-analysis-unavailable"); continue; }
-        const cluster = group.kind === "story-linked" ? clusters[0]! : null;
         observations.push({ groupId: group.id, kind: group.kind, priority: group.kind === "platform-native" && selectedNativeIds.indexOf(story.id) < 3,
           story: { ...story, title: "匿名样本中的话语观察" }, linkedClusterId: cluster?.id ?? null, primaryStoryId: cluster?.primary.storyId ?? null, primaryVersionId: cluster?.primary.versionId ?? null });
       }
