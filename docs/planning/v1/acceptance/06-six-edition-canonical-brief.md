@@ -1,6 +1,6 @@
 # V1-06 执行与待验收记录
 
-状态：**第二个冻结候选 73c95da 仍有 1 项 Spec P2 阻断，已交作者修复；未接受或集成**。GitHub #6 OPEN，assignee=yiwer。
+状态：**最终候选 af18a4b 冻结验收通过，待本地集成与集成基线复跑；尚未关票或 push**。GitHub #6 OPEN，assignee=yiwer。
 
 - 范围：[GitHub #6](https://github.com/yiwer/Observer/issues/6)、[本地票](../tickets/06-six-edition-canonical-brief.md)。
 - Fixed base：`e57832f65222c949b00acb12bbb5196ae2c2c033`，包含已验收 #5 集成及最新证据。
@@ -127,3 +127,27 @@ Docker 偶发失败另作只读诊断：Root 按 diagnosing-bugs 的 CLI 反馈�
 Root 已交原作者继续窄范围 TDD，要求隔离已识别且唯一归属的坏栏，不虚构 Provider/用量；同时保留顶层 Envelope 错配、重复/缺失/未知 Edition、可信请求/来源政策错误的整期拒绝。新冻结和完整验收仍待完成；73c95da 不集成，#7 不启动。
 
 [第二轮不接受回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551405763)已发布并读回，Issue 仍 OPEN。
+
+## 第三次冻结与最终独立验收
+
+最终实施候选 `af18a4b6276f3c5254474c1e676e5e88b2eaaa07`。最新增量 3 files、+116/-27（observer、六栏测试、实施说明）；固定 base 至 HEAD 三项提交，总 **10 files、+1006/-47**。Root 验证 base/HEAD/clean、完整非空三点 diff（105990 chars），自有 detached reader 切换至同 SHA 后重建，所有旧证据保留。
+
+本轮作者 TDD：局部 task/Bundle/config 错配先 RED `uncorrelated-agent-result`（267.2928 ms）；局部 before-cutoff/reversed-time/future-finish/unqualified-provider 先 RED `invalid-fixture-run`（205.3217 ms），后两项 **2/2 GREEN**（345.0225 ms）、typecheck 通过。新回归同时保留顶层身份/Edition 集合/可信分配错误的整期拒绝，明确纠正旧测试中将局部错误视为全局错误的预期，并记录原因，没有减少实际失败保护。
+
+- 作者最终 SHA 完整 `check` **130/130**（132936.0865 ms），smoke **3/3**（1384.4926 ms）；本轮首跑即通过，0 failed/skipped/cancelled。
+- Root detached 同 SHA 完整 `check` **130/130**（130391.6507 ms），smoke **3/3**（1337.0951 ms）；typecheck/build 通过，0 failed/skipped/cancelled。smoke 是总集的子集，不重复相加。
+- Root frozen built 专项：容量/重复身份 **6/6**（`run-mRMJyO`）；坏批/跨批最终 TTL **2/2**（`boundary-run-grGbGt`）；最大任务 ID **1/1**；局部与全局关联 **9/9**，共 **18/18**、各进程 exit 0。局部六种错误各保留 35 个正常故事，三个全局反例依然全拒。
+- 旧 177cfbb 生成的 Record v1/v2 归档 built-reader 兼容 **2/2**：既有 MD 和完整 JSON hash/字节、Version hash、错误凭证拒绝均保持。
+- 所有 Root 验证结束后 detached HEAD 仍 af18a4b、tracked clean；只读 `observer.task` 标签容器查询为空，无本轮遗留任务容器。没有清理禁止路径或其它项目资源。
+
+### Standards（最终）
+
+明确规范违反 **0**，原 **1 项 P3 possible Duplicated Code** 延续：`src/six-edition.ts:43/59/65` 分别在归档校验、引用过滤与缺口判断组合同一分析引用并检查 `claim.id === id && claim.kind === "analysis"`。未来资格变化可提取共享集合/谓词；属于非阻断维护判断，不是明确规范违反，也没有证明行为错误。此次局部隔离保留真实全局拒绝、运行资格/来源许可和生产隔离，新增测试仍遵守 T1。
+
+### Spec（最终）
+
+**0 项发现**；原两个 Spec P2、Root 最大任务 ID 问题及第二轮局部运行异常 P2 全部关闭。独立 reviewer 用原自有探针复跑 **9/9**（1206.0718 ms）、六栏/旧 brief/Gate **57/57**（3731.1452 ms），先前三项 RED 均转绿；全局关联错误仍拒绝。同栏坏批后续批、15000 容量、重复身份、长 ID、最终 TTL、整期引用配额和旧归档兼容无回归。未发现缺失/部分实现、scope creep 或新增实现错误。
+
+两轴汇总：Standards **0 hard / 1 heuristic，worst P3**；Spec **0，worst 无**。Root 接受本次冻结实现进入本地集成；必须继续验证实际 master 集成提交后才关闭 #6。
+
+资格仍仅为本地固定输入/标注语义与既有真实固定 CLI + 无凭证模型协议替身；真实六栏模型质量、Source Owner 授权、真实 Provider/地区、PDF/邮件/Android、部署/灾备与人工影子期均未被本票验证，生产入口仍关闭。之前两轮 Docker tag 瞬态失败保留且根因未定，不宣称已经修复。
