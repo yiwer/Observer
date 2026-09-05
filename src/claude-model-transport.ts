@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CandidateOutput } from "./agent-candidate.ts";
-import { messageEvents } from "./claude-usage.ts";
+import { messageEvents, readMessagesAccounting } from "./claude-usage.ts";
 
 export interface ClaudeModelTransport {
   readonly provenance: "model-protocol-fixture" | "anthropic-api";
@@ -70,13 +70,15 @@ function completeBlock(value: unknown) {
 // StructuredOutput is a schema-checked data return, never a shell or MCP tool.
 export function claudeResponseAllowed(body: string): boolean {
   try {
-    const events = messageEvents(body);
+    if (!readMessagesAccounting(body, "claude-sonnet-4-6").consistent) return false;
+    const events = [...messageEvents(body)];
     if (events.length === 1 && events[0]!.type === "message") {
       const message = z.object({ role: z.literal("assistant"), model: z.literal("claude-sonnet-4-6"), content: z.array(z.unknown()), stop_reason: z.string() }).parse(events[0]);
       message.content.forEach(completeBlock);
       return true;
     }
     let started = false, ended = false, finalDelta = false;
+    let stopReason: string | null | undefined;
     let active: { index: number; block: z.infer<typeof Block>; json: string } | undefined;
     let index = 0;
     const toolIds = new Set<string>();
@@ -107,11 +109,13 @@ export function claudeResponseAllowed(body: string): boolean {
         if (active.block.type === "tool_use") CandidateOutput.parse(active.json ? JSON.parse(active.json) : active.block.input);
         active = undefined;
       } else if (event.type === "message_delta") {
-        if (active || finalDelta) return false;
-        z.object({ stop_reason: z.enum(["end_turn", "tool_use", "refusal", "max_tokens", "stop_sequence"]) }).parse(event.delta);
+        if (active) return false;
+        const delta = z.object({ stop_reason: z.enum(["end_turn", "tool_use", "refusal", "max_tokens", "stop_sequence"]).nullish(), stop_sequence: z.null().optional() }).parse(event.delta);
+        if (stopReason && delta.stop_reason !== undefined && stopReason !== delta.stop_reason) return false;
+        if (delta.stop_reason !== undefined) stopReason = delta.stop_reason;
         finalDelta = true;
       } else if (event.type === "message_stop") {
-        if (active || !finalDelta) return false;
+        if (active || !finalDelta || !stopReason) return false;
         ended = true;
       } else return false;
     }

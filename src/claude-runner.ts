@@ -5,7 +5,7 @@ import { CandidateOutput } from "./agent-candidate.ts";
 import { ModelBoundaryError, runAgentContainer, type AgentRuntime } from "./agent-container.ts";
 import { claudeVersion, readClaudeResult } from "./claude-protocol.ts";
 import type { ClaudeModelTransport } from "./claude-model-transport.ts";
-import { claudeResearchUsage, readMessagesUsage } from "./claude-usage.ts";
+import { claudeResearchUsage, readMessagesAccounting } from "./claude-usage.ts";
 import { unknownUsage } from "./agent-usage.ts";
 
 export function createClaudeRunner(options: {
@@ -27,7 +27,7 @@ export function createClaudeRunner(options: {
       const receipt = { request: receipts.length + 1, ...unknownUsage() };
       receipts.push(receipt);
       const response = await options.transport!.respond(body, signal);
-      if (response.status === 200 && Buffer.byteLength(response.body) <= 2 * 1024 * 1024) Object.assign(receipt, readMessagesUsage(response.body, options.model));
+      if (response.status === 200 && Buffer.byteLength(response.body) <= 2 * 1024 * 1024) Object.assign(receipt, readMessagesAccounting(response.body, options.model).usage);
       return response;
     } };
     const args = ["--bare", "-p", "--restricted", "--tools", "", "--permission-mode", "dontAsk", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',

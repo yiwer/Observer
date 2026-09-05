@@ -154,6 +154,107 @@ test("A duplicated Messages stream terminal cannot publish an otherwise valid Cl
   assert.equal(sends, 1);
 });
 
+test("Claude requires a dispatched SSE terminal with a matching event name", async (t) => {
+  for (const body of [claudeMessageFixture().trimEnd(), claudeMessageFixture().replace("event: message_stop", "event: ping")]) {
+    const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    await assert.rejects(observer.produce(request), (error: unknown) => {
+      assert.ok(error instanceof ObserverError); assert.equal(error.code, "agent-policy-violation");
+      assert.equal(error.agentRun?.usage?.source, "model-responses");
+      assert.deepEqual(error.agentRun?.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 21]]);
+      assert.equal(error.agentRun?.execution?.cleanup, "removed"); return true;
+    });
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+  }
+});
+
+test("Claude accepts cumulative message deltas without adding their output counts", async (t) => {
+  const interim = 'event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null},"usage":{"output_tokens":10}}\n\n';
+  const body = claudeMessageFixture().replace("event: message_delta", interim + "event: message_delta");
+  const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+  const version = await observer.produce(request);
+  const report = observer.readReport(version.id, ownerToken);
+  assert.match(report.canonicalMarkdown, /12 个观测点/);
+  assert.equal(report.record.agentResult.usage?.outputTokens, 21);
+  assert.equal(report.record.agentResult.usage?.source, "model-responses");
+  assert.equal(report.record.agentResult.usage?.costUsd, null);
+  assert.deepEqual(report.record.agentResult.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 21]]);
+});
+
+test("Claude accepts usage-only and null-stop partial deltas before a complete terminal", async (t) => {
+  for (const delta of [{}, { stop_reason: null, stop_sequence: null }]) {
+    const interim = `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta, usage: { output_tokens: 10 } })}\n\n`;
+    const body = claudeMessageFixture().replace("event: message_delta", interim + "event: message_delta");
+    const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    const version = await observer.produce(request);
+    const report = observer.readReport(version.id, ownerToken);
+    assert.match(report.canonicalMarkdown, /12 个观测点/);
+    assert.equal(report.record.agentResult.usage?.outputTokens, 21);
+    assert.deepEqual(report.record.agentResult.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 21]]);
+  }
+});
+
+test("Claude retains per-field cumulative usage across repeated and nullable partial updates", async (t) => {
+  const delta = { stop_reason: "tool_use", stop_sequence: null };
+  const updates = [
+    { output_tokens: 10, cache_read_input_tokens: 3, output_tokens_details: { thinking_tokens: 2 } },
+    { output_tokens: 10, cache_read_input_tokens: 3, output_tokens_details: { thinking_tokens: 2 } },
+    { output_tokens: 21, input_tokens: null, cache_read_input_tokens: null, output_tokens_details: null },
+  ];
+  const frames = updates.map((usage) => `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta, usage })}\n\n`).join("");
+  const body = claudeMessageFixture().replace(/event: message_delta\ndata: [^\n]+\n\n/, frames);
+  const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+  const version = await observer.produce(request);
+  const usage = observer.readReport(version.id, ownerToken).record.agentResult.usage;
+  assert.equal(usage?.inputTokens, 12); assert.equal(usage?.outputTokens, 21);
+  assert.equal(usage?.cachedInputTokens, 3); assert.equal(usage?.reasoningOutputTokens, 2);
+  assert.deepEqual(usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens, receipt.cachedInputTokens, receipt.reasoningOutputTokens]), [[12, 21, 3, 2]]);
+});
+
+test("Claude refuses inconsistent cumulative counts while retaining unambiguous observed fields", async (t) => {
+  for (const [updates, inputTokens, outputTokens] of [
+    [[{ output_tokens: 10 }, { output_tokens: 7 }, { output_tokens: 21 }], 12, null],
+    [[{ output_tokens: 10 }, {}], 12, null],
+    [[{ output_tokens: 10 }, { output_tokens: "21" }], 12, null],
+    [[{ output_tokens: 10 }, { input_tokens: -1, output_tokens: 21 }], null, 21],
+    [[{ output_tokens: 10 }, { input_tokens: 11, output_tokens: 21 }], null, 21],
+  ] as const) {
+    const frames = updates.map((usage) => `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: { stop_reason: "tool_use", stop_sequence: null }, usage })}\n\n`).join("");
+    const body = claudeMessageFixture().replace(/event: message_delta\ndata: [^\n]+\n\n/, frames);
+    const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    await assert.rejects(observer.produce(request), (error: unknown) => {
+      assert.ok(error instanceof ObserverError); assert.equal(error.code, "agent-policy-violation");
+      assert.equal(error.agentRun?.usage?.source, "model-responses");
+      assert.equal(error.agentRun?.usage?.inputTokens, inputTokens); assert.equal(error.agentRun?.usage?.outputTokens, outputTokens);
+      assert.equal(error.agentRun?.usage?.cachedInputTokens, 2); assert.equal(error.agentRun?.usage?.costUsd, null);
+      assert.equal(error.agentRun?.execution?.cleanup, "removed"); return true;
+    });
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+  }
+});
+
+test("Partial message deltas cannot conceal a missing, retracted or conflicting stop reason", async (t) => {
+  for (const reasons of [[null], [undefined], ["tool_use", null], ["tool_use", "refusal"]]) {
+    const frames = reasons.map((stop_reason) => `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: { stop_reason, stop_sequence: null }, usage: { output_tokens: 21 } })}\n\n`).join("");
+    const body = claudeMessageFixture().replace(/event: message_delta\ndata: [^\n]+\n\n/, frames);
+    const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    await assert.rejects(observer.produce(request), (error: unknown) => {
+      assert.ok(error instanceof ObserverError); assert.equal(error.code, "agent-policy-violation");
+      assert.deepEqual(error.agentRun?.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 21]]);
+      assert.equal(error.agentRun?.execution?.cleanup, "removed"); return true;
+    });
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+  }
+});
+
+test("Claude accepts SSE comments, multiline data and CRLF or CR framing", async (t) => {
+  for (const newline of ["\r\n", "\r"]) {
+    const body = ("\uFEFF: keepalive\n\n" + claudeMessageFixture().replaceAll('data: {"type":', 'data: {\ndata: "type":')).replaceAll("\n", newline);
+    const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    const version = await observer.produce(request);
+    assert.match(observer.readReport(version.id, ownerToken).canonicalMarkdown, /12 个观测点/);
+  }
+});
+
 test("Claude process, result and terminal failures never leave a report", async (t) => {
   for (const scenario of ["success-is-error", "api-error", "permission-denied", "max_tokens", "aborted_streaming", "aborted_tools", "unknown-terminal", "missing-terminal",
     "error_max_turns", "error_max_budget_usd", "error_during_execution", "error_max_structured_output_retries", "missing-structure", "bad-schema", "wrong-task",
