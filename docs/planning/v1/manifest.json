@@ -149,7 +149,7 @@
       "number": 4,
       "title": "Codex 单栏研究到受控候选输出",
       "file": "tickets/04-codex-runner.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-03"
@@ -172,8 +172,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/4",
       "issueDatabaseId": 5355734179,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "139dc1388cb01d68df12554f85003ac41bbd20b8",
+        "integrationCommit": "f59bcad37f200e848eff305c6aeff0a5f1cb22e9",
+        "acceptanceFile": "acceptance/04-codex-runner.md",
+        "qualification": "local-cli-and-model-protocol-fixture-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-05",

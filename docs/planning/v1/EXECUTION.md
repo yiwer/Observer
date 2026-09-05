@@ -13,13 +13,13 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 已完成票：#1、#2、#3，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
-- 当前票：V1-04 / GitHub #4，进行中；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。fresh-context 实施 agent 为 `/root/implement_v1_04`。
-- #4 固定起点：320ab620a2d3f22c09e13334a68f06a3b664af05；worktree：`O:/GenesisCode/Observer-worktrees/v1-04`；分支：`ticket/v1-04`；[启动回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550300477)，已读回 OPEN 且 assignee=yiwer。
-- #4 候选 `f836d7d49bb907b4b36a3843932e7b4e6297c403` 的 Root 独立 check **70/70**、smoke **3/3**（旧子集）和首次发送 TTL 正反例 **2/2** 通过；但 Spec 发现策略拒绝时丢失已收到模型 token 用量，Root 额外公开 seam 实测 **expected 12 / actual null** 红灯。首轮 Standards 0 项；Spec 1 项 P2；作者已解冻并按 TDD 修复，尚未验收/集成。详见 [V1-04 记录](acceptance/04-codex-runner.md)。新代码须重新冻结重跑；CLI + 模型协议替身不代表真实模型或生产资格。
+- 已完成票：#1、#2、#3、#4，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
+- 下一票：V1-05 / GitHub #5，尚未派发实施；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。需从当前集成基线派 fresh-context implement agent。
+- #4 最终实施 `139dc1388cb01d68df12554f85003ac41bbd20b8`，固定起点 `320ab620a2d3f22c09e13334a68f06a3b664af05`；worktree `O:/GenesisCode/Observer-worktrees/v1-04`，分支 `ticket/v1-04`，干净；[验收回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550565579)已读回 CLOSED。
+- #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；未启动 #5 实施、触发模型或升级。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
-- 最新已验收集成提交：a83cf2a08b8db8b9b960f059e2a3653cc01c3935。
+- 最新已验收集成提交：f59bcad37f200e848eff305c6aeff0a5f1cb22e9。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
 - #3 首轮测试虽通过，但两轴及 Root 额外发现阻断；最终重新冻结、复审关闭全部发现，再集成验收。Root 在最终工作区及 master 均复跑 check 52/52、smoke 3/3；smoke 属于总测试子集。详见 [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)。
 
@@ -28,6 +28,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - [V1-01 验收记录](acceptance/01-private-brief-spine.md)：实施 35c647c，集成 1798613；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、13/13 测试及 2/2 smoke。Standards 有 1 项非阻塞建议，Spec 无发现。
 - [V1-02 验收记录](acceptance/02-policy-bound-collection.md)：最终实施 2931098，集成 7fdef67；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、32/32 测试及 3/3 smoke。两轴原 3 项阻断和 root 删除准入发现均修复；余 1 项非阻塞维护建议。
 - [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)：最终实施 67401ac，集成 a83cf2a；orchestrator 冻结和集成各复跑 typecheck/build、52/52 与 3/3 smoke；Standards、Spec 最终各 0 项；Root 矛盾回执及 24 场景 TTL 回归通过。只有标注语义替身证据。
+- [V1-04 验收记录](acceptance/04-codex-runner.md)：最终实施 139dc13，集成 f59bcad；冻结和集成各 check 74/74、smoke 3/3；Root 首次发送 TTL 与拒绝用量专项 3/3。Standards 留 1 项非阻断 P3，Spec 原 P2 关闭、最终 0。真实 CLI + 无凭证模型替身，不是模型/地区/生产资格。
 
 ## 协作容量
 

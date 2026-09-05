@@ -1,11 +1,20 @@
 # V1-04 审查与验收记录
 
-状态：**候选审查发现缺陷，尚未验收**。GitHub #4 OPEN；原产品测试通过，但 Spec 负例已由 Root 复现，须修复后重新冻结，不能关闭票或宣告生产通过。
+状态：**本地实施验收通过**。最终候选 `139dc1388cb01d68df12554f85003ac41bbd20b8`，本地集成 `f59bcad37f200e848eff305c6aeff0a5f1cb22e9`；GitHub #4 已读回 CLOSED（2026-09-05T08:23:35Z），[验收回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550565579)。没有生产准入结论，仍未 push。
 
 - 范围：[GitHub #4](https://github.com/yiwer/Observer/issues/4)、[本地票](../tickets/04-codex-runner.md)。
 - 固定起点：`320ab620a2d3f22c09e13334a68f06a3b664af05`；fresh agent `/root/implement_v1_04`。
 - 工作区：`O:/GenesisCode/Observer-worktrees/v1-04`，分支 `ticket/v1-04`。
 - [启动记录](https://github.com/yiwer/Observer/issues/4#issuecomment-5550300477)；依赖 #3 已关闭且本地验收集成。
+
+## 最终冻结与集成验收
+
+- 固定基线不变；最终 commit list 为 `139dc13 fix: retain observed usage for rejected Codex responses (#4)`、`f836d7d feat: add isolated Codex research runner (#4)`。Root 已核非空三点 diff：19 files，1305+/16-；修复增量 6 files，202+/15-。
+- Root detached 验收工作树在 **139dc13** 上重新 `npm ci`、`npm run check`：typecheck/build 成功，**74/74**、0 skipped，59.536 秒；smoke **3/3**（旧子集）。原用量 RED 与首次发送 TTL 正反例专项 **3/3** 通过，明确不重复计入产品测试。
+- 原两位 reviewer 独立复审新 SHA：Standards **1 项 P3 非阻断判断**、硬违反 0；Spec 原 P2 关闭，最终 **0 项**。详见下方各自轴，未跨轴重排。
+- 无冲突集成本地 master **f59bcad**；产品源代码/测试/配置/依赖/运行脚本与冻结候选差异为 0。集成后再次 `npm ci`、`npm run check` **74/74**、0 skipped，59.166 秒；smoke **3/3**。Root 读回工作树干净、本任务容器无残留。
+- 已验证真实 Linux CLI + 自有模型协议替身，不是实际模型。完整 chain、恶意操作拒绝、不可变身份清理、每次模型发送 TTL、日志不保留原文、编译资产、失败用量及未知字段全部在上述最终冻结/集成证据内。
+- 后文保留首轮红灯、修复与环境取得历史；其中“未冻结/尚待”是当时状态，不覆盖本节最终结论。尚存的真实调用、生产与人工门槛仍见文末。
 
 ## 冻结候选与独立复跑
 
@@ -88,11 +97,15 @@ Root 实际打开 Docker 官方 [network create](https://docs.docker.com/referen
 
 ## Standards
 
+最终 **139dc13**：同一独立 reviewer 复核修复增量及原结论，**1 项 P3，非阻断 possible Duplicated Code**：`src/codex-usage.ts:19–20` 与 `src/codex-model-transport.ts:40–42` 重复 JSON/SSE 解帧，未来同一语法变更需要同步维护。建议共享纯解帧函数，各自保留用量/工具验证。它是维护判断，不是已证明的功能失败；Root 接受本票保留该建议，不扩大为新计费系统或阻塞 #5。硬违反 0，最高 P3。该轴未重跑产品测试。
+
 `/root/review_v1_04_standards` 针对 `f836d7d` 检查完整 18 文件差异及 CONTEXT、README、PRD D6/D7/T1、指定 ADR，报告 **0 项**有充分证据的标准违反或 Fowler smell；最高严重性：无。该轴仅执行只读 diff/状态检查，没有重复运行产品测试，也不把作者 70/70 当作其独立实测。
 
 Reviewer 初步提出 `codex-container.ts` 可能 Divergent Change，最终未保留。Root 提醒实现说明中的职责描述本身不能把任何复杂模块自动视作被标准认可；当前没有独立可操作的维护成本证据，故仍不列额外发现。
 
 ## Spec
+
+最终 **139dc13**：原 P2 关闭，**0 项未关闭发现，最高无**。Reviewer 独立运行 3 个真实固定 CLI 场景、4 个协议进程场景全部通过且 cleanup=removed；另核 8 类 receipt 解析/合并边界。合法完成响应在工具拒绝后保留 12/21/2/3；正常 CLI 不双计，多请求字段全已知才求和，部分已观察分项仍保存；缺失/坏类型/重复/冲突/模型不匹配/越界为未知。只保存宿主序号与 nullable 数字，最多 8 次，不保存自由文本或响应 ID。无新增范围扩张。以下为原候选发现历史。
 
 `/root/review_v1_04_spec` 最终报告 **1 项，最高 P2：拒绝模型工具时丢失已取得用量**。#4 AC5 要求“保留……可取得的用量；取不到的用量明确未知”。`src/codex-container.ts:76` 在拿到带 usage 的 HTTP 200 完成响应后因 function_call 立即拒绝，`src/codex-runner.ts:46` 仅采用尚未产生的 CLI usage，故已取得的 input/output/cached/reasoning tokens 都变为 null。未确认额外 scope creep。
 
