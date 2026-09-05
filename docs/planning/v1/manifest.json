@@ -105,7 +105,7 @@
       "number": 3,
       "title": "陈述级证据核验与 Publication Gate",
       "file": "tickets/03-evidence-publication-gate.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-02"

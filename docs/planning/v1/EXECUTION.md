@@ -13,11 +13,12 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 下一票：V1-03 / GitHub #3；已读回原生依赖只有 #2 且 CLOSED，准备派发 fresh-context 实施 agent。
+- 当前票：V1-03 / GitHub #3，进行中；原生依赖只有 #2 且 CLOSED，fresh-context 实施 agent 为 `/root/implement_v1_03`。
+- #3 固定起点：aa2a90fd5f72b225051bff6d52bea9114a96523f；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[启动记录](https://github.com/yiwer/Observer/issues/3#issuecomment-5550133552)。
 - #1、#2 已完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 均已读回 CLOSED。
 - 最新已验收集成提交：7fdef6736f0629850cba11061bf9607a853e3d2a。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
-- 下一步：固定 #3 worktree 与起点；实施陈述级 Publication Gate，保留结构、政策和语义核验的独立结论与测试/真实质量边界。
+- 下一步：等待 #3 的固定实施提交，执行 Standards / Spec 独立双轴 review 与 orchestrator 冻结验收；重点核对逐陈述证据绑定、正常发布与隔离路径，以及结构、政策、语义结论和测试/真实质量边界。
 
 ## 已验收
 
