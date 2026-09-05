@@ -20,6 +20,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - #5 首个冻结候选 `0b967c6273b2d768f46df4ce8b546508a0d41784`（26 files，+1023/-57）；作者 check 94/94、smoke 3/3，工作树干净。Root 已固定非空三点 diff，派发 fresh Standards / Spec 两轴，在 detached `O:/GenesisCode/Observer-worktrees/accept-v1-05` 独立复跑；未出最终验收结论，不启动 #6 实施。
 - #5 首轮结果：Root 冻结 check 94/94、smoke 3/3，但 Standards 2 项 P3 非阻断维护建议、Spec 2 项 P2 阻断（SSE 未完整终帧仍出版；合法多次 message_delta 误拒/丢量）；Root 自有公开 seam 专项 3 RED 重现，已交原 implement agent 修复，旧候选不得集成。新 SHA / 全量检查 / 两轴复审 / Root 验收尚待完成。
 - #5 第二个冻结候选 `de63459f3f496374cde58eca8c250c25e01354de`：作者 check 101/101、smoke 3/3；Root detached 独立 check 101/101（128.522 秒）、smoke 3/3（1.315 秒）。Standards 硬违反 0、原 2 项 P3；Spec 关闭原 2 P2，但新增“首次输出用量更新之前截流，未知输出误记为 0”P2。Root 自有专项 3 PASS / 1 RED（5.225 秒）复现。仍不得集成或开始 #6；原作者会话已不在 live inventory，已派发 fresh-context `/root/implement_v1_05_usage_fix` 在原分支作窄范围 TDD 修复，下一冻结后重验。
+- #5 最新冻结为 `177cfbbddf08e507c448e76dbe23ebc31a2ef617`：修复 agent 完成 RED→GREEN、3 项新增回归、最终 SHA check 104/104 / smoke 3/3。Root 独立 detached 同 SHA check **104/104**（123.195 秒）、smoke **3/3**（1.293 秒）、自有专项 **4/4**（5.193 秒），clean、无任务容器残留。最终 Standards 硬违反 0 / 原 2 P3；独立 Spec 0、专属 T1 探针 7/7，原 3 项 P2 均关闭。冻结验收通过，待本地集成及集成基线复跑后再关闭票。
 - #4 最终实施 `139dc1388cb01d68df12554f85003ac41bbd20b8`，固定起点 `320ab620a2d3f22c09e13334a68f06a3b664af05`；worktree `O:/GenesisCode/Observer-worktrees/v1-04`，分支 `ticket/v1-04`，干净；[验收回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550565579)已读回 CLOSED。
 - #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；预检时未实施/触发模型/升级，现已交给 #5 fresh 实施 agent，仍须实测目标 Linux CLI 和完整隔离契约。
@@ -40,6 +41,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 #2 的第二个 reviewer spawn 曾返回 `collab spawn failed: agent thread limit reached`。Standards 使用独立新 reviewer，Spec 复用未参与 #2 实施的 #1 agent，两轴没有互换报告内容。后续实施仍要求 fresh context；若平台无法释放线程，不得把旧实施上下文冒充 fresh context，需核实容量或请求 Owner 调整会话。
 
 #3 的 fresh implementation 和两个 fresh reviewer 均实际启动成功；不要把 #2 的历史错误当作当前容量阻断。
+
+#5 最终 `177cfbb` 的新 Spec spawn 再次实际返回 `agent thread limit reached`；复用未参与 #5 实施的 #4 agent 进行独立 Spec，重新读全票，不与 Standards 交换报告。Standards 已先结束，因此此次两轴未能在时间上重叠，不能伪称并行成功；审查独立性仍保持。#6 实施仍必须新上下文，不得把 reviewer 会话直接改称 fresh implementation。
 
 ## 外部就绪项
 

@@ -1,6 +1,6 @@
 # V1-05 审查与验收记录
 
-状态：**第二轮仍有 1 项 P2，整改中，尚未验收**。GitHub #5 OPEN，assignee=yiwer；第二候选 `de63459f3f496374cde58eca8c250c25e01354de` 关闭了原 2 项 P2，但独立 Spec 与 Root 新专项发现未知输出用量误记为零，已派发窄范围修复。不得集成旧候选或启动 #6 实施。
+状态：**第三候选冻结验收通过，待本地集成基线复跑**。GitHub #5 OPEN，assignee=yiwer；最终候选 `177cfbbddf08e507c448e76dbe23ebc31a2ef617` 已通过两轴独立审查及 Root 冻结验收，此前 3 项 Spec P2 均已关闭。集成验收未完成前，不得关闭 #5 或启动 #6 实施。
 
 - 范围：[GitHub #5](https://github.com/yiwer/Observer/issues/5)、[本地票](../tickets/05-claude-runner.md)。
 - 固定 base：`8e35d12470c14f2638d3adbcd1901935feeaa593`；branch `ticket/v1-05`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`。
@@ -98,6 +98,31 @@ Root 随后在该冻结 SHA 独立完成 `npm run check`：**94/94、0 skipped�
 Root 在同一 detached SHA 的自有 `data/root-acceptance/claude-stream.test.ts` 加入该公开 seam 场景后实跑 **3 PASS / 1 RED**（5.225 秒）：前三项原问题均通过，新项明确 `0 !== null`，与独立 Spec 结论一致。结束查询无 `observer.task` 容器；虚构 SQLite 保留，未改产品源码。Spec 自有 `data/spec-review-repair-27c41a` 由 reviewer 保留，不能和首轮禁止清理目录混淆。
 
 本轮合计：Standards 2 项启发式建议、最严重 P3；Spec 1 项阻断、最严重 P2。Root 不验收 `de63459`。原作者已不在当前 live-agent inventory，改派 fresh-context `/root/implement_v1_05_usage_fix` 在同一分支亲读 implement/TDD，先 RED 后最小修复、完整测试、提交重新冻结；修复后再分别复审和 Root 验收，不能复用旧 101/101。
+
+## 第三个冻结候选与 Root 独立检查
+
+Fresh-context 修复 agent `/root/implement_v1_05_usage_fix` 从干净 `de63459` 实施，提交 `177cfbbddf08e507c448e76dbe23ebc31a2ef617`：`fix: preserve unknown Claude output before usage updates (#5)`。本次 3 files、+60/-1；全票相对固定 base `8e35d12` 为 26 files、+1255/-57。只改 `claude-usage.ts`、Claude T1 测试和实现说明，没有扩大到 Provider 仲裁或下一票。
+
+作者亲跑 test-only RED **0/1**（1842.1311ms，`0 !== null`），最小修复后定向 **7/7**（23639.3902ms）、zero / full JSON 守卫 **2/2**（4377.0901ms）。新测试覆盖 start output0/1 均未知、保留 input/cache、已报告零值及完整 JSON 已知用量；原 101 项断言未改，共新增 3 项。作者将代码与说明一起冻结后，才执行最终 SHA 的 check **104/104**（130816.8259ms）、smoke **3/3**（1353.0812ms）；报告 0 failed/skipped/cancelled、tracked clean、进程全部终结。没有为了补写耗时再移动 SHA。
+
+Root 捕获完整非空 `git diff 8e35d12470c14f2638d3adbcd1901935feeaa593...HEAD`（116335 字符）和 3 条 commit list。在自己的 clean detached `accept-v1-05` 切到该 SHA 后实际完成：
+
+- `npm run check`：**104/104、0 failed/skipped/cancelled**（123194.9628ms），包含 typecheck/build 及全部新旧 CLI/来源/Gate/归档回归。
+- `npm run smoke`：**3/3**（1293.3791ms，旧子集，不额外计数）。
+- 自有 `data/root-acceptance/claude-stream.test.ts`：**4/4**（5192.8015ms），不完整终帧、错名终帧均拒绝，累计更新出版且 output21，首 delta 前截断的运行 output 与 receipt 均 null。
+- 前后 HEAD 一致、tracked clean，结束只读查询无 `observer.task` 容器，Root 自有虚构 SQLite 证据保留；没有触碰禁止清理路径。
+
+### Standards
+
+原独立 reviewer `/root/review_v1_05_standards_final` 在最终 SHA 完整读本次 3 文件增量，结合此前全票审查：硬性违反 **0**、新增 smell **0**，原两项非阻断 possible Duplicated Code P3 仍在。`outputPending` 未放宽终态，T1 测试从业务结果而非私有实现断言。
+
+### Spec
+
+新 Spec reviewer spawn 返回 `agent thread limit reached`；没有把实现者自审当独立审查。改用未参与 #5 实施的 `/root/implement_v1_04` 单独承担 Spec，重新读取全票差异与需求，不获得 Standards 报告。因容量错误及 Standards 已完成，这轮没有实现两轴执行时间重叠；上下文及结论仍分离。
+
+该 reviewer 已分段读完 26 文件与 3 个提交，最终 Spec **0 项、worst 无**，原 3 项 P2 全部关闭，未发现需求遗漏或范围扩张。自写 Messages 流、固定真实 CLI、原 Gate 与 SQLite 的独立 T1 专项 **7/7 PASS**（10.685 秒）：start0/1 且无 delta 输出未知、两次发送 [21,13] 总量34、不完整终帧/错名终帧拒绝、10→7→21 冲突 sticky-null、完整明确零可正常出版。每次按精确 containerId 验证移除，探针源码保留在 `data/spec-review-final-c71e9a/claude-final.spec.ts`；tracked clean，未触碰禁止清理路径。
+
+最终两轴计数：Standards 硬违反 0、启发式建议 2、最严重 P3；Spec 0、无最严重项。Root 接受非阻断维护建议，准许将该 SHA 本地集成后复跑；不把冻结检查直接当作集成基线结果。
 
 ## 外部门槛
 
