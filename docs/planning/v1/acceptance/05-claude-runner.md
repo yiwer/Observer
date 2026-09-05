@@ -1,6 +1,6 @@
 # V1-05 审查与验收记录
 
-状态：**首轮冻结审查中，尚未验收**。GitHub #5 OPEN，assignee=yiwer；首个候选 `0b967c6273b2d768f46df4ce8b546508a0d41784`，双轴与 Root 独立复跑进行中。历史阶段证据不替代冻结验收。
+状态：**首轮未通过，整改中，尚未验收**。GitHub #5 OPEN，assignee=yiwer；首个候选 `0b967c6273b2d768f46df4ce8b546508a0d41784` 的完整测试通过，但独立 Spec 审查与 Root 专项复现发现 2 项 P2 阻断，已交回原 implement agent 修复。不得集成旧候选或启动 #6 实施。
 
 - 范围：[GitHub #5](https://github.com/yiwer/Observer/issues/5)、[本地票](../tickets/05-claude-runner.md)。
 - 固定 base：`8e35d12470c14f2638d3adbcd1901935feeaa593`；branch `ticket/v1-05`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`。
@@ -55,17 +55,31 @@ Root 另查官方[结构化输出说明](https://code.claude.com/docs/en/agent-s
 
 ## Standards
 
-首轮 fresh reviewer `/root/review_v1_05_standards` 已收到固定 base、候选 SHA、完整 diff command / commit list、规范来源及完整 Fowler smell baseline；审查中，无结论。
+首轮 fresh reviewer `/root/review_v1_05_standards` 在 `0b967c6` 完整阅读 26 文件 diff，固定规范及完整 Fowler baseline；明确规范违反 **0**，启发式 **2**，本轴最严重 **P3**：
+
+- possible Duplicated Code：`src/claude-runner.ts:25` 与 `src/codex-runner.ts:33` 重复逐发送 TTL、receipt、transport 和有界用量记录；共同规则未来修正需同步，建议提取 Provider 用量解析之外的共有包装。
+- possible Duplicated Code：`src/claude-model-transport.ts:16` 与 `src/codex-model-transport.ts:13` 重复有界响应读取、2 MiB 限制与 reader cancel；可共享读流函数，端点/认证仍由适配器控制。
+
+以上均是非硬违反的维护判断。Root 接受为非阻断建议，本票不为此扩大重构；修复 Spec 后仍须复审新差异。
 
 ## Spec
 
-首轮 fresh reviewer `/root/review_v1_05_spec` 独立读取同一冻结差异、GitHub #5 / 本地票及 PRD；两轴不交换报告。审查中，无结论。
+首轮 fresh reviewer `/root/review_v1_05_spec` 独立阅读冻结差异、GitHub #5 / 本地票及 PRD，并做真实固定 CLI + 无凭证 Messages 替身 + Gate/SQLite 专项。未发现范围扩张；本轴 **2 项 P2**：
+
+1. **不完整 SSE 终帧仍出版**。`src/claude-usage.ts:13–14` 只提取 `data:` 行，忽略帧结束和事件名称。将正常流 `.trimEnd()` 删除终帧空行，或仅把最终 `event: message_stop` 改成 `event: ping` 而保留 JSON `type`，实际 CLI 仍 completed、`produce → readReport` 返回正文。违反本票 AC2 对部分输出/失败不出版的要求。[SSE 标准](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream)要求丢弃 EOF 前未以空行结束的事件；[Anthropic 协议](https://platform.claude.com/docs/en/build-with-claude/streaming#event-types)要求事件名与 JSON type 匹配。
+2. **合法多次 message_delta 误拒且丢量**。`src/claude-model-transport.ts:110` 拒绝第一次之后的 delta，`src/claude-usage.ts:22` 同时丢弃已知用量。官方上述协议允许一次或多次 message_delta，usage 是累计值。独立输入 output_tokens 10→21、相同 tool_use 原因、唯一最终 message_stop 后，实际出现 `agent-policy-violation`、无归档；这不是正常协议支持，应成功且 output 为最终 21，不能相加为 31。对应本票 AC1 / AC5 与 D7 正常可互换候选契约。
+
+Root 另独立打开两个官方原始来源核对，并在 detached `0b967c6` 编写自有 ignored `data/root-acceptance/claude-stream.test.ts`，经同一公开 T1 seam 实跑：上述三种场景 **0/3、3 RED**（3.931 秒）；前两项 `Missing expected rejection`，第三项 `agent-policy-violation`，与 reviewer 观察一致。Probe 与虚构 SQLite 快照明确保留为修复前证据，不进入产品包；源码/配置仍等于冻结候选。修复必须保留正常完整流、支持累计更新不重复计费，同时不放宽危险工具、未知/冲突用量或坏终态。
+
+该 reviewer 自有 `O:/GenesisCode/Observer-worktrees/v1-05/data/spec-review-9f568c` 的精确清理被自动策略拒绝，留下探针与七份虚构 SQLite；Root 已明确禁止换工具重试/绕过，旧 `observer-codex-O2hbGJ` 同样保持不触碰。七个 reviewer 任务容器已按各自 ID 读回不存在，tracked 文件未改。此临时目录不是生产数据，也不是阻断修复的理由。
 
 ## 首个冻结候选
 
 作者提交 `0b967c6273b2d768f46df4ce8b546508a0d41784`：`feat: add isolated Claude research runner (#5)`；base 不变，26 files、+1023/-57，Root 读回 clean，固定 `git diff 8e35d12470c14f2638d3adbcd1901935feeaa593...HEAD` 与单条 commit list，确认差异非空。作者最终 `check` **94/94**（86.034 秒）、`smoke` **3/3**（1.291 秒，旧子集），未保留 `observer.task` 容器。Root 在独立 detached `O:/GenesisCode/Observer-worktrees/accept-v1-05` 安装锁定依赖后执行完整检查，尚待终态，不提前记 PASS。
 
 Root 随后在该冻结 SHA 独立完成 `npm run check`：**94/94、0 skipped、0 failed**（76.667 秒）；`npm run smoke` **3/3**（1.301 秒，旧子集）。检查包含 typecheck、生产 build、真实 Claude/Codex CLI + 无凭证模型协议替身、Gate/归档和来源政策回归；结束读回 HEAD 未变、detached 工作树 clean。双轴审查仍未结束，以上不授权先行集成或生产发布。
+
+首轮冻结及 Root 全量结果已[回写 GitHub](https://github.com/yiwer/Observer/issues/5#issuecomment-5551054369)并读回 OPEN。其后两轴完成与 Root 3 RED 已否决本候选的验收；原 `/root/implement_v1_05` 已收到具体复现和修改边界，须逐片 TDD、重新完整检查/提交冻结，再进行两轴复审与 Root 验收。旧 94/94 不可用于新代码通过声明。
 
 ## 外部门槛
 
