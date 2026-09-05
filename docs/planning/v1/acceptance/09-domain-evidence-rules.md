@@ -1,6 +1,6 @@
-# V1-09 执行与待验收记录
+# V1-09 执行与验收记录
 
-状态：**候选 57e9686 已通过冻结验收：作者/Root完整各186/186，允许本地集成；实际master复验尚未执行**。GitHub #9 OPEN、assignee yiwer，#10 未开始。下文早期 WIP / 等待环境记录是历史过程，最新结论见“Docker 就绪后的恢复全检”。
+状态：**已接受并本地集成，GitHub #9 CLOSED**。实施57e9686、集成ca7377a；作者/Root detached/actual-master完整各186/186、smoke各3/3。下文早期 WIP / 等待环境记录是历史过程，最终结论见“实际 master 验收与关闭”。代码未push，生产未启用。
 
 - [本地票](../tickets/09-domain-evidence-rules.md) / [GitHub #9](https://github.com/yiwer/Observer/issues/9)全文与空评论已实际读取；原生唯一依赖API返回#6closed，顺序前票#8亦已CLOSED。
 - 固定base **df63b78875a1fb8b4c85389ac6797ddfc5e75400**，包含#8最终06fc8b3、master集成8079271与验收关闭记录。
@@ -152,3 +152,19 @@ Root 对同一built模块另复跑原公司探针1/1（含三模式/重启），
 - verify-reader.ts SHA256：`931b528e91c2b419e1f6d836927cc0efc93fe3915da985f23f6f5117ab935180`；接受绝对模块路径，固定baseline文件摘要，比较三份完整Report/MD并检查鉴权/production隐藏。
 
 冻结built读取3/3通过；后续actual-master/新版本须另跑。原Record1–5各oracle与原Root独立探针均未改。
+
+## 实际 master 验收与关闭
+
+Root先以 `b8730d8d32f69c5d12b355eef33f7ed421d501ed` 记录冻结全检接受，再no-ff集成为 **ca7377a5d7e5cc42a4a8970b61d8cab3c835eaed**。合并无冲突；实际master的src/tests/scripts/package/lockfile与57e9686 diff为空。以下检查全部针对 `O:/GenesisCode/Observer`，不是detached构建：
+
+- `npm run check` **exit0，186/186，130691.7911ms**，typecheck/build通过；session16266完整终态0失败/跳过/取消。连续输出块0–4已落盘为 `data/root-master-v1-09-ca7377a/check.log`，SHA256=`3c58769e3062f347951d1b4e1f304f823eb6161b26fe795927fcd1aff970de68`，不混合不同run。
+- `npm run smoke` **exit0，3/3，1330.057ms**；属于全检子集。检查前后HEAD保持ca7377a，tracked clean；用户`.idea/`未触碰。
+- actual built `dist/observer.js`：原Root公司1/1、兴趣6/6、事件14/14全部通过；不可变旧Record1–5六份及新Record6三份完整Report/Markdown/鉴权/生产隐藏读取通过。每个执行输出独立保存在同目录。
+- Spec探针原内容字节复制到 `data/root-v1-09-spec-master/probe.mjs`，SHA仍 `6dad8f32e095d046c5c89aeadd777da2dd2d4114af741cae253a52dde270cd9e`；其相对import现在指向actual master dist，**3/3，106.2857ms**。没有把detached运行当master验收。
+- 当前master全检生成的四栏三态12份回放，另用只读脚本核对正文与Report/摘要及相应结果，Root逐一读完12份栏目主体；路径与完整文本保存在 `replay-inspection.log`。没有PDF、真实模型或新闻采集结论。
+
+六项AC均有专项输入到中文正文/重启读取证据：独立高风险及更严格财经核验；动态数值时点/单方归因；全部Claim kind资讯边界与来源政策；逐Evidence研究成熟度/公司独立验证；不安全材料优先隔离且冲突可读；四栏允许/拒绝/待确认回放及六条待审真实来源提案。Standards仍0hard/2非阻断P3，Spec0；代码未变，不制造新一轮不同SHA评审。
+
+[GitHub验收回写](https://github.com/yiwer/Observer/issues/9#issuecomment-5555131833)已实际读回完整正文/ID/URL；随后close并读取 **CLOSED，closedAt2026-09-05T22:12:21Z**。下一票#10的唯一原生依赖#7已重新读回CLOSED，既有本地集成/验收证据可达。这里只关闭#9开发票，不关闭真实来源许可、Provider地域与实测、产品SMTP/PDF、目标部署或14天人工质量条件。
+
+本轮未push。最近实际 `git ls-remote`：远端master仍 `e475bc18620d1d052f6effcb648fbc4ec66150d2`，无远端ticket/v1-09；Issue状态不替代远端交付状态。

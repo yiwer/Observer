@@ -348,7 +348,7 @@
       "number": 9,
       "title": "高风险新闻与 AI／科技证据标签",
       "file": "tickets/09-domain-evidence-rules.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-06"
@@ -373,12 +373,13 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/9",
       "issueDatabaseId": 5355738961,
-      "githubState": "open",
+      "githubState": "closed",
       "dependenciesVerified": true,
       "execution": {
         "implementationCommit": "57e9686a14003055f6c9e51483cd7e0cd4393663",
+        "integrationCommit": "ca7377a5d7e5cc42a4a8970b61d8cab3c835eaed",
         "acceptanceFile": "acceptance/09-domain-evidence-rules.md",
-        "qualification": "frozen-accepted-actual-master-verification-pending",
+        "qualification": "local-annotated-verifier-only",
         "pushed": false
       }
     },
