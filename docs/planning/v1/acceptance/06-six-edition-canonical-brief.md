@@ -31,3 +31,11 @@ Final Editor 只接触已校验 Report Record，不能联网、运行 shell 或�
 ## 待验收
 
 作者竖切 TDD、定期 typecheck/单文件检查后，提交代码与实施说明并冻结；最终完整 `check` / `smoke` 绑定该 SHA。Root 固定非空三点差异，协调独立 Standards / Spec，另在 detached 工作区与集成基线复跑后才验收。当前未提供冻结 SHA 或通过计数，不把 #5 的 104/104 当作 #6 结果。
+
+## 首个竖切（未冻结阶段证据）
+
+作者提出在原公开生产边界增加显式输入 v2、Report Record v3，保留输入 v1 与旧 Record v1/v2 的契约及存量正文。六栏研究结果作为一个外部 seam 的输入，不在本票实现真实六进程路由；逐栏后续将明确区分无证据、成功无候选和失败。Final Editor 采用只从已核验记录确定性投影，成稿通过内容哈希/重新投影一致性校验，不接收任意自由文本成稿。Root 已要求所有故事角色/Impact Note 引用已核验 Claim，不能把未确认或隔离项包装成事实；这些约束还须逐项测试，当前只是已收敛的实现方向。
+
+作者实际 `node --test tests/six-edition.test.ts` 首片 **RED 0/1**（`runner-unavailable`，204.6564ms），最小接入后 **GREEN 1/1**（233.9689ms）：真实 SQLite 可读取 Record3 的 42 条故事、六个独立栏目及每栏 3 个重点位置，输入中的未核验标题不进入正文，错误凭证无法读取。Root 随后只读核对 WIP 的业务测试和实现差异，未运行独立验收，也未把该定向结果称作完整票通过。
+
+此时原有 CLI 测试因联合 Record 增加 v3，需要先按 schema 判别才读取旧 `agentResult`；作者将补类型判别保留既有断言，不能删除旧用例或改变旧 Runner 契约来消除类型错误。首片暂用旧 renderer 的临时分组，仅为 tracer；后续应改为 Record 直接投影，并补稀疏/全空、逐栏失败、事实及链接/状态一致性、Priority 解释、Impact Note 和许可优先。当前无最终 SHA、完整 typecheck/check 或双轴结论。
