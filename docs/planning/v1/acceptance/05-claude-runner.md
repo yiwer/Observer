@@ -33,6 +33,14 @@ Root 独立打开官方[签名核验说明](https://code.claude.com/docs/en/setu
 
 Root 另查官方[结构化输出说明](https://code.claude.com/docs/en/agent-sdk/structured-outputs)：SDK 校验 draft-07，应显式处理 Zod 默认 draft-2020-12 差异；subtype success 但没有 structured_output 仍不能视作结构成功，先前完成输出也可能被 fallback 撤回。已提示作者用目标 CLI 验证这些契约，不能仅沿用 Codex Schema/事件规则。这些是实现前提，不是实际拒绝测试的通过结论。
 
+## 首条实际 CLI 路径（阶段证据）
+
+作者随后将 GPG 改为相对工作目录参数，报告准备脚本通过，镜像固定为 `sha256:0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269`（tag `observer-v1-05-claude:2.1.252`）。Root 独立 inspect 确认 Linux/amd64、338723300 bytes；另创建独有 name/label、network none、非 root、只读根、cap-drop ALL、log-driver none、空环境的一次性版本探针，实际 `/opt/claude --version` 输出 **2.1.252 (Claude Code)**、exit 0，按本次 label 读回自动移除。这只核实固定运行依赖，不是 Root 完整业务验收。
+
+作者报告首条实际 CLI → 自有无凭证 Messages SSE → StructuredOutput → Gate → SQLite 正文定向 **1/1** 通过。实际观察到 `init.tools` 只有 `StructuredOutput`，它是结构候选的数据工具，不能和 Bash/Edit/MCP 执行能力混为一谈；宿主固定其 draft-07 schema 并前置检查工具响应。另发现 CLI 默认会创建 `/tmp/claude-65534`，只读根导致 EROFS；设置任务私有 tmpfs 的 `TMPDIR=/run/observer` 后正常。仍须验证恶意内容不会通过这条数据路径变成执行。
+
+当前作者正按后续 red→green 收紧终态和拒绝矩阵，没有冻结 SHA。隔离生命周期从 codex-container/worker 提取为 agent-container/worker；新旧 CLI 的协议分别处理，共享变更必须完整回归原 Codex 74 项证据。当前 1/1 不扩写为全部 AC、安全、真实模型或生产通过。
+
 ## Standards
 
 待冻结后独立审查，无结论。
