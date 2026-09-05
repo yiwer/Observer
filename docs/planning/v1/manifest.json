@@ -105,7 +105,7 @@
       "number": 3,
       "title": "陈述级证据核验与 Publication Gate",
       "file": "tickets/03-evidence-publication-gate.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-02"
@@ -134,8 +134,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/3",
       "issueDatabaseId": 5355733428,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "67401aca6bcc0cd943f0b3fb9257ac7e7288f214",
+        "integrationCommit": "a83cf2a08b8db8b9b960f059e2a3653cc01c3935",
+        "acceptanceFile": "acceptance/03-evidence-publication-gate.md",
+        "qualification": "local-annotated-verifier-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-04",

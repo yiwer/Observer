@@ -13,22 +13,24 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 当前票：V1-03 / GitHub #3，进行中；原生依赖只有 #2 且 CLOSED，fresh-context 实施 agent 为 `/root/implement_v1_03`。
-- #3 固定起点：aa2a90fd5f72b225051bff6d52bea9114a96523f；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[启动记录](https://github.com/yiwer/Observer/issues/3#issuecomment-5550133552)。
-- #1、#2 已完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 均已读回 CLOSED。
-- 最新已验收集成提交：7fdef6736f0629850cba11061bf9607a853e3d2a。
+- 已完成票：#1、#2、#3，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
+- 下一票：V1-04 / GitHub #4；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。尚未派发，下一步创建固定基线的独立 worktree 并启动 fresh-context implement agent。
+- #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
+- 最新已验收集成提交：a83cf2a08b8db8b9b960f059e2a3653cc01c3935。
 - 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
-- #3 首轮冻结提交：4ae2b6a7c49e7805c8768d7c661a6256bfbafe03；Root 独立复跑 check 46/46、smoke 3/3 通过，但额外探测发现阻断。两个 fresh-context reviewer 已完成独立 Standards / Spec 首审；详见 [V1-03 审查记录（未验收）](acceptance/03-evidence-publication-gate.md)。
-- 下一步：实施 agent 修复各模型/归档边界 TTL、冲突项安全说明与归因、Root 发现的矛盾语义回执；新 SHA 重做冻结复审与验收。不得以首轮测试通过关闭 #3 或启动 #4 实施。
+- #3 首轮测试虽通过，但两轴及 Root 额外发现阻断；最终重新冻结、复审关闭全部发现，再集成验收。Root 在最终工作区及 master 均复跑 check 52/52、smoke 3/3；smoke 属于总测试子集。详见 [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)。
 
 ## 已验收
 
 - [V1-01 验收记录](acceptance/01-private-brief-spine.md)：实施 35c647c，集成 1798613；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、13/13 测试及 2/2 smoke。Standards 有 1 项非阻塞建议，Spec 无发现。
 - [V1-02 验收记录](acceptance/02-policy-bound-collection.md)：最终实施 2931098，集成 7fdef67；orchestrator 在固定工作区和集成基线均复跑 typecheck/build、32/32 测试及 3/3 smoke。两轴原 3 项阻断和 root 删除准入发现均修复；余 1 项非阻塞维护建议。
+- [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)：最终实施 67401ac，集成 a83cf2a；orchestrator 冻结和集成各复跑 typecheck/build、52/52 与 3/3 smoke；Standards、Spec 最终各 0 项；Root 矛盾回执及 24 场景 TTL 回归通过。只有标注语义替身证据。
 
 ## 协作容量
 
 #2 的第二个 reviewer spawn 曾返回 `collab spawn failed: agent thread limit reached`。Standards 使用独立新 reviewer，Spec 复用未参与 #2 实施的 #1 agent，两轴没有互换报告内容。后续实施仍要求 fresh context；若平台无法释放线程，不得把旧实施上下文冒充 fresh context，需核实容量或请求 Owner 调整会话。
+
+#3 的 fresh implementation 和两个 fresh reviewer 均实际启动成功；不要把 #2 的历史错误当作当前容量阻断。
 
 ## 外部就绪项
 
@@ -39,3 +41,5 @@ V1-26 起的真实环境、Provider 资格/凭证、来源许可、费用、收�
 2026-09-05，orchestrator 在等待 #3 时执行了本机 `codex --version`、根/exec/sandbox/features 帮助命令及无调用参数解析检查。当前二进制为 `C:/Users/16348/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe`，版本 **codex-cli 0.153.4**，已不同于历史研究的 0.151.0。`--search -a never` 放在 `exec` 前可通过帮助解析，`exec --ask-for-approval never --help` 仍被拒绝。没有读取凭证、修改配置或发起模型请求。
 
 #4 实施时必须重验实际二进制与完整终态契约，不得从历史版本或帮助解析推定认证、费用、事实质量、OS 隔离或进程树清理已经合格。预检已重新打开官方[非交互模式](https://learn.chatgpt.com/docs/non-interactive-mode)、[安全边界](https://learn.chatgpt.com/docs/agent-approvals-security)和[配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)；这些文档与本机帮助仅作后续测试依据，不是实际拒绝边界的测试证据。#4 尚未派发或开始实施。
+
+本机有 Docker CLI、WSL CLI，但 `wsl --list --quiet` 只列 docker-desktop；读取 Docker Server 版本时 Linux Engine named pipe 不存在，不能视为容器运行环境已就绪。此次只读预检没有启动虚拟机/容器、安装组件或修改配置。
