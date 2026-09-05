@@ -180,6 +180,51 @@ test("Claude accepts cumulative message deltas without adding their output count
   assert.deepEqual(report.record.agentResult.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 21]]);
 });
 
+test("Claude reports output usage as unknown when a stream ends before its first output update", async (t) => {
+  for (const initialOutput of [0, 1]) {
+    const stream = claudeMessageFixture().replace('"output_tokens":0', `"output_tokens":${initialOutput}`);
+    const body = stream.slice(0, stream.indexOf("event: message_delta"));
+    const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    await assert.rejects(observer.produce(request), (error: unknown) => {
+      assert.ok(error instanceof ObserverError); assert.equal(error.code, "agent-policy-violation");
+      const usage = error.agentRun?.usage;
+      assert.equal(usage?.source, "model-responses");
+      assert.equal(usage?.inputTokens, 12); assert.equal(usage?.outputTokens, null);
+      assert.equal(usage?.cachedInputTokens, 2); assert.equal(usage?.cacheWriteInputTokens, 0); assert.equal(usage?.costUsd, null);
+      assert.deepEqual(usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens, receipt.cachedInputTokens, receipt.cacheWriteInputTokens]), [[12, null, 2, 0]]);
+      assert.equal(error.agentRun?.execution?.cleanup, "removed"); return true;
+    });
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+  }
+});
+
+test("Claude preserves a reported zero output count from a complete Messages stream", async (t) => {
+  const body = claudeMessageFixture().replace('"output_tokens":21', '"output_tokens":0');
+  const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+  const version = await observer.produce(request);
+  const report = observer.readReport(version.id, ownerToken);
+  assert.match(report.canonicalMarkdown, /12 个观测点/);
+  assert.equal(report.record.agentResult.usage?.inputTokens, 12);
+  assert.equal(report.record.agentResult.usage?.outputTokens, 0);
+  assert.deepEqual(report.record.agentResult.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 0]]);
+});
+
+test("Rejected complete JSON Messages preserve their reported output counts without stream updates", async (t) => {
+  for (const outputTokens of [0, 21]) {
+    const body = JSON.stringify({ id: "msg_fixture", type: "message", role: "assistant", model: "claude-sonnet-4-6", stop_reason: "tool_use",
+      usage: { input_tokens: 12, output_tokens: outputTokens, cache_read_input_tokens: 2, cache_creation_input_tokens: 0 },
+      content: [{ type: "tool_use", id: "attack", name: "Bash", input: {} }] });
+    const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
+    await assert.rejects(observer.produce(request), (error: unknown) => {
+      assert.ok(error instanceof ObserverError); assert.equal(error.code, "agent-policy-violation");
+      assert.equal(error.agentRun?.usage?.inputTokens, 12); assert.equal(error.agentRun?.usage?.outputTokens, outputTokens);
+      assert.deepEqual(error.agentRun?.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens, receipt.cachedInputTokens]), [[12, outputTokens, 2]]);
+      assert.equal(error.agentRun?.execution?.cleanup, "removed"); return true;
+    });
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { message: "not-found" });
+  }
+});
+
 test("Claude accepts usage-only and null-stop partial deltas before a complete terminal", async (t) => {
   for (const delta of [{}, { stop_reason: null, stop_sequence: null }]) {
     const interim = `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta, usage: { output_tokens: 10 } })}\n\n`;

@@ -35,7 +35,7 @@ export function* messageEvents(body: string): Generator<Record<string, unknown>>
   if (name || data.length || (lines.at(-1) && !lines.at(-1)!.startsWith(":"))) throw new Error("incomplete-model-event");
 }
 export function readMessagesAccounting(body: string, model: string): { usage: TokenUsage; consistent: boolean } {
-  let usage = unknownUsage(), started = false, ended = false, consistent = true;
+  let usage = unknownUsage(), started = false, ended = false, consistent = true, outputPending = false;
   const conflicts = new Set<keyof TokenUsage>();
   const update = (key: keyof TokenUsage, value: unknown, required = false) => {
     if (conflicts.has(key) || (!required && value == null)) return;
@@ -51,11 +51,13 @@ export function readMessagesAccounting(body: string, model: string): { usage: To
         if (started) { usage = unknownUsage(); consistent = false; break; }
         const message = z.object({ model: z.literal(model), usage: usageSchema }).parse(event.message ?? event);
         usage = tokens(message.usage); started = true;
+        outputPending = event.type === "message_start";
       } else if (event.type === "message_delta") {
         if (!started) { consistent = false; break; }
         const delta = z.record(z.string(), z.unknown()).safeParse(event.usage);
         // Missing required output accounting is unknown, not the start's zero.
         update("outputTokens", delta.success ? delta.data.output_tokens : undefined, true);
+        outputPending = false;
         if (!delta.success) continue;
         update("inputTokens", delta.data.input_tokens);
         update("cachedInputTokens", delta.data.cache_read_input_tokens);
@@ -69,6 +71,9 @@ export function readMessagesAccounting(body: string, model: string): { usage: To
       }
     }
   } catch { consistent = false; } // Preserve usage from dispatched earlier frames.
+  // Keep the start count for monotonic checks, but it cannot report generated
+  // output before any output update arrives. Complete JSON messages are final.
+  if (outputPending) usage.outputTokens = null;
   return { usage, consistent: consistent && started };
 }
 
