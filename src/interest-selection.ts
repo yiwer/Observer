@@ -51,7 +51,7 @@ export function selectInterests(gate: GatedRecord["publicationGate"] | EventReco
   return { interestSelections, stories: stories.filter((story) => decision(story.id).outcome === "eligible").sort((a, b) => Number(decision(b.id).baseline) - Number(decision(a.id).baseline) || decision(b.id).score - decision(a.id).score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) };
 }
 
-export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 4 | 5 }>, snapshot: InterestSnapshot): Extract<ReportRecord, { schemaVersion: 5 }>["coverage"] {
+export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 4 | 5 | 6 }>, snapshot: InterestSnapshot): Extract<ReportRecord, { schemaVersion: 5 }>["coverage"] {
   const gate = record.publicationGate;
   const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
   const permitted = new Set(record.evidenceBundle.evidence.map((evidence) => evidence.id));
@@ -91,7 +91,7 @@ export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 
 }
 
 // Recheck the published projection without reopening source material or the mutable profile.
-export function consistentInterests(record: Extract<ReportRecord, { schemaVersion: 5 }>): boolean {
+export function consistentInterests(record: Extract<ReportRecord, { schemaVersion: 5 | 6 }>): boolean {
   if (interestHash(record.interestProfile.profile) !== record.interestProfile.sha256 || new Set(record.interestSelections.map((entry) => entry.storyId)).size !== record.interestSelections.length) return false;
   const gate = record.publicationGate;
   const receipts = gate.schemaVersion === 1 ? [gate] : gate.batches;
