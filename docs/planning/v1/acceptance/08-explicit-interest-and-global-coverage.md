@@ -1,6 +1,6 @@
 # V1-08 执行与待验收记录
 
-状态：**首次冻结 c0a4522 不接受，Spec P2 经 Root 复现，交原作者窄修**。GitHub #8 OPEN，已分配 yiwer；未验收/集成。
+状态：**最终冻结 06fc8b3 已通过独立验收，允许本地集成；尚待master复验**。GitHub #8 OPEN，已分配 yiwer，未关闭。首次冻结 c0a4522 的失败过程保留于下文。
 
 - 范围：[GitHub #8](https://github.com/yiwer/Observer/issues/8)、[本地票](../tickets/08-explicit-interest-and-global-coverage.md)；PRD US8/64–66、AC17、D1/D3/D6。
 - Fixed base：**`b1b6ac3ab557f0098ae5b133f20f4ca32b9182aa`**；包含 #7 最终实施7fae122、集成8e02377及关闭记录。
@@ -128,3 +128,46 @@ Root新增自有ignored `accept-v1-07/data/root-v1-08-review/verification-dispat
 ### 作者 c0a4522 首轮完整检查终态
 
 `npm run check` **exit1，165/166 PASS、1 FAIL**；测试duration **198319.9923 ms**，命令wall204.1528秒。唯一失败为 `tests/claude-runner.test.ts:40` 首个隔离Claude协议fixture的 `docker image inspect` tag `No such image`，全部14个兴趣测试通过。日志 `O:/GenesisCode/Observer-worktrees/v1-08/data/v1-08-c0a4522-6dc7/check-first.log` 保留。没有中止/修改镜像、tag、daemon或环境；尚无该SHA第二full或smoke，也不为已知P2候选继续凑验收。此环境查询失败与Spec业务P2分别记录。
+
+## 第二冻结 06fc8b3
+
+作者自身新增T1实测RED（298.93 ms）→GREEN（372.69 ms），补充两批去重/混合发送后6模式GREEN（491.58 ms）；typecheck通过，相关63/63（4162.41 ms）。新提交 **06fc8b33b4bbb3f063d865f53dfe8086599c7e13**（`fix: count only evidence dispatched to semantic verification`），增量7文件。Root实际核对clean、固定base不变、完整三点diff及2个commit、diff-check0；整票15files、+849/-30，完整命令输出99,261字符。
+
+仅request4在实际 `verify` 调用处记录每批 `dispatchedEvidenceIds`，聚合去重；prepared字段与旧请求字节不改。发送后失败仍计真实交付；读取要求字段存在、为准备输入子集、批次与汇总一致。c0a4522未接受的诊断Record5不是旧已发布兼容基准；旧Record1–4始终不变。
+
+Root另建detached `O:/GenesisCode/Observer-worktrees/accept-v1-08-r2` 固定新SHA，保留旧c0a工作树与全部失败数据；锁定安装/build exit0。对新built模块原脚本/预期不变重跑：
+
+| 检查 | 第二冻结结果 |
+|---|---|
+| dispatch原失败探针 | 4/4 PASS，134.1066 ms；未发送0，发送后throw/坏回执1 |
+| 第9候选容量 | 1/1 PASS，86.0681 ms |
+| 共享文档覆盖归因 | 1/1 PASS，78.6082 ms |
+| 新事实/因果历史 | 3/3 PASS，152.0813 ms |
+| 隔离注解不留存 | 4/4 PASS，102.0932 ms |
+| 声明/事实组合 | 3/3 PASS，86.8267 ms |
+| 历史许可传递 | 1/1 PASS，160.0299 ms |
+| Version/Gate时间关联 | 3/3 PASS，154.979 ms |
+| 不可变旧归档 | 5/5，Record1/2/3/两期4全部保持 |
+
+本票专项6/6、既有事件14/14。上述检查不替代完整suite，生产资格不变。
+
+### Standards 复审
+
+同独立reviewer核对全票15文件与7文件增量，保持 **0 hard / 2 heuristic，worst P3**，无新增发现。两项旧建议仍是兴趣键规范化重复和Gate版本展开重复（新行27/56/102），不要求扩大重构；结束06fc8b3/clean。
+
+### Spec 复审
+
+同独立reviewer核对完整变更并用新自有ignored `v1-08/data/spec-rereview-28ee548f-eeac-4cf3-b09c-b8c243e86be0/coverage-probe.ts` 做公开T1六模式复验，exit0：无Verifier/全结构拒绝/无候选为0；已发送throw/坏回执为1；混合批次仅实际发送列表计数。全部真实SQLite重启鉴权读取一致。原P2关闭，**最终0项、worst无**；未跑完整suite，结束06fc8b3/clean，旧失败数据不动。
+
+两轴实际并行复审、独立报告；最终Standards 0 hard / 2 heuristic，worst P3；Spec0，worst无。
+
+### 最终冻结完整检查
+
+| 执行方 / SHA | 完整check | smoke（check子集） |
+|---|---|---|
+| 作者06fc8b3 | exit0，167/167，169144.5267 ms | exit0，3/3，1418.0405 ms |
+| Root detached 06fc8b3 | exit0，167/167，172795.386 ms | exit0，3/3，1367.1765 ms |
+
+两方检查前后HEAD不变/clean；typecheck/build均通过，没有修改镜像、tag、daemon或凭证。作者日志 `v1-08/data/v1-08-06fc8b3-a94d/check-first.log` / `smoke.log`；Root完整输出保存在 `accept-v1-08-r2/data/root-acceptance-06fc8b3-9c10/check.log`，该日志合并的是**同一次exec session的连续输出块**，不是把不同测试运行拼为成功。Root smoke另有工具终态。
+
+结合原脚本新built专项6/6、旧事件14/14、旧归档5/5与两轴复审，最终冻结允许进入本地master集成。此时没有实际master复验、Issue关闭或push；真实多语言召回/模型质量、Source Policy许可、部署和人工长期核查仍未通过，生产保持禁用。
