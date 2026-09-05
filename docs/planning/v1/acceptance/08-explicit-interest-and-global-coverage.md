@@ -1,6 +1,6 @@
 # V1-08 执行与待验收记录
 
-状态：**首片配置排序 T1 已 RED→GREEN，正在逐片实现后续约束，未冻结/验收**。GitHub #8 OPEN，已分配 yiwer。
+状态：**首次冻结 c0a4522 不接受，Spec P2 经 Root 复现，交原作者窄修**。GitHub #8 OPEN，已分配 yiwer；未验收/集成。
 
 - 范围：[GitHub #8](https://github.com/yiwer/Observer/issues/8)、[本地票](../tickets/08-explicit-interest-and-global-coverage.md)；PRD US8/64–66、AC17、D1/D3/D6。
 - Fixed base：**`b1b6ac3ab557f0098ae5b133f20f4ca32b9182aa`**；包含 #7 最终实施7fae122、集成8e02377及关闭记录。
@@ -79,3 +79,52 @@ Root 独立 `coverage-attribution-probe.ts` 在新自有 `accept-v1-07/data/root
 作者用自己的第7片公开T1独立复现：重复Cluster成员标US，而主CN与另一EU事件共享Evidence，错误的US已选故事数组同时包含space/climate；当时6 PASS / 1 RED，约448 ms。改为沿实际已选fact/statement及supportingClaim的qualified annotation归因后，作者单文件 **7/7 GREEN**（416.7 ms）。纯Impact Note成员不会将未承载事实的地域借给主故事；证据层的研究观察计数仍保留。语言已选计数定义为已选Claim所见获准材料的标注语言，不再无条件join整个共享文档。
 
 Root 未修改脚本或预期，对整改后WIP source实际重跑：原覆盖归因 **1/1 PASS**（53.9939 ms），US.evidenceIds仍为shared而US.selectedStoryIds正确为空；容量 **1/1 PASS**（74.7954 ms），旧Record1/2/3/两期4 **5/5**兼容。原RED材料保留，不改写历史。此开发期复现已转绿，正式关闭仍待固定SHA、双轴和built/master验收；其它来源/元数据边界继续实施。
+
+## 首次冻结与独立检查
+
+作者提交 **c0a4522ca52704f2f6c5ae65ca970ae3a0429214**（`feat: add versioned explicit interests and coverage baseline`）。Root实际核对base、HEAD、clean、commit list、非空完整 `git diff b1b6ac3ab557f0098ae5b133f20f4ca32b9182aa...HEAD`（90,345字符，14 files、+792/-29）及diff-check exit0；首次输出截断后完整重取，未以截断内容冒充全部diff。
+
+本票新增14个公开T1测试、初始配置与 [专属实施说明](../../../implementation/v1-08.md)。作者记录10段真实RED过程及5个初绿补充测试；其中既有entity/region测试后来新增正文断言经历独立RED→GREEN。Root收尾提醒的数量缺口措辞已修为新版“硬门、事件去重及兴趣与地域筛选后不足”，不再把兴趣过滤称为Gate候选不足；旧版文字未改。
+
+Root创建新的 detached `O:/GenesisCode/Observer-worktrees/accept-v1-08` 固定于c0a4522，`npm ci --ignore-scripts` 安装7个锁定依赖、build exit0，实际再次确认clean。以下均对该 **built `dist/observer.js`** 运行，沿用既有脚本及独立预期，没有重建旧producer档案：
+
+| 检查 | 结果 |
+|---|---|
+| 第9候选在7条截断前按偏好提升 | 1/1 PASS，108.6773 ms |
+| 共享文档不借已排除US地域 | 1/1 PASS，128.9291 ms；US evidence保留、selected为空 |
+| 既有事件：新事实/因果历史 | 3/3 PASS，339.3039 ms |
+| 既有事件：隔离注解不留存 | 4/4 PASS，197.1883 ms |
+| 既有事件：声明/事实组合 | 3/3 PASS，123.6209 ms |
+| 既有事件：来源许可传递 | 1/1 PASS，171.4147 ms |
+| 既有事件：Version/Gate时间关联 | 3/3 PASS，203.1198 ms |
+| 不可变Record1/2/3/两期4 | 5/5，原MD/完整JSON/摘要/私有读取保持 |
+
+新增专项合计2/2，既有事件14/14；这些不是完整suite或生产质量证明。作者首轮full日志已出现首个Claude tag inspect `No such image`，其余组继续执行；尚待完整计数/exit，不中断后拼成PASS，不修改环境或镜像。
+
+### Standards
+
+fresh `/root/review_v1_08_standards` 已完成完整14文件静态审查，结束时c0a4522/clean；没有执行测试。硬性违反 **0**，启发式建议 **2**，worst **P3**，均非阻断：
+
+- possible Duplicated Code：`src/interest-contracts.ts:15` 与 `src/interest-profile.ts:7` 重复兴趣键规范化规则，未来可抽取无依赖函数避免等价关系漂移。
+- possible Repeated Switches：`src/interest-selection.ts:27,56,97` 重复Gate版本的assessment展开，未来可集中版本适配。
+
+### Spec
+
+fresh `/root/review_v1_08_spec` 与Standards实际并行启动，独立上下文、没有交换两轴发现。完整静态审查及自有公开T1探针后，**1项P2**：未实际调用SemanticVerifier时，`interestCoverage`仍将准备输入的`verificationEvidenceIds`计为“实际进入核验”。`src/interest-selection.ts:58,86` / `src/six-edition.ts:107` 的新使用与实施说明“真正交给Verifier、不包含仅Runner所见材料”不符。未配置Verifier、全部Claim因重复ID在发送前结构拒绝，两模式调用0次但inputEvidenceCount为1、MD报1，重启可读。Spec自有ignored探针 `v1-08/data/spec-review-d38d70b3-cd31-4954-83b5-443ab8ce4b8b/coverage-probe.ts` exit0为观察结果，不是断言修复通过。
+
+两轴汇总：Standards **0 hard / 2 heuristic，worst P3**；Spec **1，worst P2**。Root不合并或重排两轴发现；该候选不接受，Root未启动完整detached suite或集成。
+
+### Root P2 复现与整改边界
+
+Root新增自有ignored `accept-v1-07/data/root-v1-08-review/verification-dispatch-probe.ts`，动态指定c0a4522的detached built reader，公开文件配置→produce→关闭/重启readReport，真实独立SQLite。首次脚本虚构Owner token不足32字符，4例均被`invalid-owner-token`拒绝，属于 **harness错误**，不是产品RED；只修正脚本token后重跑。
+
+正式探针 SHA-256 **6c47db960ec1e3b52fbd55154325739df868dff95b021b72da61c78432a5fb9e**，实际 **2 PASS / 2 RED**（134.8554 ms，exit1）：
+
+- absent / structurally-rejected：外部Verifier实际收到IDs为空，期望inputEvidenceCount为0及unknown数组空；实际count1且unknown包含observations，两个断言失败。
+- throws-after-dispatch / invalid-receipt-after-dispatch：外部Verifier已收到observations，即使抛错或回执无效仍应count1并保留未知标注；两例通过。发送不等于核验成功，修复不能只依据有效回执计数。
+
+全部材料保留。原作者已获完整Spec及Root复现，按自身T1先RED后窄修；保留旧`verificationEvidenceIds`准备输入语义、request1/2/3及旧档字节，在新版本准确记录实际交付的证据、跨批去重，不改文案掩盖发送事实。后续必须clean新SHA、完整检查及两轴复审、Root原脚本不改预期复验。
+
+### 作者 c0a4522 首轮完整检查终态
+
+`npm run check` **exit1，165/166 PASS、1 FAIL**；测试duration **198319.9923 ms**，命令wall204.1528秒。唯一失败为 `tests/claude-runner.test.ts:40` 首个隔离Claude协议fixture的 `docker image inspect` tag `No such image`，全部14个兴趣测试通过。日志 `O:/GenesisCode/Observer-worktrees/v1-08/data/v1-08-c0a4522-6dc7/check-first.log` 保留。没有中止/修改镜像、tag、daemon或环境；尚无该SHA第二full或smoke，也不为已知P2候选继续凑验收。此环境查询失败与Spec业务P2分别记录。
