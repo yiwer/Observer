@@ -15,12 +15,13 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 - 已完成票：#1、#2、#3、#4，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
 - 当前票：V1-05 / GitHub #5，进行中；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。fresh-context implement agent `/root/implement_v1_05` 已派发，base `8e35d12470c14f2638d3adbcd1901935feeaa593`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`，branch `ticket/v1-05`；[启动回写](https://github.com/yiwer/Observer/issues/5#issuecomment-5550574214)已读回 OPEN、assignee=yiwer，详见 [#5 执行边界](acceptance/05-claude-runner.md)。
+- #5 首个冻结候选 `0b967c6273b2d768f46df4ce8b546508a0d41784`（26 files，+1023/-57）；作者 check 94/94、smoke 3/3，工作树干净。Root 已固定非空三点 diff，派发 fresh Standards / Spec 两轴，在 detached `O:/GenesisCode/Observer-worktrees/accept-v1-05` 独立复跑；未出最终验收结论，不启动 #6 实施。
 - #4 最终实施 `139dc1388cb01d68df12554f85003ac41bbd20b8`，固定起点 `320ab620a2d3f22c09e13334a68f06a3b664af05`；worktree `O:/GenesisCode/Observer-worktrees/v1-04`，分支 `ticket/v1-04`，干净；[验收回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550565579)已读回 CLOSED。
 - #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；预检时未实施/触发模型/升级，现已交给 #5 fresh 实施 agent，仍须实测目标 Linux CLI 和完整隔离契约。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
 - 最新已验收集成提交：f59bcad37f200e848eff305c6aeff0a5f1cb22e9。
-- 当前仍未 push；已关闭的 Issue 表示本地实施验收，不表示远程代码或生产部署已更新。
+- 2026-09-05 17:59:25 +08:00 后读到 `origin/master` 与 `git ls-remote` 均为 `e475bc18620d1d052f6effcb648fbc4ec66150d2`；已确认 #1–#4 实施和集成提交都可从该远端提交到达。该 push 不是本次 orchestrator 执行；#5 候选仍未集成、未推送（远端无 ticket/v1-05）。远端代码存在不代表生产部署或模型资格通过。Root 新出现未跟踪 `.idea/`，保留不纳入任务提交。
 - #3 首轮测试虽通过，但两轴及 Root 额外发现阻断；最终重新冻结、复审关闭全部发现，再集成验收。Root 在最终工作区及 master 均复跑 check 52/52、smoke 3/3；smoke 属于总测试子集。详见 [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)。
 
 ## 已验收

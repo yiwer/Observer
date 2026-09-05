@@ -56,7 +56,7 @@
         "integrationCommit": "179861356306ace135b5e731e0655e272df1b1b6",
         "acceptanceFile": "acceptance/01-private-brief-spine.md",
         "qualification": "local-fixture-only",
-        "pushed": false
+        "pushed": true
       }
     },
     {
@@ -97,7 +97,7 @@
         "integrationCommit": "7fdef6736f0629850cba11061bf9607a853e3d2a",
         "acceptanceFile": "acceptance/02-policy-bound-collection.md",
         "qualification": "local-fixture-and-injected-network-only",
-        "pushed": false
+        "pushed": true
       }
     },
     {
@@ -141,7 +141,7 @@
         "integrationCommit": "a83cf2a08b8db8b9b960f059e2a3653cc01c3935",
         "acceptanceFile": "acceptance/03-evidence-publication-gate.md",
         "qualification": "local-annotated-verifier-only",
-        "pushed": false
+        "pushed": true
       }
     },
     {
@@ -179,7 +179,7 @@
         "integrationCommit": "f59bcad37f200e848eff305c6aeff0a5f1cb22e9",
         "acceptanceFile": "acceptance/04-codex-runner.md",
         "qualification": "local-cli-and-model-protocol-fixture-only",
-        "pushed": false
+        "pushed": true
       }
     },
     {

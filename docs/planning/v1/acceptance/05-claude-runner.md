@@ -1,6 +1,6 @@
 # V1-05 审查与验收记录
 
-状态：**实施中，尚未验收**。GitHub #5 OPEN，assignee=yiwer；没有冻结候选或双轴结论。此文记录执行边界，不是通过证明。
+状态：**首轮冻结审查中，尚未验收**。GitHub #5 OPEN，assignee=yiwer；首个候选 `0b967c6273b2d768f46df4ce8b546508a0d41784`，双轴与 Root 独立复跑进行中。历史阶段证据不替代冻结验收。
 
 - 范围：[GitHub #5](https://github.com/yiwer/Observer/issues/5)、[本地票](../tickets/05-claude-runner.md)。
 - 固定 base：`8e35d12470c14f2638d3adbcd1901935feeaa593`；branch `ticket/v1-05`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`。
@@ -55,12 +55,18 @@ Root 另查官方[结构化输出说明](https://code.claude.com/docs/en/agent-s
 
 ## Standards
 
-待冻结后独立审查，无结论。
+首轮 fresh reviewer `/root/review_v1_05_standards` 已收到固定 base、候选 SHA、完整 diff command / commit list、规范来源及完整 Fowler smell baseline；审查中，无结论。
 
 ## Spec
 
-待冻结后独立审查，无结论。
+首轮 fresh reviewer `/root/review_v1_05_spec` 独立读取同一冻结差异、GitHub #5 / 本地票及 PRD；两轴不交换报告。审查中，无结论。
+
+## 首个冻结候选
+
+作者提交 `0b967c6273b2d768f46df4ce8b546508a0d41784`：`feat: add isolated Claude research runner (#5)`；base 不变，26 files、+1023/-57，Root 读回 clean，固定 `git diff 8e35d12470c14f2638d3adbcd1901935feeaa593...HEAD` 与单条 commit list，确认差异非空。作者最终 `check` **94/94**（86.034 秒）、`smoke` **3/3**（1.291 秒，旧子集），未保留 `observer.task` 容器。Root 在独立 detached `O:/GenesisCode/Observer-worktrees/accept-v1-05` 安装锁定依赖后执行完整检查，尚待终态，不提前记 PASS。
+
+Root 随后在该冻结 SHA 独立完成 `npm run check`：**94/94、0 skipped、0 failed**（76.667 秒）；`npm run smoke` **3/3**（1.301 秒，旧子集）。检查包含 typecheck、生产 build、真实 Claude/Codex CLI + 无凭证模型协议替身、Gate/归档和来源政策回归；结束读回 HEAD 未变、detached 工作树 clean。双轴审查仍未结束，以上不授权先行集成或生产发布。
 
 ## 外部门槛
 
-没有真实模型、认证、地域资格、费用、质量、邮件、生产 Linux 或人工验收证据。生产发布/fixture 隔离继续保留；未知不记 PASS。当前提交均未 push。
+没有真实模型、认证、地域资格、费用、质量、邮件、生产 Linux 或人工验收证据。生产发布/fixture 隔离继续保留；未知不记 PASS。Root 后来实际读到远端 master=`e475bc1`（含 #1–#4），这次 orchestrator 没有执行 push；#5 首个候选仍未集成、未推送，远端无 `ticket/v1-05`。
