@@ -41,6 +41,8 @@ Root 另查官方[结构化输出说明](https://code.claude.com/docs/en/agent-s
 
 当前作者正按后续 red→green 收紧终态和拒绝矩阵，没有冻结 SHA。隔离生命周期从 codex-container/worker 提取为 agent-container/worker；新旧 CLI 的协议分别处理，共享变更必须完整回归原 Codex 74 项证据。当前 1/1 不扩写为全部 AC、安全、真实模型或生产通过。
 
+后续作者报告的实际 red→green：`stop_reason=refusal` 且退出 0 曾误出版，联合唯一 result/init/session/StructuredOutput 完成状态后拒绝；恶意 Bash 响应已有用量却是 null，现保留 Messages 12/21/cached 2 且不出版；第二次发送前 TTL 曾未阻断，现依可信快照拒绝过期发送。该阶段 **4/4** 通过；共享重命名后旧 Codex 适配器文件 **22/22** 通过（60.638 秒）。当前扩展协议失败/整树/OS 拒绝检查在作者 session 59932，未冻结，Root 尚未独立复跑这些新增用例。最终需旧 74 + 新测试完整运行，不把分阶段计数叠加冒充最终总数。
+
 ## Standards
 
 待冻结后独立审查，无结论。
