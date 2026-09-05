@@ -14,8 +14,10 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 ## 当前停止点
 
 - 当前票：V1-01 / GitHub #1，前置关系已读回为空。
-- 状态：准备独立实施基线，尚未有产品代码。
-- 下一步：派发 #1；完成后核对两轴 review 并在集成 worktree 验收。
+- 状态：implement_v1_01 subagent 正在实施，尚未完成验收。
+- 固定起点：99d7fb5fd3873786d2510fc6ccbf230997a07374。
+- 工作目录：O:/GenesisCode/Observer-worktrees/v1-01，分支 ticket/v1-01。
+- 下一步：等待 #1 实施与两轴 review；orchestrator 另行检查鉴权、重启持久化、不可变版本与替身/生产隔离，并在集成基线重跑验收。
 
 ## 已验收
 

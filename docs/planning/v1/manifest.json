@@ -954,7 +954,7 @@
       "PRD-T1-integration-test-seam",
       "GitHub-Issues-publication"
     ],
-    "implementationAuthorized": false
+    "implementationAuthorized": true
   },
   "publication": {
     "status": "verified",
