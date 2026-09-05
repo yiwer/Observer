@@ -1,0 +1,985 @@
+{
+  "schemaVersion": 1,
+  "feature": "observer-v1",
+  "status": "published",
+  "baselineCommit": "c104ef73f2b78bab729978a53016ac3833ccdfc4",
+  "targetTracker": {
+    "type": "github",
+    "repository": "yiwer/Observer",
+    "status": "confirmed-by-owner",
+    "apiAccess": "verified-authenticated",
+    "label": "ready-for-agent"
+  },
+  "phase2Excluded": {
+    "userStories": [
+      62,
+      63
+    ],
+    "acceptanceCriteria": [
+      21
+    ]
+  },
+  "approvalRequired": [],
+  "tickets": [
+    {
+      "id": "V1-01",
+      "number": 1,
+      "title": "最小私有日报闭环与共享契约",
+      "file": "tickets/01-private-brief-spine.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [],
+      "userStories": [
+        54,
+        58
+      ],
+      "acceptanceCriteria": [
+        15,
+        16
+      ],
+      "references": [
+        "D1",
+        "D2",
+        "D3",
+        "D9",
+        "T1",
+        "ADR-0001"
+      ],
+      "issueNumber": 1,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/1",
+      "issueDatabaseId": 5355681211,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-02",
+      "number": 2,
+      "title": "受来源政策约束的持续采集",
+      "file": "tickets/02-policy-bound-collection.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-01"
+      ],
+      "userStories": [
+        8,
+        16,
+        17,
+        26,
+        27,
+        28
+      ],
+      "acceptanceCriteria": [
+        5
+      ],
+      "references": [
+        "D3",
+        "D6",
+        "ADR-0001",
+        "research:sources"
+      ],
+      "issueNumber": 2,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/2",
+      "issueDatabaseId": 5355689192,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-03",
+      "number": 3,
+      "title": "陈述级证据核验与 Publication Gate",
+      "file": "tickets/03-evidence-publication-gate.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-02"
+      ],
+      "userStories": [
+        5,
+        10,
+        15,
+        16,
+        17,
+        18,
+        26
+      ],
+      "acceptanceCriteria": [
+        4,
+        5,
+        18
+      ],
+      "references": [
+        "D5",
+        "D6",
+        "T1",
+        "ADR-0001"
+      ],
+      "issueNumber": 3,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/3",
+      "issueDatabaseId": 5355733428,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-04",
+      "number": 4,
+      "title": "Codex 单栏研究到受控候选输出",
+      "file": "tickets/04-codex-runner.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-03"
+      ],
+      "userStories": [
+        39,
+        67,
+        68
+      ],
+      "acceptanceCriteria": [
+        18
+      ],
+      "references": [
+        "D7",
+        "ADR-0001",
+        "ADR-0002",
+        "research:codex"
+      ],
+      "issueNumber": 4,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/4",
+      "issueDatabaseId": 5355734179,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-05",
+      "number": 5,
+      "title": "Claude 单栏研究到受控候选输出",
+      "file": "tickets/05-claude-runner.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-03"
+      ],
+      "userStories": [
+        39,
+        67,
+        68
+      ],
+      "acceptanceCriteria": [
+        18
+      ],
+      "references": [
+        "D7",
+        "ADR-0001",
+        "ADR-0002",
+        "research:claude"
+      ],
+      "issueNumber": 5,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/5",
+      "issueDatabaseId": 5355734934,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-06",
+      "number": 6,
+      "title": "六栏编排、Today Overview 与唯一正文",
+      "file": "tickets/06-six-edition-canonical-brief.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-03"
+      ],
+      "userStories": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        54
+      ],
+      "acceptanceCriteria": [
+        1,
+        15
+      ],
+      "references": [
+        "D1",
+        "D2",
+        "D7",
+        "D9"
+      ],
+      "issueNumber": 6,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/6",
+      "issueDatabaseId": 5355735948,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-07",
+      "number": 7,
+      "title": "Event Cluster、跨栏去重与跨日报更新",
+      "file": "tickets/07-event-history-and-updates.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-06"
+      ],
+      "userStories": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "acceptanceCriteria": [
+        2,
+        3
+      ],
+      "references": [
+        "D3",
+        "D5"
+      ],
+      "issueNumber": 7,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/7",
+      "issueDatabaseId": 5355736681,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-08",
+      "number": 8,
+      "title": "可版本化兴趣配置与全球覆盖底线",
+      "file": "tickets/08-explicit-interest-and-global-coverage.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-07"
+      ],
+      "userStories": [
+        8,
+        64,
+        65,
+        66
+      ],
+      "acceptanceCriteria": [
+        17
+      ],
+      "references": [
+        "D1",
+        "D3",
+        "D6",
+        "research:sources"
+      ],
+      "issueNumber": 8,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/8",
+      "issueDatabaseId": 5355737356,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-09",
+      "number": 9,
+      "title": "高风险新闻与 AI／科技证据标签",
+      "file": "tickets/09-domain-evidence-rules.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-06"
+      ],
+      "userStories": [
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "acceptanceCriteria": [
+        4
+      ],
+      "references": [
+        "D1",
+        "D5",
+        "D6",
+        "research:sources"
+      ],
+      "issueNumber": 9,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/9",
+      "issueDatabaseId": 5355738961,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-10",
+      "number": 10,
+      "title": "合规社交样本到话语观察 Edition",
+      "file": "tickets/10-social-discourse-edition.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-07"
+      ],
+      "userStories": [
+        23,
+        24,
+        25
+      ],
+      "acceptanceCriteria": [
+        5,
+        6
+      ],
+      "references": [
+        "D5",
+        "D6",
+        "research:sources"
+      ],
+      "issueNumber": 10,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/10",
+      "issueDatabaseId": 5355739420,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-11",
+      "number": 11,
+      "title": "GitHub 候选、稳定身份与真实快照增量",
+      "file": "tickets/11-github-snapshot-observations.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-06"
+      ],
+      "userStories": [
+        29,
+        32,
+        33,
+        35,
+        38,
+        39
+      ],
+      "acceptanceCriteria": [
+        7,
+        18
+      ],
+      "references": [
+        "D8",
+        "ADR-0003",
+        "research:github"
+      ],
+      "issueNumber": 11,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/11",
+      "issueDatabaseId": 5355739790,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-12",
+      "number": 12,
+      "title": "Observer GitHub Heat 与历史报道降权",
+      "file": "tickets/12-github-heat-and-novelty.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-08",
+        "V1-11"
+      ],
+      "userStories": [
+        29,
+        30,
+        31,
+        34,
+        35,
+        40
+      ],
+      "acceptanceCriteria": [
+        8
+      ],
+      "references": [
+        "D8",
+        "ADR-0003",
+        "research:github"
+      ],
+      "issueNumber": 12,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/12",
+      "issueDatabaseId": 5355740299,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-13",
+      "number": 13,
+      "title": "GitHub 重大进展一次性重新入榜",
+      "file": "tickets/13-github-repromotion-events.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-12"
+      ],
+      "userStories": [
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "acceptanceCriteria": [
+        9
+      ],
+      "references": [
+        "D8",
+        "ADR-0003",
+        "research:github"
+      ],
+      "issueNumber": 13,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/13",
+      "issueDatabaseId": 5355741048,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-14",
+      "number": 14,
+      "title": "双 Provider 路由、复核与有界降级",
+      "file": "tickets/14-provider-routing-and-review.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-04",
+        "V1-05",
+        "V1-09"
+      ],
+      "userStories": [
+        18,
+        44,
+        67,
+        68,
+        73
+      ],
+      "acceptanceCriteria": [
+        11,
+        18
+      ],
+      "references": [
+        "D5",
+        "D7",
+        "T3",
+        "ADR-0001",
+        "ADR-0002"
+      ],
+      "issueNumber": 14,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/14",
+      "issueDatabaseId": 5355741618,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-15",
+      "number": 15,
+      "title": "07:30 冻结到 08:30 原子发布",
+      "file": "tickets/15-scheduled-cutoff-publication.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-07",
+        "V1-14"
+      ],
+      "userStories": [
+        1,
+        41,
+        42,
+        53
+      ],
+      "acceptanceCriteria": [
+        10,
+        14
+      ],
+      "references": [
+        "D3",
+        "D4",
+        "D7"
+      ],
+      "issueNumber": 15,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/15",
+      "issueDatabaseId": 5355742684,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-16",
+      "number": 16,
+      "title": "降级、迟到、缺刊与午前补齐",
+      "file": "tickets/16-degraded-delayed-and-missed.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-15"
+      ],
+      "userStories": [
+        41,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        53
+      ],
+      "acceptanceCriteria": [
+        11,
+        12,
+        14
+      ],
+      "references": [
+        "D4"
+      ],
+      "issueNumber": 16,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/16",
+      "issueDatabaseId": 5355745893,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-17",
+      "number": 17,
+      "title": "私有归档、可撤销配对与同步 API",
+      "file": "tickets/17-private-archive-and-device-sync.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-01"
+      ],
+      "userStories": [
+        58,
+        59,
+        60,
+        61
+      ],
+      "acceptanceCriteria": [
+        16
+      ],
+      "references": [
+        "D3",
+        "D9"
+      ],
+      "issueNumber": 17,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/17",
+      "issueDatabaseId": 5355746748,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-18",
+      "number": 18,
+      "title": "Canonical Markdown 到中文 PDF",
+      "file": "tickets/18-markdown-to-pdf-rendition.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-06"
+      ],
+      "userStories": [
+        54,
+        55
+      ],
+      "acceptanceCriteria": [
+        15
+      ],
+      "references": [
+        "D9"
+      ],
+      "issueNumber": 18,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/18",
+      "issueDatabaseId": 5355747524,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-19",
+      "number": 19,
+      "title": "同版本邮件交付与未知受理对账",
+      "file": "tickets/19-email-delivery-and-reconciliation.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-17",
+        "V1-18"
+      ],
+      "userStories": [
+        53,
+        56,
+        57,
+        60
+      ],
+      "acceptanceCriteria": [
+        14,
+        15,
+        16
+      ],
+      "references": [
+        "D4",
+        "D9",
+        "research:sources"
+      ],
+      "issueNumber": 19,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/19",
+      "issueDatabaseId": 5355748179,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-20",
+      "number": 20,
+      "title": "证据更正、撤回与重大更正通知",
+      "file": "tickets/20-correction-and-retraction-versions.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-16",
+        "V1-19"
+      ],
+      "userStories": [
+        43,
+        49,
+        51,
+        52,
+        53,
+        59
+      ],
+      "acceptanceCriteria": [
+        10,
+        12,
+        13,
+        14
+      ],
+      "references": [
+        "D4",
+        "D5",
+        "D9"
+      ],
+      "issueNumber": 20,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/20",
+      "issueDatabaseId": 5355748856,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-21",
+      "number": 21,
+      "title": "最近 7 天来源更正与撤回巡检",
+      "file": "tickets/21-seven-day-correction-patrol.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-20"
+      ],
+      "userStories": [
+        43,
+        50,
+        51,
+        52,
+        53
+      ],
+      "acceptanceCriteria": [
+        13
+      ],
+      "references": [
+        "D4",
+        "D5",
+        "research:sources"
+      ],
+      "issueNumber": 21,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/21",
+      "issueDatabaseId": 5355749450,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-22",
+      "number": 22,
+      "title": "到期清理、来源撤销与审计保留",
+      "file": "tickets/22-retention-and-rights-removal.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-13",
+        "V1-20"
+      ],
+      "userStories": [
+        26,
+        40,
+        71
+      ],
+      "acceptanceCriteria": [
+        5,
+        20
+      ],
+      "references": [
+        "D6",
+        "D8",
+        "D10"
+      ],
+      "issueNumber": 22,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/22",
+      "issueDatabaseId": 5355749969,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-23",
+      "number": 23,
+      "title": "单节点 Linux 运行与可观测运维",
+      "file": "tickets/23-single-node-runtime.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-16",
+        "V1-19"
+      ],
+      "userStories": [
+        68,
+        69
+      ],
+      "acceptanceCriteria": [
+        18
+      ],
+      "references": [
+        "D7",
+        "D10",
+        "ADR-0002",
+        "research:deployment"
+      ],
+      "issueNumber": 23,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/23",
+      "issueDatabaseId": 5355750779,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-24",
+      "number": 24,
+      "title": "节点外一致性备份与干净环境恢复",
+      "file": "tickets/24-off-node-backup-restore.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-22",
+        "V1-23"
+      ],
+      "userStories": [
+        70,
+        71
+      ],
+      "acceptanceCriteria": [
+        19,
+        20
+      ],
+      "references": [
+        "D10",
+        "research:deployment"
+      ],
+      "issueNumber": 24,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/24",
+      "issueDatabaseId": 5355751384,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-25",
+      "number": 25,
+      "title": "影子评测记录、抽样与事实核查工具",
+      "file": "tickets/25-shadow-evaluation-harness.md",
+      "status": "ready-for-agent",
+      "kind": "implementation",
+      "blockedBy": [
+        "V1-06"
+      ],
+      "userStories": [
+        72,
+        73
+      ],
+      "acceptanceCriteria": [],
+      "references": [
+        "T1",
+        "T3",
+        "D7"
+      ],
+      "issueNumber": 25,
+      "externalPrerequisites": [],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/25",
+      "issueDatabaseId": 5355752175,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-26",
+      "number": 26,
+      "title": "真实接入、部署与发布前冒烟验收",
+      "file": "tickets/26-authorized-live-readiness.md",
+      "status": "ready-for-agent",
+      "kind": "live-gate",
+      "blockedBy": [
+        "V1-10",
+        "V1-21",
+        "V1-24",
+        "V1-25"
+      ],
+      "userStories": [
+        55,
+        56,
+        60,
+        67,
+        69,
+        70,
+        73
+      ],
+      "acceptanceCriteria": [
+        15,
+        16,
+        18,
+        19
+      ],
+      "references": [
+        "D6",
+        "D7",
+        "D9",
+        "D10",
+        "T3",
+        "ADR-0002"
+      ],
+      "issueNumber": 26,
+      "externalPrerequisites": [
+        "Owner-authorized environment, accounts, sources, credentials, costs and test recipient"
+      ],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/26",
+      "issueDatabaseId": 5355752799,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-27",
+      "number": 27,
+      "title": "启动可续跑的 14 天影子评测批次",
+      "file": "tickets/27-start-shadow-campaign.md",
+      "status": "ready-for-agent",
+      "kind": "campaign-launch",
+      "blockedBy": [
+        "V1-26"
+      ],
+      "userStories": [
+        72,
+        73
+      ],
+      "acceptanceCriteria": [],
+      "references": [
+        "T3"
+      ],
+      "issueNumber": 27,
+      "externalPrerequisites": [
+        "Owner-approved frozen evaluation rubric and human audit owner"
+      ],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/27",
+      "issueDatabaseId": 5355753979,
+      "githubState": "open",
+      "dependenciesVerified": true
+    },
+    {
+      "id": "V1-28",
+      "number": 28,
+      "title": "14 天证据审核与 V1 上线结论",
+      "file": "tickets/28-v1-release-verdict.md",
+      "status": "ready-for-agent",
+      "kind": "acceptance-gate",
+      "blockedBy": [
+        "V1-27"
+      ],
+      "userStories": [
+        41,
+        55,
+        56,
+        70,
+        72,
+        73
+      ],
+      "acceptanceCriteria": [
+        15,
+        19
+      ],
+      "references": [
+        "T3",
+        "D10"
+      ],
+      "issueNumber": 28,
+      "externalPrerequisites": [
+        "14 consecutive real business dates complete",
+        "Required human fact audits complete",
+        "Independent live evidence current for the release candidate"
+      ],
+      "issueUrl": "https://github.com/yiwer/Observer/issues/28",
+      "issueDatabaseId": 5355754544,
+      "githubState": "open",
+      "dependenciesVerified": true
+    }
+  ],
+  "approval": {
+    "date": "2026-09-05",
+    "userConfirmation": "确认，发布",
+    "scope": [
+      "ticket-granularity-and-blocking-edges",
+      "PRD-T1-integration-test-seam",
+      "GitHub-Issues-publication"
+    ],
+    "implementationAuthorized": false
+  },
+  "publication": {
+    "status": "verified",
+    "createdIssuesThisAttempt": 28,
+    "remoteIssueInventoryVerified": true,
+    "label": "ready-for-agent",
+    "nativeDependencyStatus": "verified",
+    "verifiedNativeBlockingEdges": 39,
+    "verifiedIssueBodies": 28,
+    "verifiedIssueLabels": 28,
+    "verificationMethod": "Read back issue identities, approved bodies, labels and each native blocked_by relation list.",
+    "aggregateSummaryIsAdvisory": true,
+    "aggregateSummaryMismatchObserved": [
+      {
+        "issue": 28,
+        "summary": 0,
+        "nativeVerified": 1
+      }
+    ],
+    "initialFrontier": [
+      {
+        "ticketId": "V1-01",
+        "issueNumber": 1
+      }
+    ],
+    "implementationStarted": false
+  }
+}
