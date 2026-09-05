@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CollectedEvidence, EvidenceBundle } from "./contracts.ts";
 
 const id = z.string().min(1).max(200);
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
@@ -13,7 +14,7 @@ export type Claim = z.infer<typeof ClaimSchema>;
 export const CandidateV2Schema = z.strictObject({
   schemaVersion: z.literal(2), id, eventClusterId: id,
   edition: z.enum(["world-affairs", "ai", "finance", "frontier-technology", "social-discourse", "github-projects"]),
-  // A headline must be the wording of a claim; the gate never publishes an unchecked headline.
+  // The input title is ignored; published headings are derived from accepted claims.
   title: z.string().min(1).max(4000), claims: z.array(ClaimSchema).min(1).max(50),
 });
 export type CandidateV2 = z.infer<typeof CandidateV2Schema>;
@@ -26,7 +27,7 @@ export const AssessmentSchema = z.strictObject({
   evidence: z.array(z.strictObject({
     evidenceId: id, relation: z.enum(["supports", "contradicts", "irrelevant"]),
     basis: z.enum(["direct-observation", "publisher-statement", "secondary-report"]),
-    reliability: z.enum(["reliable", "unknown"]), upstreamOriginId: id,
+    reliability: z.enum(["reliable", "unknown"]), upstreamOriginId: id.nullable(),
   })).max(20),
 });
 export const VerificationSchema = z.strictObject({
@@ -42,7 +43,7 @@ export interface VerificationInput {
   evidenceBundleId: string;
   configurationId: string;
   stories: CandidateV2[];
-  evidence: ReadonlyArray<{ id: string; sourceId: string; sourceType: "primary" | "secondary"; content?: string | undefined; contentSha256?: string | undefined }>;
+  evidence: ReadonlyArray<CollectedEvidence | EvidenceBundle["evidence"][number]>;
 }
 // A semantic judgment is external input, never a deterministic proof of truth.
 export interface SemanticVerifier { verify(input: VerificationInput): Promise<unknown>; }
@@ -55,10 +56,18 @@ export const GateDecisionSchema = z.strictObject({
   outcome: z.enum(["published", "unconfirmed", "quarantined"]), reason: id,
 });
 export type GateDecision = z.infer<typeof GateDecisionSchema>;
+export const UnconfirmedItemSchema = z.strictObject({
+  storyId: id, claimId: id, edition: CandidateV2Schema.shape.edition,
+  description: z.string().min(1), evidenceIds: z.array(id).min(1),
+});
+export type UnconfirmedItem = z.infer<typeof UnconfirmedItemSchema>;
 export const PublicationGateSchema = z.strictObject({
   schemaVersion: z.literal(1), decisions: z.array(GateDecisionSchema),
+  checkedAtUtc: z.iso.datetime({ precision: 3, offset: false }),
+  unconfirmedItems: z.array(UnconfirmedItemSchema),
   input: z.strictObject({
     inputSha256: sha256, taskId: id, evidenceBundleId: id, configurationId: id,
+    verificationEvidenceIds: z.array(id),
     evidence: z.array(z.strictObject({ evidenceId: id, sourceId: id, sourceType: z.enum(["primary", "secondary"]), retrievedAtUtc: z.iso.datetime({ precision: 3, offset: false }), policyVersion: z.number().int().positive().optional(), policySha256: sha256.optional() })),
   }),
   verification: VerificationSchema.nullable(),

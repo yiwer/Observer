@@ -55,6 +55,16 @@ export const CollectedBundleSchema = z.strictObject({
 });
 export type CollectedBundle = z.infer<typeof CollectedBundleSchema>;
 const AnyBundleSchema = z.discriminatedUnion("schemaVersion", [EvidenceBundleSchema, CollectedBundleSchema]);
+// Archive-only projection: fixture inputs never acquire fictitious collection policy identities.
+export const ArchivedBundleSchema = CollectedBundleSchema.extend({
+  schemaVersion: z.literal(3), sourceBundleSchemaVersion: z.union([z.literal(1), z.literal(2)]),
+  evidence: z.array(CollectedEvidenceSchema.omit({ content: true, expiresAtUtc: true, policyVersion: true, policySha256: true, trust: true }).extend({
+    origin: z.discriminatedUnion("kind", [
+      z.strictObject({ kind: z.literal("fixture") }),
+      z.strictObject({ kind: z.literal("collected"), policyVersion: z.number().int().positive(), policySha256: sha256 }),
+    ]),
+  })),
+});
 
 export const CandidateStorySchema = z.strictObject({
   schemaVersion: z.literal(1),
@@ -117,6 +127,7 @@ const LegacyReportRecordSchema = z.strictObject({
 });
 export const ReportRecordSchema = z.union([LegacyReportRecordSchema, LegacyReportRecordSchema.extend({
   schemaVersion: z.literal(2),
+  evidenceBundle: ArchivedBundleSchema,
   stories: z.array(CandidateV2Schema),
   coverageGaps: z.array(z.strictObject({ edition, reason: z.string().min(1) })),
   sourcePolicyDecisions: z.array(LegacyReportRecordSchema.shape.sourcePolicyDecisions.element),

@@ -1,17 +1,33 @@
 import { createHash } from "node:crypto";
-import { VerificationSchema, type CandidateV2, type Claim, type GateDecision, type SemanticVerifier, type VerificationInput } from "./gate-contracts.ts";
+import { VerificationSchema, type CandidateV2, type Claim, type GateDecision, type SemanticVerifier, type UnconfirmedItem, type VerificationInput } from "./gate-contracts.ts";
 import { editionNames, type ProduceRequest, type ReportRecord } from "./contracts.ts";
 
 export const inputDigest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-export async function evaluatePublication(request: ProduceRequest, stories: CandidateV2[], verifier?: SemanticVerifier, policyCheck: (evidenceIds: string[], claim: Claim) => string | null = () => null) {
-  const context = { schemaVersion: 1 as const, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId, stories, evidence: request.evidenceBundle.evidence };
+interface EvaluationOptions {
+  request: ProduceRequest;
+  stories: CandidateV2[];
+  verifier: SemanticVerifier | undefined;
+  clock: () => string;
+  modelPolicyCheck: (evidenceIds: string[], atUtc: string) => string | null;
+  publicationPolicyCheck: (evidenceIds: string[], claim: Claim, atUtc: string) => string | null;
+}
+
+export async function evaluatePublication(options: EvaluationOptions) {
+  const { request, stories, verifier } = options;
+  const beforeVerifierUtc = options.clock();
+  const modelFailures = new Map(request.evidenceBundle.evidence.map((item) => [item.id, options.modelPolicyCheck([item.id], beforeVerifierUtc)]));
+  const permitted = new Set([...modelFailures].filter(([, reason]) => reason === null).map(([id]) => id));
+  const reviewStories = stories.map((story) => ({ ...story, title: "陈述级核验", claims: story.claims.filter((claim) => claim.evidenceIds.every((id) => permitted.has(id))) })).filter((story) => story.claims.length > 0);
+  const context = { schemaVersion: 1 as const, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId, stories: reviewStories, evidence: request.evidenceBundle.evidence.filter((evidence) => permitted.has(evidence.id)) };
   const input: VerificationInput = { ...context, inputSha256: inputDigest(context) };
   let output: unknown;
-  try { output = verifier ? await verifier.verify(structuredClone(input)) : undefined; } catch { /* External error text is never retained. */ }
+  try { output = verifier && reviewStories.length ? await verifier.verify(structuredClone(input)) : undefined; } catch { /* External error text is never retained. */ }
+  const completedAtUtc = options.clock();
   const parsed = VerificationSchema.safeParse(output);
-  const expected = stories.flatMap((story) => story.claims.map((claim) => ({ storyId: story.id, claim })));
-  const valid = parsed.success && parsed.data.inputSha256 === input.inputSha256 && parsed.data.assessments.length === expected.length && expected.every(({ storyId, claim }) => {
+  const expected = reviewStories.flatMap((story) => story.claims.map((claim) => ({ storyId: story.id, claim })));
+  const consistentReasons = { supported: ["supported-by-evidence"], insufficient: ["insufficient-evidence"], conflicting: ["source-conflict"], unsafe: ["unsafe-material", "irrelevant-evidence"] };
+  const valid = parsed.success && parsed.data.assessments.every((item) => consistentReasons[item.conclusion].includes(item.reason)) && parsed.data.inputSha256 === input.inputSha256 && parsed.data.assessments.length === expected.length && expected.every(({ storyId, claim }) => {
     const matches = parsed.data.assessments.filter((item) => item.storyId === storyId && item.claimId === claim.id);
     return matches.length === 1 && matches[0]!.evidence.length === claim.evidenceIds.length &&
       new Set(matches[0]!.evidence.map((item) => item.evidenceId)).size === claim.evidenceIds.length &&
@@ -19,31 +35,36 @@ export async function evaluatePublication(request: ProduceRequest, stories: Cand
   });
   const verification = valid ? parsed.data : null;
   const decisions: GateDecision[] = [];
+  const unconfirmedItems: UnconfirmedItem[] = [];
   const published: CandidateV2[] = [];
   for (const story of stories) {
     const claims = story.claims.filter((claim) => {
+      const assessment = verification?.assessments.find((item) => item.storyId === story.id && item.claimId === claim.id);
+      const decide = (outcome: GateDecision["outcome"], reason: string, checks: Partial<Pick<GateDecision, "structure" | "policy" | "semantic">> = {}) => {
+        decisions.push({ storyId: story.id, claimId: claim.id, inputClaimSha256: inputDigest(claim), evidenceIds: claim.evidenceIds,
+          structure: { status: "passed", reason: "valid-claim" }, policy: { status: "passed", reason: "eligible-source" },
+          semantic: { status: "not-evaluated", reason }, outcome, reason, ...checks });
+        if (outcome === "unconfirmed" && assessment?.wording === "original" && claim.kind !== "quotation") {
+          unconfirmedItems.push({ storyId: story.id, claimId: claim.id, edition: story.edition, description: claim.text, evidenceIds: claim.evidenceIds });
+        }
+      };
       const structuralReason = claim.evidenceIds.some((id) => !request.evidenceBundle.evidence.some((evidence) => evidence.id === id)) ? "unknown-evidence-reference" :
         new Set(claim.evidenceIds).size !== claim.evidenceIds.length || story.claims.filter((item) => item.id === claim.id).length !== 1 || stories.filter((item) => item.id === story.id).length !== 1 ? "ambiguous-claim-identity" : null;
       if (structuralReason) {
-        decisions.push({ storyId: story.id, claimId: claim.id, inputClaimSha256: inputDigest(claim), evidenceIds: claim.evidenceIds,
+        decide("quarantined", structuralReason, {
           structure: { status: "failed", reason: structuralReason }, policy: { status: "not-evaluated", reason: "structure-failed" },
-          semantic: { status: "not-evaluated", reason: "structure-failed" }, outcome: "quarantined", reason: structuralReason });
+          semantic: { status: "not-evaluated", reason: "structure-failed" } });
         return false;
       }
-      const policyFailure = policyCheck(claim.evidenceIds, claim);
+      const policyFailure = claim.evidenceIds.map((id) => modelFailures.get(id)).find((reason) => reason != null) ?? options.publicationPolicyCheck(claim.evidenceIds, claim, completedAtUtc);
       if (policyFailure) {
-        decisions.push({ storyId: story.id, claimId: claim.id, inputClaimSha256: inputDigest(claim), evidenceIds: claim.evidenceIds,
-          structure: { status: "passed", reason: "valid-claim" }, policy: { status: "failed", reason: policyFailure },
-          semantic: { status: "not-evaluated", reason: "policy-failed" }, outcome: "quarantined", reason: policyFailure });
+        decide("quarantined", policyFailure, { policy: { status: "failed", reason: policyFailure }, semantic: { status: "not-evaluated", reason: "policy-failed" } });
         return false;
       }
       if (!verification) {
-        decisions.push({ storyId: story.id, claimId: claim.id, inputClaimSha256: inputDigest(claim), evidenceIds: claim.evidenceIds,
-          structure: { status: "passed", reason: "valid-claim" }, policy: { status: "passed", reason: "eligible-source" },
-          semantic: { status: "not-evaluated", reason: "invalid-verifier-receipt" }, outcome: "quarantined", reason: "invalid-verifier-receipt" });
+        decide("quarantined", "invalid-verifier-receipt");
         return false;
       }
-      const assessment = verification?.assessments.find((item) => item.storyId === story.id && item.claimId === claim.id);
       const semanticFailure = assessment?.conclusion === "unsafe" || assessment?.wording === "unsafe" ? "unsafe-material" :
         assessment?.evidence.some((item) => item.relation === "irrelevant") ? "irrelevant-evidence" :
         assessment?.conclusion === "conflicting" || assessment?.evidence.some((item) => item.relation === "contradicts") ? "source-conflict" :
@@ -51,38 +72,31 @@ export async function evaluatePublication(request: ProduceRequest, stories: Cand
         assessment?.conclusion === "insufficient" ? "insufficient-evidence" : null;
       if (semanticFailure) {
         const unresolved = semanticFailure === "source-conflict" || semanticFailure === "insufficient-evidence";
-        decisions.push({ storyId: story.id, claimId: claim.id, inputClaimSha256: inputDigest(claim), evidenceIds: claim.evidenceIds,
-          structure: { status: "passed", reason: "valid-claim" }, policy: { status: "passed", reason: "eligible-source" },
-          semantic: { status: unresolved ? semanticFailure === "source-conflict" ? "conflicting" : "insufficient" : "unsafe", reason: semanticFailure },
-          outcome: unresolved ? "unconfirmed" : "quarantined", reason: semanticFailure });
+        decide(unresolved ? "unconfirmed" : "quarantined", semanticFailure, { semantic: { status: unresolved ? semanticFailure === "source-conflict" ? "conflicting" : "insufficient" : "unsafe", reason: semanticFailure } });
         return false;
       }
       if (claim.kind === "quotation" && (!request.evidenceBundle.evidence.find((item) => item.id === claim.evidenceIds[0])?.content?.includes(claim.originalText) || (!claim.translated && claim.text !== claim.originalText) || assessment?.wording !== "quotation")) {
-        decisions.push({ storyId: story.id, claimId: claim.id, inputClaimSha256: inputDigest(claim), evidenceIds: claim.evidenceIds,
-          structure: { status: "passed", reason: "valid-claim" }, policy: { status: "passed", reason: "eligible-source" },
-          semantic: { status: "unsafe", reason: "quotation-unverified" }, outcome: "quarantined", reason: "quotation-unverified" });
+        decide("quarantined", "quotation-unverified", { semantic: { status: "unsafe", reason: "quotation-unverified" } });
         return false;
       }
       const support = assessment?.evidence.filter((item) => item.relation === "supports" && item.reliability === "reliable" && item.basis !== "publisher-statement" && claim.evidenceIds.includes(item.evidenceId)) ?? [];
       const primary = support.some((item) => item.basis === "direct-observation" && request.evidenceBundle.evidence.some((evidence) => evidence.id === item.evidenceId && evidence.sourceType === "primary"));
-      const origins = new Set(support.map((item) => item.upstreamOriginId));
-      const sources = new Set(support.map((item) => request.evidenceBundle.evidence.find((evidence) => evidence.id === item.evidenceId)?.sourceId));
+      const knownOrigins = support.filter((item) => item.upstreamOriginId !== null);
+      const origins = new Set(knownOrigins.map((item) => item.upstreamOriginId));
+      const sources = new Set(knownOrigins.map((item) => request.evidenceBundle.evidence.find((evidence) => evidence.id === item.evidenceId)?.sourceId));
       const attributed = claim.kind === "statement" && assessment?.evidence.some((item) => item.relation === "supports" && item.basis === "publisher-statement" && request.evidenceBundle.evidence.some((evidence) => evidence.id === item.evidenceId && evidence.sourceId === claim.publisherSourceId));
       const hasSupport = claim.kind === "statement" ? attributed : claim.kind === "quotation" || claim.kind === "analysis" ? assessment?.evidence.some((item) => item.relation === "supports") : primary || (origins.size >= 2 && sources.size >= 2);
       const supported = assessment?.conclusion === "supported" && hasSupport;
       const reason = supported ? claim.kind === "statement" ? "attributed-statement" : claim.kind === "quotation" ? "verified-quotation" : claim.kind === "analysis" ? "editorial-analysis" : primary ? "appropriate-primary" : "independent-corroboration" :
         assessment?.evidence.some((item) => item.basis === "publisher-statement") ? "publisher-statement-not-fact" : "insufficient-independent-sources";
-      decisions.push({ storyId: story.id, claimId: claim.id, inputClaimSha256: inputDigest(claim), evidenceIds: claim.evidenceIds,
-        structure: { status: "passed", reason: "valid-claim" }, policy: { status: "passed", reason: "eligible-source" },
-        semantic: { status: assessment?.conclusion ?? "not-evaluated", reason: assessment?.reason ?? "verifier-unavailable" },
-        outcome: supported ? "published" : "unconfirmed", reason,
-      });
+      decide(supported ? "published" : "unconfirmed", reason, { semantic: { status: assessment?.conclusion ?? "not-evaluated", reason: assessment?.reason ?? "verifier-unavailable" } });
       return supported;
     });
     if (claims.length) published.push({ ...story, title: claims.find((claim) => claim.kind === "fact")?.text ?? "陈述级核验", claims });
   }
-  return { stories: published, publicationGate: { schemaVersion: 1 as const, decisions, verification, input: {
+  return { stories: published, completedAtUtc, publicationGate: { schemaVersion: 1 as const, checkedAtUtc: completedAtUtc, decisions, verification, unconfirmedItems, input: {
     inputSha256: input.inputSha256, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId,
+    verificationEvidenceIds: context.evidence.map((evidence) => evidence.id),
     evidence: request.evidenceBundle.evidence.map((evidence) => ({ evidenceId: evidence.id, sourceId: evidence.sourceId, sourceType: evidence.sourceType, retrievedAtUtc: evidence.retrievedAtUtc,
       ...("policyVersion" in evidence ? { policyVersion: evidence.policyVersion, policySha256: evidence.policySha256 } : {}),
     })),
@@ -133,6 +147,18 @@ export function gatedMarkdown(record: Extract<ReportRecord, { schemaVersion: 2 }
         const url = evidence.url!.replace(/[<>\s]/g, (character) => encodeURIComponent(character));
         return `来源：${policy?.decision === "source-policy-v1" ? escapeMarkdown(policy.attribution) + " — " : ""}[直达原始材料](<${url}>) [${escapeMarkdown(id)}]`;
       }).join("\n\n")}`),
+    ]),
+    ...record.publicationGate.unconfirmedItems.flatMap((item) => [
+      `## ${editionNames[item.edition]} · 待确认`,
+      `待确认说法（非已证事实）：${escapeMarkdown(item.description)}`,
+      ...item.evidenceIds.map((id) => {
+        const evidence = record.evidenceBundle.evidence.find((entry) => entry.id === id)!;
+        const attribution = record.sourcePolicyDecisions.find((entry) => entry.evidenceId === id);
+        const assessment = record.publicationGate.verification?.assessments.find((entry) => entry.storyId === item.storyId && entry.claimId === item.claimId);
+        const relation = assessment?.evidence.find((entry) => entry.evidenceId === id)?.relation;
+        const label = relation === "contradicts" ? "提供相反材料" : relation === "supports" ? "提供支持材料" : "关系未确认";
+        return `来源 ${escapeMarkdown(evidence.sourceId)}（${label}）：${attribution?.decision === "source-policy-v1" ? escapeMarkdown(attribution.attribution) + " — " : ""}[原始材料](<${evidence.url!.replace(/[<>\s]/g, (character) => encodeURIComponent(character))}>)`;
+      }),
     ]),
     ...record.publicationGate.decisions.filter((decision) => decision.outcome !== "published").map((decision) => `${decision.outcome === "unconfirmed" ? "Unconfirmed Item（待确认）" : "Coverage Gap（隔离项）"} [${escapeMarkdown(decision.storyId)}/${escapeMarkdown(decision.claimId)}]：${failureExplanations[decision.reason] ?? "该陈述未通过发布门。"} (${decision.reason})`),
   ].join("\n\n") + "\n";

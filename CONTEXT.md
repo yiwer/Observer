@@ -120,6 +120,10 @@ _Avoid_: Approval, human review
 A Candidate Story whose evidence is insufficient or conflicting and is therefore presented explicitly as unresolved, never as an established fact.
 _Avoid_: Rumor reported as fact
 
+**Quarantined Claim**:
+A Claim whose structure, source permissions, or safe wording prevents it from being shown, while its identity and rejection reason remain traceable.
+_Avoid_: Unconfirmed Item, silently discarded evidence
+
 **Financial Brief**:
 An informational Edition about macroeconomic, company, regulatory, and market developments that does not prescribe trades, prices, or expected returns.
 _Avoid_: Investment advice, trading signal, stock recommendation

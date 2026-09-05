@@ -168,15 +168,27 @@ export function createObserver(options: ObserverOptions) {
           if (!evidence) continue;
           quotationTotals.set(evidence.sourceId, (quotationTotals.get(evidence.sourceId) ?? 0) + [...claim.originalText].length + (claim.translated ? [...claim.text].length : 0));
         }
-        const policyCheck = (ids: string[], claim: Claim): string | null => {
+        const modelPolicyCheck = (ids: string[], atUtc: string): string | null => {
           if (bundle.schemaVersion === 1) return null;
           for (const id of ids) {
             const evidence = bundle.evidence.find((item) => item.id === id)!;
             let source: SourcePolicy;
             try { source = checkedPolicy(evidence); } catch { return "source-policy-invalid"; }
             if (evidence.sourceType !== source.sourceType) return "source-policy-invalid";
-            if (evidence.expiresAtUtc <= (options.clock ?? (() => new Date().toISOString()))()) return "evidence-expired";
+            if (evidence.expiresAtUtc <= atUtc) return "evidence-expired";
             if (!source.model.enabled) return "model-forbidden";
+          }
+          return null;
+        };
+        const policyCheck = (ids: string[], claim: Claim, atUtc: string): string | null => {
+          const modelFailure = modelPolicyCheck(ids, atUtc);
+          if (modelFailure) return modelFailure;
+          if (bundle.schemaVersion === 1) return null;
+          for (const id of ids) {
+            const evidence = bundle.evidence.find((item) => item.id === id)!;
+            let source: SourcePolicy;
+            try { source = checkedPolicy(evidence); } catch { return "source-policy-invalid"; }
+            if (evidence.sourceType !== source.sourceType) return "source-policy-invalid";
             if (!source.distribution.enabled || !source.distribution.allowDerivedText) return "distribution-forbidden";
             if (!source.distribution.allowPermanentArchive) return "archive-forbidden";
             if (!source.citation.enabled) return "citation-forbidden";
@@ -185,17 +197,20 @@ export function createObserver(options: ObserverOptions) {
           }
           return null;
         };
-        const gated = await evaluatePublication(modelRequest, result.stories, options.verifier, policyCheck);
-        publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
-        const eligibleIds = new Set(gated.stories.flatMap((story) => story.claims.flatMap((claim) => claim.evidenceIds)));
+        const { completedAtUtc, ...gated } = await evaluatePublication({ request: modelRequest, stories: result.stories, verifier: options.verifier,
+          clock: options.clock ?? (() => new Date().toISOString()), modelPolicyCheck, publicationPolicyCheck: policyCheck });
+        publishedAtUtc = completedAtUtc;
+        const eligibleIds = new Set([...gated.stories.flatMap((story) => story.claims.flatMap((claim) => claim.evidenceIds)), ...gated.publicationGate.unconfirmedItems.flatMap((item) => item.evidenceIds)]);
         // The input digest and permitted Evidence identities preserve review correlation without raw text.
-        const archiveBundle = { ...bundle, schemaVersion: 2 as const, coverageGaps: [], evidence: bundle.evidence.filter((evidence) => eligibleIds.has(evidence.id)).map((evidence) => {
+        const archiveBundle = { ...bundle, schemaVersion: 3 as const, sourceBundleSchemaVersion: bundle.schemaVersion, coverageGaps: bundle.schemaVersion === 2 ? bundle.coverageGaps : [], evidence: bundle.evidence.filter((evidence) => eligibleIds.has(evidence.id)).map((evidence) => {
           const { content: _content, ...metadata } = structuredClone(evidence);
-          if (bundle.schemaVersion === 2 && "policyVersion" in metadata) {
+          if ("policyVersion" in metadata) {
             const source = checkedPolicy(metadata);
             for (const field of sourceFields) if (field !== "content" && (!source.collection.fields.includes(field) || !source.storage.fields.includes(field) || !source.distribution.fields.includes(field))) delete metadata[field];
+            const { policyVersion, policySha256, expiresAtUtc: _expiry, trust: _trust, ...retained } = metadata;
+            return { ...retained, origin: { kind: "collected" as const, policyVersion, policySha256 } };
           }
-          return bundle.schemaVersion === 2 ? metadata : { ...metadata, policyVersion: 1, policySha256: digest("test-fixture-only"), trust: "untrusted-source-data" as const, expiresAtUtc: publishedAtUtc };
+          return { ...metadata, origin: { kind: "fixture" as const } };
         }) };
         const { stories: _stories, ...agentMetadata } = result;
         record = { ...commonRecord, schemaVersion: 2, evidenceBundle: archiveBundle, agentResult: agentMetadata, ...gated,
@@ -230,10 +245,10 @@ export function createObserver(options: ObserverOptions) {
       if (!row) throw new ObserverError("not-found");
       const report = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
-      if (report.record.evidenceBundle.schemaVersion === 2) {
+      if (report.record.evidenceBundle.schemaVersion !== 1) {
         try {
-          for (const evidence of report.record.evidenceBundle.evidence) {
-            if (report.record.schemaVersion === 2 && report.record.sourcePolicyDecisions.some((decision) => decision.evidenceId === evidence.id && decision.decision === "test-fixture-only")) continue;
+          const identities = report.record.evidenceBundle.schemaVersion === 2 ? report.record.evidenceBundle.evidence : report.record.evidenceBundle.evidence.flatMap((evidence) => evidence.origin.kind === "collected" ? [{ sourceId: evidence.sourceId, ...evidence.origin }] : []);
+          for (const evidence of identities) {
             const source = checkedPolicy(evidence);
             if (!source.distribution.enabled || !source.distribution.allowDerivedText || !source.distribution.allowPermanentArchive || !source.citation.enabled) throw new Error("revoked");
           }
