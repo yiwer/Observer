@@ -213,6 +213,40 @@ test("Malformed output in one identified Edition becomes a gap without inventing
   assert.ok(report.record.coverageGaps.some((gap) => gap.edition === "ai" && gap.reason === "agent-invalid-output"));
 });
 
+test("Uncorrelated metadata in one uniquely identified Edition is isolated without losing five valid Editions", async (t) => {
+  for (const field of ["taskId", "evidenceBundleId", "configurationId"] as const) {
+    const output = research(7);
+    output.editions[1]!.result[field] = "wrong-local-identity";
+    const { observer } = await fixture(t, output);
+    const report = observer.readReport((await observer.produce(input())).id, ownerToken);
+    assert.equal(report.record.stories.length, 35, field);
+    if (report.record.schemaVersion !== 3) assert.fail("Expected six-Edition Report Record");
+    assert.deepEqual(report.record.editionRuns.find((entry) => entry.edition === "ai"), { edition: "ai", status: "invalid-output" });
+    assert.ok(report.record.coverageGaps.some((gap) => gap.edition === "ai" && gap.reason === "agent-invalid-output"));
+    assert.equal(report.record.stories.some((story) => story.edition === "ai"), false);
+    assert.match(report.canonicalMarkdown, /研究运行未完成.*invalid-output/);
+    assert.equal(JSON.stringify(report).includes("wrong-local-identity"), false);
+  }
+});
+
+test("Invalid timing or unqualified runtime metadata in one Edition cannot invalidate five eligible runs", async (t) => {
+  for (const fault of ["before-cutoff", "reversed-time", "future-finish", "unqualified-provider"]) {
+    const output = research(7);
+    const result = output.editions[1]!.result;
+    if (fault === "before-cutoff") result.startedAtUtc = "2026-09-04T23:29:00.000Z";
+    if (fault === "reversed-time") result.startedAtUtc = "2026-09-04T23:39:00.000Z";
+    if (fault === "future-finish") result.finishedAtUtc = "2026-09-04T23:41:00.000Z";
+    if (fault === "unqualified-provider") result.provider = "codex";
+    const { observer } = await fixture(t, output);
+    const report = observer.readReport((await observer.produce(input())).id, ownerToken);
+    assert.equal(report.record.stories.length, 35, fault);
+    if (report.record.schemaVersion !== 3) assert.fail("Expected six-Edition Report Record");
+    assert.deepEqual(report.record.editionRuns.find((entry) => entry.edition === "ai"), { edition: "ai", status: "invalid-output" });
+    assert.ok(report.record.coverageGaps.some((gap) => gap.edition === "ai" && gap.reason === "agent-invalid-output"));
+    assert.equal(report.record.stories.some((story) => story.edition === "ai"), false);
+  }
+});
+
 test("Editorial roles cannot promote missing, rejected or unconfirmed claims into Priority facts or Impact Notes", async (t) => {
   const output = research(1);
   const ai = output.editions[1]!.result.stories[0]!;
@@ -281,20 +315,61 @@ test("Expiry during either research or verification is enforced before the next 
   }
 });
 
-test("Cross-Edition evidence assignments and global research identities cannot be silently reassigned", async (t) => {
+test("A local cross-Edition evidence reference is isolated rather than reassigned or allowed to discard valid Editions", async (t) => {
   const task = input();
   task.evidenceBundle.evidence.push({ ...task.evidenceBundle.evidence[0]!, id: "evidence-outside-ai" });
   const output = research(1);
   output.editions[1]!.result.stories[0]!.claims[0]!.evidenceIds = ["evidence-outside-ai"];
   const { observer } = await fixture(t, output);
-  await assert.rejects(observer.produce(task), { code: "uncorrelated-agent-result" });
-  assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { code: "not-found" });
-  for (const changed of [
-    { ...research(1), taskId: "different-task" },
-    { ...research(1), editions: research(1).editions.map((entry) => entry.edition !== "ai" ? entry : { ...entry, result: { ...entry.result, evidenceBundleId: "different-bundle" } }) },
-  ]) {
+  const report = observer.readReport((await observer.produce(task)).id, ownerToken);
+  assert.equal(report.record.stories.length, 5);
+  if (report.record.schemaVersion !== 3) assert.fail("Expected six-Edition Report Record");
+  assert.deepEqual(report.record.editionRuns.find((entry) => entry.edition === "ai"), { edition: "ai", status: "invalid-output" });
+  assert.equal(report.record.evidenceBundle.evidence.some((entry) => entry.id === "evidence-outside-ai"), false);
+  assert.equal(report.canonicalMarkdown.includes("事实：AI 日报"), false);
+});
+
+test("Inconsistent local Edition states and story ownership produce an explicit invalid-output gap", async (t) => {
+  for (const fault of ["false-no-evidence", "valid-no-evidence", "completed-without-assignment", "wrong-story-edition", "unknown-evidence"]) {
+    const task = input();
+    const output = research(7);
+    if (fault === "completed-without-assignment" || fault === "valid-no-evidence") task.editions[1]!.evidenceIds = [];
+    if (fault === "wrong-story-edition") output.editions[1]!.result.stories[0]!.edition = "finance";
+    if (fault === "unknown-evidence") output.editions[1]!.result.stories[0]!.claims[0]!.evidenceIds = ["not-in-bundle"];
+    const changed = fault === "false-no-evidence" || fault === "valid-no-evidence" ? { ...output, editions: output.editions.map((entry) => entry.edition === "ai" ? { edition: "ai", status: "no-evidence" } : entry) } : output;
     const { observer } = await fixture(t, changed);
-    await assert.rejects(observer.produce(input()), { code: "uncorrelated-agent-result" });
+    const report = observer.readReport((await observer.produce(task)).id, ownerToken);
+    assert.equal(report.record.stories.length, 35, fault);
+    if (report.record.schemaVersion !== 3) assert.fail("Expected six-Edition Report Record");
+    assert.deepEqual(report.record.editionRuns.find((entry) => entry.edition === "ai"), { edition: "ai", status: fault === "valid-no-evidence" ? "no-evidence" : "invalid-output" });
+    assert.ok(report.record.coverageGaps.some((gap) => gap.edition === "ai" && gap.reason === (fault === "valid-no-evidence" ? "no-evidence" : "agent-invalid-output")));
+    assert.equal(report.record.stories.some((story) => story.id.startsWith("ai-")), false);
+  }
+});
+
+test("Global research identity or Edition-set errors still fail closed without publishing partial results", async (t) => {
+  for (const fault of ["taskId", "evidenceBundleId", "configurationId", "duplicate-edition", "missing-edition", "unknown-edition"]) {
+    const output = research(7);
+    if (fault === "taskId" || fault === "evidenceBundleId" || fault === "configurationId") output[fault] = "wrong-global-identity";
+    if (fault === "duplicate-edition") output.editions[1]!.edition = "world-affairs";
+    if (fault === "missing-edition") output.editions.pop();
+    const changed = fault === "unknown-edition" ? { ...output, editions: output.editions.map((entry) => entry.edition === "ai" ? { ...entry, edition: "unknown-edition" } : entry) } : output;
+    const { observer } = await fixture(t, changed);
+    await assert.rejects(observer.produce(input()), { code: fault === "missing-edition" || fault === "unknown-edition" ? "agent-invalid-output" : "uncorrelated-agent-result" });
+    assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { code: "not-found" });
+  }
+});
+
+test("Invalid trusted six-Edition assignments and Bundle identity are rejected before research", async (t) => {
+  for (const fault of ["duplicate-edition", "duplicate-assignment", "unknown-assignment", "bundle-config", "duplicate-evidence"]) {
+    const task = input();
+    if (fault === "duplicate-edition") task.editions[1]!.edition = "world-affairs";
+    if (fault === "duplicate-assignment") task.editions[1]!.evidenceIds.push("evidence-1");
+    if (fault === "unknown-assignment") task.editions[1]!.evidenceIds = ["not-in-bundle"];
+    if (fault === "bundle-config") task.evidenceBundle.configurationId = "wrong-bundle-config";
+    if (fault === "duplicate-evidence") task.evidenceBundle.evidence.push(structuredClone(task.evidenceBundle.evidence[0]!));
+    const { observer } = await fixture(t, undefined, { editionRunner: { run: async () => { assert.fail("Invalid trusted input cannot reach research"); } } });
+    await assert.rejects(observer.produce(task), { code: fault === "bundle-config" || fault === "duplicate-evidence" ? "invalid-bundle-identity" : "invalid-edition-input" });
     assert.throws(() => observer.readReport("2026-09-05-v1", ownerToken), { code: "not-found" });
   }
 });

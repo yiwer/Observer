@@ -120,6 +120,12 @@ export function createObserver(options: ObserverOptions) {
       catch { throw new ObserverError("agent-unknown"); }
       let research: EditionResearch | undefined;
       let results: AgentResult[];
+      let publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
+      const validFixtureRun = (result: AgentResult) => {
+        const protocolFixture = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === "protocol-fixture" && options.verifier;
+        return (result.provider === "fixture" || !!protocolFixture) && result.startedAtUtc >= bundle.cutoffUtc &&
+          result.startedAtUtc <= result.finishedAtUtc && result.finishedAtUtc <= publishedAtUtc;
+      };
       if (request.schemaVersion === 2) {
         const parsed = EditionResearchEnvelopeSchema.safeParse(runnerOutput);
         if (!parsed.success) throw new ObserverError("agent-invalid-output");
@@ -129,29 +135,25 @@ export function createObserver(options: ObserverOptions) {
         }) };
         if (research.taskId !== request.taskId || research.evidenceBundleId !== bundle.id || research.configurationId !== request.configurationId ||
           new Set(research.editions.map((entry) => entry.edition)).size !== 6 || new Set(request.editions.map((entry) => entry.edition)).size !== 6) throw new ObserverError("uncorrelated-agent-result");
-        for (const entry of research.editions) {
+        research.editions = research.editions.map((entry) => {
           const assigned = request.editions.find((item) => item.edition === entry.edition)!;
-          if (entry.status === "no-evidence") {
-            if (assigned.evidenceIds.length) throw new ObserverError("uncorrelated-agent-result");
-            continue;
-          }
-          if (entry.status === "invalid-output") continue;
-          if (!assigned.evidenceIds.length) throw new ObserverError("uncorrelated-agent-result");
-          if (entry.result.taskId !== `${request.taskId}:${entry.edition}` || entry.result.status === "succeeded" && entry.result.stories.some((story) => story.edition !== entry.edition || story.claims.some((claim) => claim.evidenceIds.some((id) => !assigned.evidenceIds.includes(id))))) throw new ObserverError("uncorrelated-agent-result");
-        }
+          const invalid = { edition: entry.edition, status: "invalid-output" as const };
+          if (entry.status === "no-evidence") return assigned.evidenceIds.length ? invalid : entry;
+          if (entry.status === "invalid-output") return entry;
+          if (!assigned.evidenceIds.length || entry.result.taskId !== `${request.taskId}:${entry.edition}` ||
+            entry.result.evidenceBundleId !== bundle.id || entry.result.configurationId !== request.configurationId ||
+            !validFixtureRun(entry.result) ||
+            entry.result.status === "succeeded" && entry.result.stories.some((story) => story.edition !== entry.edition || story.claims.some((claim) => claim.evidenceIds.some((id) => !assigned.evidenceIds.includes(id))))) return invalid;
+          return entry;
+        });
         results = research.editions.flatMap((entry) => entry.status === "completed" ? [entry.result] : []);
       } else {
         const parsedResult = AgentResultSchema.safeParse(runnerOutput);
         if (!parsedResult.success) throw new ObserverError("agent-invalid-output");
         results = [parsedResult.data];
       }
-      let publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
       for (const result of results) {
-        const protocolFixture = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === "protocol-fixture" && options.verifier;
-        if ((result.provider !== "fixture" && !protocolFixture) || result.startedAtUtc < bundle.cutoffUtc ||
-          result.startedAtUtc > result.finishedAtUtc || result.finishedAtUtc > publishedAtUtc) {
-          throw new ObserverError("invalid-fixture-run");
-        }
+        if (!validFixtureRun(result)) throw new ObserverError("invalid-fixture-run");
         if ((request.schemaVersion === 1 && result.taskId !== request.taskId) || result.evidenceBundleId !== request.evidenceBundle.id || result.configurationId !== request.configurationId) {
           throw new ObserverError("uncorrelated-agent-result");
         }
