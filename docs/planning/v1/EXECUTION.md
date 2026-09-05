@@ -15,8 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 已完成票：#1、#2、#3、#4、#5，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
-- 当前票：#6，原生依赖 #3 与顺序前票 #5 均读回 CLOSED。已实际新建 fresh-context `/root/implement_v1_06`，worktree `O:/GenesisCode/Observer-worktrees/v1-06`、branch `ticket/v1-06`，fixed base `e57832f65222c949b00acb12bbb5196ae2c2c033`；[启动回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551218588)读回 OPEN、assignee=yiwer。详见 [#6 执行与验收边界](acceptance/06-six-edition-canonical-brief.md)。
+- 已完成票：#1、#2、#3、#4、#5、#6，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
+- 当前实施票：无；正在为下一票 #7 准备 fresh worktree/session，尚未开始实施。#7 原生依赖 #6 已实际读回 CLOSED。#6 最终实施 `af18a4b6276f3c5254474c1e676e5e88b2eaaa07`、集成 `d24c0526b7fff852aeb8b0cb8ab0e61c76632ae4`，[关闭回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551458795)已核对；见 [#6 验收记录](acceptance/06-six-edition-canonical-brief.md)。以下 #6 冻结/阻断/待集成条目是历史过程，当前状态以本条为准。
 - #6 首次冻结 `ac55dc418425d02030441156bf9eef9224873f1c`，8 files、+682/-40；作者第二轮和 Root 独立 check 均 120/120、smoke 各 3/3，旧 Record v1/v2 built-reader 兼容 2/2；作者首轮 119/120 的 Docker tag 查询失败另行保留。Standards 0 hard / 1 非阻断 P3；Spec **2 P2 阻断**（六栏总 Claims 超 500 全体误拒、局部重复身份污染正常五栏），Root 自有磁盘 SQLite / built-reader 专项 **1 PASS / 4 RED** 复现。已交原 implement agent 窄范围 TDD 修复，当前候选不接受、不集成、不启动 #7；详见验收记录。
 - #6 最新冻结 **73c95da371e710a59a2658c8e82073dbcf6eb44c**，10 files、+918/-48。作者与 Root 完整 check 各 **125/125**、smoke 各 **3/3**，Root 边界专项 **9/9**、旧归档 **2/2**；旧容量/重复身份及新增长 taskId 问题已修复。Standards 0 hard / 原 1 P3；独立 Spec 仍有 **1 P2**：已识别单栏的局部任务/Bundle/配置/运行时间或资格错误仍直接中止整期，丢失五栏有效内容。Root 专项 3 PASS / 6 RED、Spec 专项 6 PASS / 3 RED，已交原作者继续 TDD；本候选不接受、不集成。前条为历史过程，以本条及验收记录最新结论为准。
 - #6 最终冻结 **af18a4b6276f3c5254474c1e676e5e88b2eaaa07** 已通过独立冻结验收：作者/Root check 各 **130/130**、smoke 各 **3/3**；Root 自有 built 专项 **18/18**、旧归档 **2/2**。最终 Standards 0 hard / 原 1 P3；Spec **0**、原所有阻断已关闭，自有专项9/9。以上两轮为历史过程。当前只接受进入本地集成，尚待 master 集成复跑，#6 未关、#7 未开始、未 push。
@@ -29,7 +29,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；预检时未实施/触发模型/升级，现已交给 #5 fresh 实施 agent，仍须实测目标 Linux CLI 和完整隔离契约。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
-- 最新已验收集成提交：ed2f705f8381a2f8543e48f21266affe252b9ea4。
+- 最新已验收集成提交：d24c0526b7fff852aeb8b0cb8ab0e61c76632ae4。
 - 2026-09-05 17:59:25 +08:00 后读到 `origin/master` 与 `git ls-remote` 均为 `e475bc18620d1d052f6effcb648fbc4ec66150d2`；已确认 #1–#4 实施和集成提交都可从该远端提交到达。该 push 不是本次 orchestrator 执行；#5 候选仍未集成、未推送（远端无 ticket/v1-05）。远端代码存在不代表生产部署或模型资格通过。Root 新出现未跟踪 `.idea/`，保留不纳入任务提交。
 - #3 首轮测试虽通过，但两轴及 Root 额外发现阻断；最终重新冻结、复审关闭全部发现，再集成验收。Root 在最终工作区及 master 均复跑 check 52/52、smoke 3/3；smoke 属于总测试子集。详见 [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)。
 
@@ -40,6 +40,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)：最终实施 67401ac，集成 a83cf2a；orchestrator 冻结和集成各复跑 typecheck/build、52/52 与 3/3 smoke；Standards、Spec 最终各 0 项；Root 矛盾回执及 24 场景 TTL 回归通过。只有标注语义替身证据。
 - [V1-04 验收记录](acceptance/04-codex-runner.md)：最终实施 139dc13，集成 f59bcad；冻结和集成各 check 74/74、smoke 3/3；Root 首次发送 TTL 与拒绝用量专项 3/3。Standards 留 1 项非阻断 P3，Spec 原 P2 关闭、最终 0。真实 CLI + 无凭证模型替身，不是模型/地区/生产资格。
 - [V1-05 验收记录](acceptance/05-claude-runner.md)：最终实施 177cfbb，集成 ed2f705；Root 冻结和集成各 check **104/104**、smoke **3/3**，自有专项 **4/4**，独立 Spec 专项 **7/7**。Standards 硬违反 0、2 项非阻断 P3；Spec 原 3 P2 全关闭、最终 0。固定 Linux Claude 2.1.252 CLI 与无凭证模型替身；后查宿主已 2.1.261，不混作同一资格。#5 代码未 push。
+- [V1-06 验收记录](acceptance/06-six-edition-canonical-brief.md)：最终实施 af18a4b，集成 d24c052；Root 冻结/集成各 check **130/130**、smoke **3/3**、自有 built 专项 **18/18**、旧归档兼容 **2/2**。最终 Standards 0 hard / 1 非阻断 P3，Spec 0；所有容量/身份/局部失败阻断均关闭。#6 已 CLOSED，#5/#6 代码未 push；最新远端仍 e475bc1。仅本地标注替身与旧 CLI 协议回归资格，生产仍禁用。
 
 ## 协作容量
 

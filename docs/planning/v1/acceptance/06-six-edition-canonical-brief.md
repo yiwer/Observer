@@ -1,6 +1,6 @@
-# V1-06 执行与待验收记录
+# V1-06 验收记录
 
-状态：**最终候选 af18a4b 冻结验收通过，待本地集成与集成基线复跑；尚未关票或 push**。GitHub #6 OPEN，assignee=yiwer。
+状态：**已接受、本地集成验收通过；GitHub #6 已读回 CLOSED，代码未 push**。最终实施 af18a4b，集成 d24c052；下文前两轮及早期阶段均为历史过程，不是当前开放阻断。
 
 - 范围：[GitHub #6](https://github.com/yiwer/Observer/issues/6)、[本地票](../tickets/06-six-edition-canonical-brief.md)。
 - Fixed base：`e57832f65222c949b00acb12bbb5196ae2c2c033`，包含已验收 #5 集成及最新证据。
@@ -151,3 +151,11 @@ Root 已交原作者继续窄范围 TDD，要求隔离已识别且唯一归属�
 两轴汇总：Standards **0 hard / 1 heuristic，worst P3**；Spec **0，worst 无**。Root 接受本次冻结实现进入本地集成；必须继续验证实际 master 集成提交后才关闭 #6。
 
 资格仍仅为本地固定输入/标注语义与既有真实固定 CLI + 无凭证模型协议替身；真实六栏模型质量、Source Owner 授权、真实 Provider/地区、PDF/邮件/Android、部署/灾备与人工影子期均未被本票验证，生产入口仍关闭。之前两轮 Docker tag 瞬态失败保留且根因未定，不宣称已经修复。
+
+## 本地集成与关闭
+
+Root 以 no-ff 集成本次已接受的冻结提交，实际集成 SHA **`d24c0526b7fff852aeb8b0cb8ab0e61c76632ae4`**。源代码、测试、依赖/TypeScript 配置、构建脚本和实施说明与 af18a4b 的差异为零；Root 自有记录提交保留。实际 master 集成基线 `check` **130/130**（184292.0218 ms）、smoke **3/3**（1679.4459 ms），typecheck/build 通过，0 failed/skipped/cancelled；非冻结工作区或旧 SHA 的结果没有替代本次集成运行。
+
+同一 master build 再执行 Root 专项 **18/18**：容量/重复身份（`run-4qYDot`）、坏批/跨批 TTL（`boundary-run-1o91qU`）、最大任务 ID 和局部/全局关联；读取旧 177cfbb 归档 **2/2**，MD 与完整记录 hash/字节/鉴权保持。运行后 HEAD 仍 d24c052；产品树与冻结提交差异零，`observer.task` 容器查询为空。仅用户无关 `.idea/` 未跟踪，未纳入提交。
+
+[最终验收与关闭证据](https://github.com/yiwer/Observer/issues/6#issuecomment-5551458795)已发布并读回；#6 **CLOSED，closedAt `2026-09-05T11:29:58Z`**。#7 原生依赖接口也实际读回 #6 closed，允许下一票按独立 fresh-context 流程开始。远端只读核对仍为 master `e475bc18620d1d052f6effcb648fbc4ec66150d2`，没有 ticket/v1-06；本票代码未 push。关闭开发票不表示任何真实模型/部署或生产验收已通过。

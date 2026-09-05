@@ -225,7 +225,7 @@
       "number": 6,
       "title": "六栏编排、Today Overview 与唯一正文",
       "file": "tickets/06-six-edition-canonical-brief.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-03"
@@ -256,8 +256,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/6",
       "issueDatabaseId": 5355735948,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "af18a4b6276f3c5254474c1e676e5e88b2eaaa07",
+        "integrationCommit": "d24c0526b7fff852aeb8b0cb8ab0e61c76632ae4",
+        "acceptanceFile": "acceptance/06-six-edition-canonical-brief.md",
+        "qualification": "local-annotated-verifier-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-07",
