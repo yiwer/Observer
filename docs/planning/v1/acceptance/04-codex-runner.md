@@ -94,11 +94,13 @@ Reviewer 初步提出 `codex-container.ts` 可能 Divergent Change，最终未�
 
 ## Spec
 
-`/root/review_v1_04_spec` 已实测确认 **P2：拒绝模型工具时丢失已取得用量**，正式轴报告待收尾。#4 AC5 要求“保留……可取得的用量；取不到的用量明确未知”。`src/codex-container.ts:76` 在拿到带 usage 的 HTTP 200 完成响应后因 function_call 立即拒绝，`src/codex-runner.ts:46` 仅采用尚未产生的 CLI usage，故已取得的 input/output/cached/reasoning tokens 都变为 null。
+`/root/review_v1_04_spec` 最终报告 **1 项，最高 P2：拒绝模型工具时丢失已取得用量**。#4 AC5 要求“保留……可取得的用量；取不到的用量明确未知”。`src/codex-container.ts:76` 在拿到带 usage 的 HTTP 200 完成响应后因 function_call 立即拒绝，`src/codex-runner.ts:46` 仅采用尚未产生的 CLI usage，故已取得的 input/output/cached/reasoning tokens 都变为 null。未确认额外 scope creep。
 
 Root 在同冻结 SHA 的独立工作树以公开 `produce` → 错误/私有读取 seam 复现：ignored `data/root-acceptance/codex-rejected-usage.test.ts`，真实固定 CLI + 自有模型替身返回 response.completed 含禁止工具和 tokens 12/21/2/3，任务正确拒绝 `agent-policy-violation`、cleanup=removed，但用量断言 **expected 12 / actual null** 红灯。应保留有明确来源的已观察用量，不把 transport 与 CLI 两份重复累加，未知字段仍 null；没有真实模型或凭证参与。
 
 当前不得沿用产品 70/70 宣告验收。修复后需新 SHA、两轴复审和 Root 再跑完整及专项回归。
+
+两轴计数独立保留：Standards 0、最高无；Spec 1、最高 P2。[首轮审查回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550507064)已读回 OPEN。作者已解冻自己的 worktree，按 implement/TDD 补拒绝用量回归；计划保留带宿主序号的有界 Responses 用量 receipt，CLI 与 API 统计不重复相加，缺失/不可信字段仍未知。该方案尚在实施，不是修复通过证据。
 
 ## 外部门槛
 
