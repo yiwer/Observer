@@ -300,7 +300,7 @@
         "implementationCommit": "7fae122cbe1d7abf1ebd12615091221abb6d7fda",
         "integrationCommit": null,
         "acceptanceFile": "acceptance/07-event-history-and-updates.md",
-        "qualification": "review-in-progress",
+        "qualification": "frozen-accepted-awaiting-integration",
         "pushed": false
       }
     },

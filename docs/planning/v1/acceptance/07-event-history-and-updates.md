@@ -1,6 +1,6 @@
 # V1-07 执行与待验收记录
 
-状态：**第二冻结 7fae122 已进入独立双轴复审，Root built 专项 14/14、旧档 3/3；完整测试仍待通过，未接受/集成**。GitHub #7 OPEN，assignee=yiwer。首个候选 63e93dc 的拒绝和失败证据保留为历史过程，以本文最后的审查记录为准。
+状态：**第二冻结 7fae122 已通过独立冻结验收，允许本地集成；实际 master 复验尚待完成，未关票**。GitHub #7 OPEN，assignee=yiwer。首个候选 63e93dc 的拒绝和失败证据保留为历史过程，以本文最后的审查记录为准。
 
 - 范围：[GitHub #7](https://github.com/yiwer/Observer/issues/7)、[本地票](../tickets/07-event-history-and-updates.md)。
 - Fixed base：`5da81976dd2ba166066977c038e6f46451890283`，包含 #6 最终接受、集成与关闭记录。
@@ -173,3 +173,15 @@ Root 完整 check/smoke、双轴结论及实际 master 集成复验仍缺；当�
 其自有 `data/spec-v1-07-c9a641/probe.test.mjs` 原三例在新 SHA **3/3 PASS**；追加静态页面不同发布时间/期次、完全相同旧事实抑制、旧发布时间未知三个正反例后，同一公开 T1 套件 **6/6 PASS**（315.6102 ms）。真实 SQLite、外部 Runner/Verifier/时钟、重启后旧刊字节不变、实际旧版本 ID 和未分类状态均有断言。Root 已完整阅读修订后的脚本；未修改作者源码/测试，也未把作者 full 结果算作本轴证据。本地标注替身不证明真实模型或生产质量。
 
 两个轴的原阻断已关闭；Root 已通知作者在不修改 SHA/环境的前提下运行第二次完整 check，随后才做 Root 独立完整验收与 master 集成。此前失败仍保留，不提前宣告最终通过。
+
+### 同 SHA 完整复跑
+
+作者第二次 `npm run check` 已自然结束 exit 0：typecheck/build PASS，**152/152 PASS**，0 fail/skip/cancel，**123586.1916 ms**；结束后仍为 7fae122 且 clean，无源码/文档/环境变化，未重复已有 smoke 3/3。第一次 151/152 的失败仍是独立结果，不改写为首跑通过。Root 随后确认自己的 detached 同 SHA clean，启动独立完整 check；尚未终态。
+
+第二轮 Spec 六例脚本 SHA-256 为 `d591fd6d87351fd4218dccf7d977b5b1438b7d5ad18fbcb8113dcae9584728e6`；Root 实际读回并计算，不与原三例失败时的脚本版本混淆。
+
+### Root 独立冻结验收通过
+
+Root clean detached `7fae122` 的首次完整 `npm run check` 自然结束 exit 0：typecheck/build PASS，**152/152 PASS**、0 fail/skip/cancel，**151077.6439 ms**。随后同 SHA `npm run smoke` **3/3 PASS**（1404.4045 ms），它是完整检查的子集，不相加制造额外覆盖。结束后 HEAD 未变且工作区 clean；按两个固定镜像 ID 只读检查，均无运行中容器残留。
+
+结合 Root built 专项 **14/14**、旧 producer 归档 **3/3**、独立 Spec **6/6** 与两轴原阻断关闭，允许候选进入本地集成。唯一保留的 Standards P3 是非阻断回执展开重复；不增加无关重构。尚需实际 master 合并提交上的 full/smoke/专项/旧档复验后才能关闭 #7；代码未 push、生产未启用，真实 Provider/来源/人工质量资格未验证。
