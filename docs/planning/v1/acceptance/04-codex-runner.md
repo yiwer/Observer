@@ -51,6 +51,14 @@
 
 已将已核验文件交给实施 agent 做本票镜像/CLI 测试，未改变宿主 CLI 安装或读取凭证。完整性匹配只确认取得了指定分发物，不证明模型可用性、安全拒绝、真实调用或生产资格。原 npm session 由创建它的 agent 按准确工具句柄或进程身份处理，不全局杀 node/npm。
 
+实施 agent 随后确认：复制文件后再次匹配上述 SHA-256；按原工具 session 18443 发送 Ctrl-C，命令退出 1，未按裸 PID 杀进程。构建得到镜像 `sha256:12226892754c245087a7285475dad50d58322e7b9d637ba40850370c37cc5024`（tag `observer-v1-04-codex:0.153.4`），并报告首次真实 Linux CLI→本地无凭证 Responses 替身→JSONL/最终文件→Gate→SQLite 正文测试通过。
+
+Root 独立读过 `config/codex-runtime.Dockerfile`，inspect 精确镜像身份为 Linux/amd64、459308449 bytes；另用独有名称/label、无网络、只读根、非 root、无 capabilities 的一次性容器执行 `/opt/codex/bin/codex --version`，输出 `codex-cli 0.153.4`、退出 0。只有无法写 PATH 别名的只读警告，自动移除后读回无该测试容器。Root 的这一步仅证明当前镜像二进制版本，尚未独立复跑完整业务或安全测试。
+
+## Root 模型发送时刻的有效期检查
+
+未冻结实现的接入检查发现：已有 Observer 在调用 Runner 前核验 Bundle v2 TTL，但容器启动和多轮 Responses 往返会跨越时间。每次实际 `ModelTransport.respond` 必须依据可信任务快照重新检查材料有效期，不能信任 CLI 请求体自行声称的 expiry。已交实施 agent 补延迟首请求及后续请求过期的红绿回归，保留未过期正常路径。此项目前是待实现/验收的 D6 约束，不记已修复或 PASS。
+
 ## Root 网络前提核查
 
 Root 实际打开 Docker 官方 [network create](https://docs.docker.com/reference/cli/docker/network/create/#network-internal-mode---internal) 和 [gateway modes](https://docs.docker.com/engine/network/port-publishing/#gateway-modes)：普通 `--internal` bridge 仍可访问网关地址上的宿主服务，包含监听所有地址的服务；`isolated` gateway mode 配合 internal 才不向 bridge 分配地址。因此仅检查 `Internal=true` 及已连接容器名单，不能证明模型专用网络已隔离宿主旁路。
