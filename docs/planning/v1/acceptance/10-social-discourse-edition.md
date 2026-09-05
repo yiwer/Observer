@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**fresh 作者实施中，已取得局部 RED→GREEN；尚未冻结提交或完成本票验收**。GitHub #10 OPEN / assignee yiwer。
+状态：**首轮冻结候选未通过独立评审，作者正在修复三个已复现阻断；尚未合并或完成本票验收**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -78,3 +78,50 @@ Root进一步亲读作者 `18-lifecycle-regression.log` 与 `18-green.log`：Run
 Root静态发现最初p/br-only解析与选定hashtag时间线的标准正文不相容，要求在冻结前验证。原研究agent依research技能仅窄复核官方v4.7.1 formatter并追加同一研究文件：本地正文标签标准格式为 `a.mention.hashtag[rel=tag]` 包裹 `#<span>tag</span>`，一般URL和账户mention另有不同结构。作者以该自有虚构格式取得真实RED→GREEN，并把两类正向fixture换成这个格式；只允许受限同实例标签包装，剥除链接/HTML，不扩大来源用途许可。Root亲读唯一附注152–171并验证最终研究文件SHA256 `c1ff179946466fb9684158c18d4cf466442e54852871c9b5b34175d84df42221`；原151行版本摘要仅是历史中间版本。来源：[官方hashtag formatter](https://github.com/mastodon/mastodon/blob/v4.7.1/app/lib/text_formatter.rb#L109-L114)。Root完整读作者 `24-real-format-fixtures.log`：22/22、1000.5791ms；作者曾误把Observer自己的MD目录锚判为来源HTML，保留中间失败记录并只收窄该错误断言，不称其为产品RED。
 
 同次准备完整测试时，Root只读Docker预检曾重复遇到两个既有Provider标签 `No such image`，但按固定ID读取和镜像列表仍显示原标签。Root依diagnosing-bugs技能用原CLI调用缩小复现，未升级、重建、retag、重启或清理Docker。随后原标签读取恢复，**根因未证实，不能声称修复了Docker**。2026-09-05T23:03:00Z `data/root-v1-10-review/docker-tag-probe-ready.log` 三项均exit0且精确匹配原Codex/Claude/协议镜像ID；`docker-tag-differential.json`保留恢复时的对照结果。这是测试环境就绪检查，不是完整check结果；若完整执行再次失败，保留整次终态，单独复跑而不拼接PASS。
+
+## 首轮固定候选 R1：拒绝合并
+
+作者提交 `6c7da4c4fa45b6fca80444247fef4ed70fa3ae52`，Root实际核对clean `ticket/v1-10`、有效base `f36aae2122d081e638bfd520f93ded88fc95ef3b`及非空 `git diff f36aae2...HEAD`；唯一提交 `6c7da4c feat: add policy-bound Mastodon discourse observations`，19文件、1370+/45-。包含[技术规格](../../../implementation/v1-10.md)、官方研究、固定材料用途说明和26项社交测试。Root重读GitHub #10全文/评论及原生#7 CLOSED，未改票状态。
+
+作者完整check首轮 `data/v1-10-final-check-ES7ah1`：212项中211通过/1失败，exit1、144507.8822ms；唯一失败为初始 `docker image inspect observer-v1-05-claude:2.1.252` 返回No such image。原始stdout SHA256 `1415e08aa5bf043fc7ac442a8232dae19ace5e35413a80911dc14a4b483cae92`，失败整次保留。只读原标签检查恢复且没有环境变更后，同SHA另目录完整重跑，不拼接局部结果：
+
+| 执行者/同SHA工作树 | 完整check终态 | smoke终态 | 证据目录 |
+|---|---|---|---|
+| 作者 `v1-10` | 212/212，exit0，125379.994ms | 3/3，exit0，1335.3342ms | `data/v1-10-final-check-sq9mlU` / `data/v1-10-final-smoke-t5FMRW` |
+| Root独立detached `accept-v1-10` | 212/212，exit0，121090.2552ms | 3/3，exit0，1310.9221ms | `data/root-frozen-6c7da4c-full` |
+
+两者均前后clean同SHA，无取消/跳过；smoke是完整套件子集。作者check stdout SHA256 `92fcd7057f3bc184962cb61dfbe9bdc50ae8984e2dbe0626f92b15d3cb5906bd`、smoke stdout `b1fcf2bd4c419283011f82a402b9e13a406d5b07614caa898df1ec429542d210`；Root原始stdout/stderr分存且combined按观测到达顺序落盘，check combined `161e7f6f8e2e8f8558bae15e492afab806f66ad74be5b0812f8ab5e47cea8380`、smoke combined `ab3df2ea7ebb4780e8025e65512ffe598c564c7b97e91a7fbb22207f7a30d597`。
+
+Root用此detached built显式路径重跑全部旧Record1–6不可变reader，9份旧Report/MD字节均相同；公司独立性1项、Profile三探针1/1/4、Event五探针3/4/3/1/3均通过。旧#9 Spec探针原字节SHA `6dad8f32e095d046c5c89aeadd777da2dd2d4114af741cae253a52dde270cd9e`机械复制到此工作树 `data/root-v1-10-inherited-spec`，实际导入本树dist，3/3、106.7757ms。没有重建旧基准。
+
+本票四个Root探针在同built独立重跑均exit0/1项：policy26.0657ms、最后响应取消30.6134ms、native-only94.7069ms、post-Verifier不可用79.8001ms，日志 `Observer/data/root-v1-10-review/frozen-6c7da4c-*.log`。Root读回两份新MD的社交栏和Overview，原生候选、计数/两桶/未知属性、非代表性及404非确认删除表述与期待一致。
+
+### Standards
+
+fresh `/root/review_v1_10_standards` 阅读完整差异与规范后报告两项，维持本轴原分类：
+
+1. **P1，硬性违规：最终社交复查留下普通证据TTL校验空档。** R1 `observer.ts:294` 在 `await discourse.refresh()` 后更新发布时间却仅检查social失败，违反 `docs/implementation/v1-03.md:38`「不再取一次较晚时间留下校验空档。到期瞬间不再允许事实发布」及v1-09最终许可/TTL规则。普通证据23:41到期，最后一次社交I/O把时钟推进至23:42，事实仍published且进入永久MD和鉴权重启结果。
+2. **P3，判断性 possible Repeated Switches。** `record.schemaVersion === 6 || record.schemaVersion === 7` 等能力判断重复分布在observer/archive-integrity/six-edition等模块，可能增加未来版本遗漏风险；非硬性违规。本票不为此扩展旧版本重构。
+
+Standards合计2项：1硬性、1判断性；本轴最严重P1。未以完整套件通过掩盖新增反例。
+
+### Spec
+
+fresh `/root/review_v1_10_spec` 阅读完整差异及票/PRD/Root批准范围后报告两项：
+
+1. **P1：歧义组占用native排名，导致整期无法归档。** R1 `discourse.ts:102–117` 先排名再拒绝同组多候选，priority仍取旧位置，违背「最多7个native、前三个重点」与合格部分继续成稿。A组三个分别过Gate的候选与B组一个合格候选使B的priority=false，最终 `canonical-record-invalid`；两个唯一候选的对照成功归档/重启。
+2. **P1：后续组等待时撤回前组来源拖垮合法组。** R1 `discourse.ts:52–72` 仅在每组自己的await后检查当前政策；复查B时撤回A，未回扫的A仍进modelRequest，`source-policy-invalid`阻止合法B成稿，违反「变化只把组放入sticky隔离集合」；稳定政策对照通过。
+
+Spec合计2项，本轴最严重P1；未确认额外范围扩张。两个轴不合并或重新排序。
+
+### 独立反例与修复边界
+
+Root亲读并原样重复三个评审探针，每个对照通过、负例失败：
+
+- Standards `final-refresh-expiry-probe.mjs` SHA256 `24688d5e0a1c8c319cc0d3331866ae3c52ea4459ae9a18b37c6c4d26a464bf47`；评审2项中1失败406.9957ms，Root399.0863ms。
+- Spec `native-group-isolation.mjs` SHA256 `4b63a876ff4bd2dfe74a5e5d20a5dcba855c76250774beba7032770fc75eb6b0`；评审2项中1失败231.9069ms，Root331.0215ms。
+- Spec `multi-group-revocation.mjs` SHA256 `dc05fb78790597852ef48c8f7eafa2991fd772c6f032d70677e69d6177ad2404`；评审2项中1失败293.5895ms，Root267.1527ms。
+
+原探针与首次日志分别保留在 `Observer/data/root-v1-10-standards-review` / `root-v1-10-spec-review`。Root仅另做可移植副本，参数化被测built模块路径及SHA诊断，业务期待不变；先对原detached R1重新证明各2项中1失败，105.8668/90.4179/106.6598ms，`root-v1-10-review/portable-r1-*-red.log`。Standards早期探针的Windows导入URL和SourcePolicy规范化顺序准备错误保留，不算产品RED。
+
+Root因此拒绝R1合并，批准作者按TDD窄修：最终await后以唯一最终时间重查全部可展示Claim的完整当前许可/TTL及受限回执；先确定每组唯一且可刊资格再进行native排序/容量/priority；全部组HTTP完成后无新HTTP地同步重扫所有未隔离组当前许可/TTL。不放宽一致性校验、不改旧字节/独立探针期待。新clean SHA须重新冻结、双轴复审、完整check/smoke、Root独立与actual-master验收，当前不启动#11。
