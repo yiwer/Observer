@@ -70,3 +70,11 @@ Root另静态发现Interest快照曾放在新增异步采样之后；作者报�
 在作者第13片后变化中源码上，Root四个原探针又独立并行复跑，均exit0/各1项：policy16.0268ms、cancellation18.5967ms、native-only66.1554ms、post-Verifier56.1193ms。日志为 `data/root-v1-10-review/wip-after-s13-*.log`，SQLite/MD输出各自独立新目录；不是同一冻结版完整check，不将重复计数累计成测试覆盖量。
 
 以上均基于尚未提交冻结的工作树；完整check/smoke、fresh Standards/Spec、Root冻结构建和actual-master验收仍未执行。本票保持in-progress，不启动#11。
+
+## 收口前协议复核与环境记录
+
+Root进一步亲读作者 `18-lifecycle-regression.log` 与 `18-green.log`：Runner后撤销来源许可曾使普通新闻一并因 `source-policy-invalid` 失败（16项中1失败，566.431ms）。作者修复后16/16、594.5898ms；撤销社会材料而保留普通新闻的期待未变。Root又完整读取 `27-green.log` / `27-typecheck.log`：社交单文件25/25、946.4876ms，无失败/取消/跳过，typecheck无错误。上述依然是变化中作者工作树日志，不计作冻结验收。
+
+Root静态发现最初p/br-only解析与选定hashtag时间线的标准正文不相容，要求在冻结前验证。原研究agent依research技能仅窄复核官方v4.7.1 formatter并追加同一研究文件：本地正文标签标准格式为 `a.mention.hashtag[rel=tag]` 包裹 `#<span>tag</span>`，一般URL和账户mention另有不同结构。作者以该自有虚构格式取得真实RED→GREEN，并把两类正向fixture换成这个格式；只允许受限同实例标签包装，剥除链接/HTML，不扩大来源用途许可。Root亲读唯一附注152–171并验证最终研究文件SHA256 `c1ff179946466fb9684158c18d4cf466442e54852871c9b5b34175d84df42221`；原151行版本摘要仅是历史中间版本。来源：[官方hashtag formatter](https://github.com/mastodon/mastodon/blob/v4.7.1/app/lib/text_formatter.rb#L109-L114)。Root完整读作者 `24-real-format-fixtures.log`：22/22、1000.5791ms；作者曾误把Observer自己的MD目录锚判为来源HTML，保留中间失败记录并只收窄该错误断言，不称其为产品RED。
+
+同次准备完整测试时，Root只读Docker预检曾重复遇到两个既有Provider标签 `No such image`，但按固定ID读取和镜像列表仍显示原标签。Root依diagnosing-bugs技能用原CLI调用缩小复现，未升级、重建、retag、重启或清理Docker。随后原标签读取恢复，**根因未证实，不能声称修复了Docker**。2026-09-05T23:03:00Z `data/root-v1-10-review/docker-tag-probe-ready.log` 三项均exit0且精确匹配原Codex/Claude/协议镜像ID；`docker-tag-differential.json`保留恢复时的对照结果。这是测试环境就绪检查，不是完整check结果；若完整执行再次失败，保留整次终态，单独复跑而不拼接PASS。
