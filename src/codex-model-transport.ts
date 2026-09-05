@@ -3,11 +3,6 @@ export interface CodexModelTransport {
   respond(body: Record<string, unknown>, signal: AbortSignal): Promise<{ status: number; body: string }>;
 }
 
-export class ModelBoundaryError extends Error {
-  readonly category: "evidence-expired";
-  constructor(category: "evidence-expired") { super(category); this.category = category; }
-}
-
 // Explicit construction is required. No ambient key, proxy URL, account or
 // saved Codex authentication is read. The only endpoint is Responses creation.
 export function createOpenAIModelTransport(apiKey: string): CodexModelTransport {

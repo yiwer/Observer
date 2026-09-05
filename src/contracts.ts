@@ -99,9 +99,9 @@ const agentMetadata = {
   model: id, runnerVersion: id,
   startedAtUtc: utc, finishedAtUtc: utc,
   execution: z.strictObject({
-    provenance: z.enum(["protocol-fixture", "codex-cli"]),
-    processKind: z.enum(["protocol-fixture", "codex-cli"]),
-    modelTransport: z.enum(["not-used", "model-protocol-fixture", "openai-api"]),
+    provenance: z.enum(["protocol-fixture", "codex-cli", "claude-cli"]),
+    processKind: z.enum(["protocol-fixture", "codex-cli", "claude-cli"]),
+    modelTransport: z.enum(["not-used", "model-protocol-fixture", "openai-api", "anthropic-api"]),
     cliVersion: id, durationMs: z.number().int().nonnegative(),
     exitCode: z.number().int().nullable(),
     terminal: z.enum(["completed", "failed", "missing", "invalid"]),
@@ -109,7 +109,7 @@ const agentMetadata = {
     cleanup: z.enum(["removed", "not-created", "unverified"]),
   }).optional(),
   usage: TokenUsageSchema.partial().extend({
-    source: z.enum(["cli-turn", "model-responses", "unknown"]).optional(),
+    source: z.enum(["cli-turn", "cli-model-tree", "model-responses", "unknown"]).optional(),
     modelResponses: z.array(ModelUsageReceiptSchema).max(8).optional(),
   }).optional(),
 };
