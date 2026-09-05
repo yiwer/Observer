@@ -1,0 +1,33 @@
+# V1-06 执行与待验收记录
+
+状态：**实施中，尚无冻结提交/验收结果**。GitHub #6 OPEN，assignee=yiwer。
+
+- 范围：[GitHub #6](https://github.com/yiwer/Observer/issues/6)、[本地票](../tickets/06-six-edition-canonical-brief.md)。
+- Fixed base：`e57832f65222c949b00acb12bbb5196ae2c2c033`，包含已验收 #5 集成及最新证据。
+- Worktree：`O:/GenesisCode/Observer-worktrees/v1-06`；branch：`ticket/v1-06`，创建时 clean。
+- Fresh-context agent：`/root/implement_v1_06`，已实际创建新会话，不复用审查/旧实施上下文；要求亲读 implement、TDD 与 required references、CONTEXT、PRD/ADR/票据。
+- 唯一 native dependency #3 已实际读回 CLOSED；顺序前票 #5 也已验收关闭。[启动回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551218588)及 assignee 已读回。
+
+## 实施边界
+
+六个 Edition 共同编排，Today Overview 引用各栏首要内容与缺口，生成同一 Report Version 的唯一 Canonical Markdown。约 7 条/3 重点、Priority 400–800 中文字（复杂约 1200）、Watch 100–250 是软目标，不是硬配额/读时要求；证据不足保留真实数量和原因，Source Policy 优先，Impact Note 独立位置不占普通故事配额。
+
+Final Editor 只接触已校验 Report Record，不能联网、运行 shell 或加入未核验事实；新增/改变成稿事实须重新核验或拒绝。标题、数字、链接、状态与记录一致，总览只是该版本正文的导航子集，不能独立研究。说明事件、意义、影响路径、未知，同时保留事实/声明/分析/引用的语义区别。
+
+既有入口与已确认 PRD T1 seam 为 `createObserver.produce → readReport`；使用真实 SQLite，必要时只替换外部 AgentRunner/Verifier、时钟或来源响应，不测内部函数、类结构或 Prompt 字面。首个竖切先验证六栏完整生产读取的 RED→GREEN，再逐片覆盖稀疏、全空、单栏异常、内容一致性、来源许可优先。空输入不能伪造成功 Agent 或未经核验的正文；不通过新增发布后门绕过 Publication Gate。
+
+当前基线 **104 项**，smoke 3 项属于旧子集。应保留旧 Report Version 字节不变/可读、来源各阶段许可与 TTL、固定 Codex/Claude CLI 协议与失败/用量/回收、私有鉴权、原子不可覆盖归档、生产入口拒绝 fixture。公共 Schema 的演化必须明确兼容/版本，不删除旧断言以掩盖回归。
+
+本票不实现跨天去重（#7）、主题判定、真实专用采集、Provider 路由/复核（#14）、调度恢复、PDF、邮件、Android 或生产开闸。下一票需要的契约可在本票范围内明确，但不偷带后续业务。
+
+## 环境与安全
+
+继续使用既有固定 Docker Linux 运行依赖及无凭证模型协议替身：Codex 0.153.4 镜像 `sha256:12226892754c245087a7285475dad50d58322e7b9d637ba40850370c37cc5024`；Claude 2.1.252 镜像 `sha256:0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269`。宿主 Claude 现为 2.1.261，不替代容器资格，不升级/重建现有依赖或更改全局配置。
+
+本票不需要真实模型调用或秘密。Owner 的本机 Codex 费用授权/地区资格核查、延期的 Claude 实测、QQ SMTP 单封测试由 Root 分开处理；本 agent 不读个人认证/环境秘密、不发邮件、不读邮箱。其他项目容器/网络/卷和用户 `.idea/` 不动。
+
+此前策略拒绝清理的 `C:/Users/16348/AppData/Local/Temp/observer-codex-O2hbGJ`、`O:/GenesisCode/Observer-worktrees/v1-05/data/spec-review-9f568c` 绝对不触碰，不换工具重试。其他 agent 的证据目录不修改/删除。
+
+## 待验收
+
+作者竖切 TDD、定期 typecheck/单文件检查后，提交代码与实施说明并冻结；最终完整 `check` / `smoke` 绑定该 SHA。Root 固定非空三点差异，协调独立 Standards / Spec，另在 detached 工作区与集成基线复跑后才验收。当前未提供冻结 SHA 或通过计数，不把 #5 的 104/104 当作 #6 结果。

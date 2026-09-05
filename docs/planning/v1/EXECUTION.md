@@ -15,7 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 已完成票：#1、#2、#3、#4、#5，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。下一票 #6，原生依赖 #3 已重新读回 CLOSED，待 fresh-context 派发。
+- 已完成票：#1、#2、#3、#4、#5，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
+- 当前票：#6，原生依赖 #3 与顺序前票 #5 均读回 CLOSED。已实际新建 fresh-context `/root/implement_v1_06`，worktree `O:/GenesisCode/Observer-worktrees/v1-06`、branch `ticket/v1-06`，fixed base `e57832f65222c949b00acb12bbb5196ae2c2c033`；[启动回写](https://github.com/yiwer/Observer/issues/6#issuecomment-5551218588)读回 OPEN、assignee=yiwer。详见 [#6 执行与验收边界](acceptance/06-six-edition-canonical-brief.md)。
 - #5 已验收：最终实施 `177cfbbddf08e507c448e76dbe23ebc31a2ef617`、本地集成 `ed2f705f8381a2f8543e48f21266affe252b9ea4`；[关闭回写](https://github.com/yiwer/Observer/issues/5#issuecomment-5551208771)实际读回 CLOSED。以下 #5 冻结/整改条目为历史过程，当前状态以本条与 [验收记录](acceptance/05-claude-runner.md) 为准；不得把此前 P2 或待验收状态当作仍然开放。
 - #5 首个冻结候选 `0b967c6273b2d768f46df4ce8b546508a0d41784`（26 files，+1023/-57）；作者 check 94/94、smoke 3/3，工作树干净。Root 已固定非空三点 diff，派发 fresh Standards / Spec 两轴，在 detached `O:/GenesisCode/Observer-worktrees/accept-v1-05` 独立复跑；未出最终验收结论，不启动 #6 实施。
 - #5 首轮结果：Root 冻结 check 94/94、smoke 3/3，但 Standards 2 项 P3 非阻断维护建议、Spec 2 项 P2 阻断（SSE 未完整终帧仍出版；合法多次 message_delta 误拒/丢量）；Root 自有公开 seam 专项 3 RED 重现，已交原 implement agent 修复，旧候选不得集成。新 SHA / 全量检查 / 两轴复审 / Root 验收尚待完成。
@@ -44,6 +45,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 #3 的 fresh implementation 和两个 fresh reviewer 均实际启动成功；不要把 #2 的历史错误当作当前容量阻断。
 
 #5 最终 `177cfbb` 的新 Spec spawn 再次实际返回 `agent thread limit reached`；复用未参与 #5 实施的 #4 agent 进行独立 Spec，重新读全票，不与 Standards 交换报告。Standards 已先结束，因此此次两轴未能在时间上重叠，不能伪称并行成功；审查独立性仍保持。#6 实施仍必须新上下文，不得把 reviewer 会话直接改称 fresh implementation。
+
+随后 #6 的 `/root/implement_v1_06` fresh spawn 已实际成功，旧容量问题不再阻断当前实施；该 agent 未继承旧票对话上下文。
 
 ## 外部就绪项
 

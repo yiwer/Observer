@@ -225,7 +225,7 @@
       "number": 6,
       "title": "六栏编排、Today Overview 与唯一正文",
       "file": "tickets/06-six-edition-canonical-brief.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-03"
