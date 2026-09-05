@@ -37,6 +37,24 @@ export const EvidenceBundleSchema = z.strictObject({
 });
 export type EvidenceBundle = z.infer<typeof EvidenceBundleSchema>;
 
+export const CollectedEvidenceSchema = z.strictObject({
+  id, sourceId: id, policyVersion: z.number().int().positive(), policySha256: sha256,
+  sourceType: z.enum(["primary", "secondary"]), trust: z.literal("untrusted-source-data"),
+  discoveredAtUtc: utc, retrievedAtUtc: utc, expiresAtUtc: utc,
+  url: z.url({ protocol: /^https?$/ }).optional(), title: z.string().optional(),
+  publishedAtRaw: z.string().nullable().optional(), publishedAtUtc: utc.nullable().optional(),
+  eventTimeUtc: utc.nullable().optional(), content: z.string().optional(), contentSha256: sha256.optional(),
+});
+export type CollectedEvidence = z.infer<typeof CollectedEvidenceSchema>;
+export const CollectedBundleSchema = z.strictObject({
+  schemaVersion: z.literal(2), id, businessDate: date, configurationId: id,
+  windowStartUtc: utc, cutoffUtc: utc,
+  evidence: z.array(CollectedEvidenceSchema),
+  coverageGaps: z.array(z.strictObject({ sourceId: id, edition, reason: z.string().min(1) })),
+});
+export type CollectedBundle = z.infer<typeof CollectedBundleSchema>;
+const AnyBundleSchema = z.discriminatedUnion("schemaVersion", [EvidenceBundleSchema, CollectedBundleSchema]);
+
 export const CandidateStorySchema = z.strictObject({
   schemaVersion: z.literal(1),
   id, eventClusterId: id,
@@ -46,6 +64,7 @@ export const CandidateStorySchema = z.strictObject({
     text: z.string().min(1),
     evidenceIds: z.array(id).min(1),
   })).min(1),
+  quotations: z.array(z.strictObject({ evidenceId: id, text: z.string().min(1) })).optional(),
 });
 export type CandidateStory = z.infer<typeof CandidateStorySchema>;
 
@@ -73,7 +92,7 @@ export type AgentResult = z.infer<typeof AgentResultSchema>;
 
 export const ProduceRequestSchema = z.strictObject({
   schemaVersion: z.literal(1), taskId: id, businessDate: date, configurationId: id,
-  evidenceBundle: EvidenceBundleSchema,
+  evidenceBundle: AnyBundleSchema,
 });
 export type ProduceRequest = z.infer<typeof ProduceRequestSchema>;
 
@@ -86,10 +105,13 @@ export const ReportRecordSchema = z.strictObject({
   schemaVersion: z.literal(1), id,
   businessDate: date, businessTimezone: z.literal("Asia/Shanghai"),
   configurationId: id, taskId: id, applicationVersion: id,
-  evidenceBundle: EvidenceBundleSchema,
+  evidenceBundle: AnyBundleSchema,
   stories: z.array(CandidateStorySchema).length(1),
   coverageGaps: z.array(z.strictObject({ edition, reason: z.literal("not-implemented-in-fixture-spine") })).length(5),
-  sourcePolicyDecisions: z.array(z.strictObject({ evidenceId: id, decision: z.literal("test-fixture-only") })).min(1),
+  sourcePolicyDecisions: z.array(z.union([
+    z.strictObject({ evidenceId: id, decision: z.literal("test-fixture-only") }),
+    z.strictObject({ evidenceId: id, decision: z.literal("source-policy-v1"), sourceId: id, policyVersion: z.number().int().positive(), policySha256: sha256, attribution: z.string().min(1) }),
+  ])).min(1),
   agentResult: AgentResultSchema,
 });
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;

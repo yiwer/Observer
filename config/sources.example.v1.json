@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "configurationId": "owner-example-v1",
+  "sources": [{
+    "schemaVersion": 1,
+    "sourceId": "owner-test",
+    "version": 1,
+    "name": "Owner self-authored observatory fixture",
+    "feedUrl": "https://source.example/feed",
+    "sourceType": "primary",
+    "edition": "frontier-technology",
+    "review": {
+      "status": "pending",
+      "reviewedBy": "Owner",
+      "reviewedAtUtc": null,
+      "basis": "Only tests/fixtures/owner-source text is licensed for unrestricted test collection, storage, model processing, quotation and distribution. source.example is a reserved illustrative hostname, not an enabled source. Owner must record rights and approve the actual deployment origin."
+    },
+    "collection": { "enabled": false, "fields": ["url", "title", "publishedAtRaw", "publishedAtUtc", "eventTimeUtc", "content", "contentSha256"], "readBody": false },
+    "storage": { "fields": ["url", "title", "publishedAtRaw", "publishedAtUtc", "eventTimeUtc", "content", "contentSha256"], "retentionHours": 24, "retainRecordKeys": true },
+    "model": { "enabled": true, "fields": ["url", "title", "publishedAtRaw", "publishedAtUtc", "eventTimeUtc", "content", "contentSha256"] },
+    "distribution": { "enabled": true, "fields": ["url", "title", "publishedAtUtc", "contentSha256"], "allowDerivedText": true, "allowPermanentArchive": true },
+    "citation": { "enabled": true, "attribution": "Observer Owner self-authored test fixture", "maxCharacters": 100 },
+    "deletion": { "mode": "owner-request", "instructions": "Remove source from configuration and restart to purge its raw cache; fixture rights permit permanent original reports and permitted short quotations. Sources needing stream deletion are not supported by this generic feed collector." },
+    "limits": { "pollIntervalSeconds": 300, "timeoutMs": 10000, "maxResponseBytes": 262144, "maxItems": 100, "maxRedirects": 3 }
+  }]
+}
