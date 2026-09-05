@@ -2,7 +2,7 @@
 
 Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 implement skill 实现并提交，由 orchestrator review、验收和集成。此授权不包含资源购买、未经批准的真实付费调用、正式投递或自动跳过人工验收。
 
-最新补充授权见 [Owner 运行输入](OWNER-INPUTS.md)：本机 Codex 真实测试已批准且不设额度上限；Claude 真实环境由 Owner 后续提供、当前跳过但保留未验证；邮件选择 QQ SMTP 授权码、发件收件同一邮箱（具体地址只保存在 ignored 本地配置）。本机地区资格尚待信息，未进行真实模型或邮件测试。
+最新补充授权见 [Owner 运行输入](OWNER-INPUTS.md)：本机 Codex 真实测试已批准且不设额度上限；Claude 真实环境由 Owner 后续提供、当前跳过但保留未验证；邮件选择 QQ SMTP 授权码、发件收件同一邮箱（具体地址只保存在 ignored 本地配置）。本机地区资格尚待信息，未进行真实模型调用。Owner 已授权读取用户级 `QQ_SMTP_KEY` 并测试；[单封 SMTP 预检](acceptance/qq-smtp-preflight-2026-09-05.md)实际 TLS 1.3、AUTH 235、DATA 250，收件/显示待人工确认，不代表产品投递器或每日发送已启用。
 
 ## 接续规则
 
@@ -19,6 +19,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - 当前票：V1-05 / GitHub #5，进行中；原生依赖只有 #3，已于 2026-09-05 读回 CLOSED。fresh-context implement agent `/root/implement_v1_05` 已派发，base `8e35d12470c14f2638d3adbcd1901935feeaa593`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`，branch `ticket/v1-05`；[启动回写](https://github.com/yiwer/Observer/issues/5#issuecomment-5550574214)已读回 OPEN、assignee=yiwer，详见 [#5 执行边界](acceptance/05-claude-runner.md)。
 - #5 首个冻结候选 `0b967c6273b2d768f46df4ce8b546508a0d41784`（26 files，+1023/-57）；作者 check 94/94、smoke 3/3，工作树干净。Root 已固定非空三点 diff，派发 fresh Standards / Spec 两轴，在 detached `O:/GenesisCode/Observer-worktrees/accept-v1-05` 独立复跑；未出最终验收结论，不启动 #6 实施。
 - #5 首轮结果：Root 冻结 check 94/94、smoke 3/3，但 Standards 2 项 P3 非阻断维护建议、Spec 2 项 P2 阻断（SSE 未完整终帧仍出版；合法多次 message_delta 误拒/丢量）；Root 自有公开 seam 专项 3 RED 重现，已交原 implement agent 修复，旧候选不得集成。新 SHA / 全量检查 / 两轴复审 / Root 验收尚待完成。
+- #5 第二个冻结候选 `de63459f3f496374cde58eca8c250c25e01354de`：作者 check 101/101、smoke 3/3；Root detached 独立 check 101/101（128.522 秒）、smoke 3/3（1.315 秒）。Standards 硬违反 0、原 2 项 P3；Spec 关闭原 2 P2，但新增“首次输出用量更新之前截流，未知输出误记为 0”P2。Root 自有专项 3 PASS / 1 RED（5.225 秒）复现。仍不得集成或开始 #6；原作者会话已不在 live inventory，已派发 fresh-context `/root/implement_v1_05_usage_fix` 在原分支作窄范围 TDD 修复，下一冻结后重验。
 - #4 最终实施 `139dc1388cb01d68df12554f85003ac41bbd20b8`，固定起点 `320ab620a2d3f22c09e13334a68f06a3b664af05`；worktree `O:/GenesisCode/Observer-worktrees/v1-04`，分支 `ticket/v1-04`，干净；[验收回写](https://github.com/yiwer/Observer/issues/4#issuecomment-5550565579)已读回 CLOSED。
 - #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；预检时未实施/触发模型/升级，现已交给 #5 fresh 实施 agent，仍须实测目标 Linux CLI 和完整隔离契约。
@@ -42,7 +43,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 外部就绪项
 
-V1-26 起的真实环境、Provider 资格/凭证、来源许可、费用、收件人与备份资源逐项结合最新 Owner 输入判断；Codex 本机调用费用已授权，Claude 外部测试已明确延期，QQ SMTP/同一发件收件邮箱已选择、授权码未配置，其余未获授权部分仍不得擅自执行。V1-28 需要连续 14 天真实记录及规定比例的人工事实核查。没有这些证据时不得宣布 V1 生产通过。
+V1-26 起的真实环境、Provider 资格/凭证、来源许可、费用、收件人与备份资源逐项结合最新 Owner 输入判断；Codex 本机调用费用已授权，Claude 外部测试已明确延期，QQ 授权码已在本机用户级环境可用且单封 SMTP 受理成功，收件仍待确认；其余未获授权部分仍不得擅自执行。V1-28 需要连续 14 天真实记录及规定比例的人工事实核查。没有这些证据时不得宣布 V1 生产通过。
 
 ## 下一票只读预检
 

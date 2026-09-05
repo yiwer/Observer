@@ -1,6 +1,6 @@
 # V1-05 审查与验收记录
 
-状态：**首轮未通过，整改中，尚未验收**。GitHub #5 OPEN，assignee=yiwer；首个候选 `0b967c6273b2d768f46df4ce8b546508a0d41784` 的完整测试通过，但独立 Spec 审查与 Root 专项复现发现 2 项 P2 阻断，已交回原 implement agent 修复。不得集成旧候选或启动 #6 实施。
+状态：**第二轮仍有 1 项 P2，整改中，尚未验收**。GitHub #5 OPEN，assignee=yiwer；第二候选 `de63459f3f496374cde58eca8c250c25e01354de` 关闭了原 2 项 P2，但独立 Spec 与 Root 新专项发现未知输出用量误记为零，已派发窄范围修复。不得集成旧候选或启动 #6 实施。
 
 - 范围：[GitHub #5](https://github.com/yiwer/Observer/issues/5)、[本地票](../tickets/05-claude-runner.md)。
 - 固定 base：`8e35d12470c14f2638d3adbcd1901935feeaa593`；branch `ticket/v1-05`；worktree `O:/GenesisCode/Observer-worktrees/v1-05`。
@@ -81,6 +81,24 @@ Root 随后在该冻结 SHA 独立完成 `npm run check`：**94/94、0 skipped�
 
 首轮冻结及 Root 全量结果已[回写 GitHub](https://github.com/yiwer/Observer/issues/5#issuecomment-5551054369)并读回 OPEN。其后两轴完成与 Root 3 RED 已否决本候选的验收；原 `/root/implement_v1_05` 已收到具体复现和修改边界，须逐片 TDD、重新完整检查/提交冻结，再进行两轴复审与 Root 验收。旧 94/94 不可用于新代码通过声明。
 
+## 第二个冻结候选及复审
+
+作者提交 `de63459f3f496374cde58eca8c250c25e01354de`：`fix: validate Claude SSE framing and cumulative usage (#5)`；原始 base 不变，全票 26 files、+1196/-57，本次修复 5 files、+199/-26。作者 check **101/101**（116.335 秒）、smoke **3/3**（1.459 秒）。Root 固定完整非空三点 diff 和两条 commit list，在干净 detached 同 SHA 独立 check **101/101、0 skipped、0 failed**（128.522 秒），smoke **3/3**（1.315 秒，旧子集）。
+
+### Standards
+
+独立 fresh reviewer `/root/review_v1_05_standards_final` 阅读全票 26 文件及规范，硬性违反 **0**，保留上述两项 possible Duplicated Code **P3**；修复没有新增 Standards 问题，非阻断。
+
+### Spec
+
+独立原 Spec reviewer 关闭原 2 P2，未发现扩展范围；四项 T1 真实固定 CLI + Messages 替身 + 原 Gate/真实 SQLite 探针确认：两次发送输出累计 10→21 与 8→13 得到总量 34、receipts [21,13]；缺失可选输入/缓存保持 null；递减冲突被拒绝、输出 null 且保留已知输入。
+
+新增 **1 项 P2**：在完整 StructuredOutput 内容块之后、首次 `event: message_delta` 之前截断响应，正文正确拒绝、cleanup=removed，但 `src/claude-usage.ts:53` 接受启动帧 `output_tokens=0`，未收到输出更新仍在第 72 行返回零。错误元数据和 receipt 均为 `outputTokens:0`，违反票 AC“无法取得的用量明确未知”；应保持未知或明确标注仅观察到的部分值，不能把初始零当最终运行输出量。
+
+Root 在同一 detached SHA 的自有 `data/root-acceptance/claude-stream.test.ts` 加入该公开 seam 场景后实跑 **3 PASS / 1 RED**（5.225 秒）：前三项原问题均通过，新项明确 `0 !== null`，与独立 Spec 结论一致。结束查询无 `observer.task` 容器；虚构 SQLite 保留，未改产品源码。Spec 自有 `data/spec-review-repair-27c41a` 由 reviewer 保留，不能和首轮禁止清理目录混淆。
+
+本轮合计：Standards 2 项启发式建议、最严重 P3；Spec 1 项阻断、最严重 P2。Root 不验收 `de63459`。原作者已不在当前 live-agent inventory，改派 fresh-context `/root/implement_v1_05_usage_fix` 在同一分支亲读 implement/TDD，先 RED 后最小修复、完整测试、提交重新冻结；修复后再分别复审和 Root 验收，不能复用旧 101/101。
+
 ## 外部门槛
 
-没有真实模型、认证、地域资格、费用、质量、邮件、生产 Linux 或人工验收证据。生产发布/fixture 隔离继续保留；未知不记 PASS。Root 后来实际读到远端 master=`e475bc1`（含 #1–#4），这次 orchestrator 没有执行 push；#5 首个候选仍未集成、未推送，远端无 `ticket/v1-05`。
+本票没有真实模型、Provider 认证、地域资格、费用、质量、生产 Linux 或人工验收证据。Owner 后续已明确延期 Claude 真实环境测试，离线实现与协议验收继续；本机单封 [QQ SMTP 预检](qq-smtp-preflight-2026-09-05.md) 独立记录，不作为本票或产品投递器通过证据。生产发布/fixture 隔离继续保留；未知不记 PASS。Root 后来实际读到远端 master=`e475bc1`（含 #1–#4），这次 orchestrator 没有执行 push；#5 候选仍未集成、未推送，远端无 `ticket/v1-05`。
