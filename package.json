@@ -1,0 +1,17 @@
+{
+  "name": "observer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.18.0 <25" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.ts",
+    "smoke": "npm run build && node --test tests/http.test.ts",
+    "check": "npm run typecheck && npm test",
+    "start": "node dist/main.js"
+  },
+  "dependencies": { "zod": "4.1.12" },
+  "devDependencies": { "@types/node": "24.10.1", "typescript": "5.9.3" }
+}

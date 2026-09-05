@@ -1,0 +1,40 @@
+# Observer
+
+私人 Daily Brief 服务端。当前完成 V1-01 的固定数据闭环：一条有来源故事、六栏总览、五个 Coverage Gap、不可变归档和鉴权读取。固定数据和替身只用于自动化测试；当前生产启动入口禁用发布，也不提供测试归档内容。
+
+## 本地检查
+
+需要 Node **24.18.0 或较新的 24.x**、npm。锁定依赖已写入 `package-lock.json`。
+
+```sh
+npm ci
+npm run check
+npm run smoke
+```
+
+`check` 独立执行 `tsc --noEmit`，构建 `dist/`，再运行全部业务测试。`smoke` 构建并验证真实进程退出／重启后的 HTTP 私有读取和生产入口隔离，不需要网络、真实 Provider 或外部凭证。`npm ci` 首次安装需要 npm registry；测试用的 `example.org` 来源只作为不可联网的固定出处。
+
+```sh
+npm run typecheck
+node --test tests/brief.test.ts
+npm run build
+```
+
+测试与源码都使用显式 `.ts` 导入，构建重写为 `.js`；生产包 `dist/` 不包含 `tests/`。
+
+## 私有读取启动
+
+先运行 `npm run build`，再通过环境设置 `OBSERVER_OWNER_TOKEN`（至少 32 字节的 Owner 随机密钥）。可选 `OBSERVER_DATABASE_PATH` 默认 `data/observer.sqlite`，`OBSERVER_PORT` 默认 `3000`；然后 `npm start`。不要把密钥提交到 Git、放在 URL 或写进报告。
+
+监听地址固定为 `127.0.0.1`。远程 TLS 接入、短期签名链接、完整配对和撤销将在后续票实现；本票没有公网部署。
+
+当前只提供两个 GET 路由，均要求 `Authorization: Bearer <Owner 密钥>` 并返回 `Cache-Control: no-store`：
+
+| 路由 | 返回 |
+|---|---|
+| `/v1/reports/YYYY-MM-DD-v1` | 同一版本的 `version`、`record`、`canonicalMarkdown` JSON |
+| `/v1/reports/YYYY-MM-DD-v1/markdown` | 已保存的 Canonical Markdown，UTF-8 |
+
+无有效凭证为 401；未知版本为 404；其他方法为 405。生产入口不会采集、调用 Agent、创建报告或返回 fixture 报告，所以本票生产入口合法读取已知 fixture 也为 404。成功读取的本地能力由测试专用装配验证。
+
+技术选择见 [ADR-0004](docs/adr/0004-start-with-typescript-and-atomic-sqlite-report-archive.md)，公共契约及证据见 [V1-01 实现说明](docs/implementation/v1-01.md)。
