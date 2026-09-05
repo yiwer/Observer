@@ -295,7 +295,14 @@
       "issueUrl": "https://github.com/yiwer/Observer/issues/7",
       "issueDatabaseId": 5355736681,
       "githubState": "open",
-      "dependenciesVerified": true
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "63e93dc29f83ae3e0f010e2051dc2e162eaf8f1b",
+        "integrationCommit": null,
+        "acceptanceFile": "acceptance/07-event-history-and-updates.md",
+        "qualification": "review-in-progress",
+        "pushed": false
+      }
     },
     {
       "id": "V1-08",

@@ -1,6 +1,6 @@
 # V1-07 执行与待验收记录
 
-状态：**已启动 fresh-context 实施，未冻结、未验收**。GitHub #7 OPEN，assignee=yiwer。
+状态：**首个候选已冻结，双轴 review 与完整验收进行中，未接受/集成**。GitHub #7 OPEN，assignee=yiwer。下方 WIP 条目保留为历史过程，以本文最后的冻结记录为准。
 
 - 范围：[GitHub #7](https://github.com/yiwer/Observer/issues/7)、[本地票](../tickets/07-event-history-and-updates.md)。
 - Fixed base：`5da81976dd2ba166066977c038e6f46451890283`，包含 #6 最终接受、集成与关闭记录。
@@ -102,3 +102,14 @@ Root 新增自有公开 T1 探针，仍位于 `accept-v1-06/data/root-v1-07-revi
 - `transitive-policy-probe.ts` **1/1 PASS**（113.8449 ms）：五期、三来源；D1 来源 A 的时间经来源 B/C 的 D2/D3 借用；重开撤销 A/B 后 D1–D3 均拒读；D4 以有效 C 源发布独立新进展，受限旧时间不在新 Record/MD；再次重开 D5 对 D2 已报道事实仍以历史指纹抑制重复。SHA-256 `4ab0ba7dd52af9d65185c3391f76ee33855c1825b2aaaa3ffd3e6765980f1a9b`。
 
 这些新测试与目录保留；加上原因果 3、注解保留 4，Root 当前有 **11 个独立专项场景**，另有 **3 份旧归档**。它们并非同一最终冻结的全量结果，正式验收时需全部对 fixed built 与集成基线复跑。#7 此时尚未冻结，不能因为 WIP 诊断通过而关票。
+
+## 首次冻结与独立验收进行中
+
+- 冻结实施 SHA：`63e93dc29f83ae3e0f010e2051dc2e162eaf8f1b`，commit `feat: persist evidence-bound event clusters and daily updates (#7)`。作者与 Root 均实际核对 branch `ticket/v1-07`、tracked/untracked clean；固定起点仍 `5da81976dd2ba166066977c038e6f46451890283`。
+- Root 实际捕获 `git diff 5da81976dd2ba166066977c038e6f46451890283...HEAD`，非空 **12 files、+811/-17**（完整捕获 90126 chars）；包含 4 个事件模块、契约/Observer/Gate/renderer 接入、17 个新 T1 测试、实施判定表及两个纯领域词条。Root planning 状态文件不在实施提交内。
+- 两个 fresh 独立 reviewer 均实际创建成功并并行：`/root/review_v1_07_standards`、`/root/review_v1_07_spec`。各自读取固定 diff/规范/PRD，不互换报告；结果尚待返回，不拿旧 #6 reviewer 结论代替。
+- Root 新建 clean detached `O:/GenesisCode/Observer-worktrees/accept-v1-07`，同 SHA；`npm ci --ignore-scripts` 仅安装锁文件依赖（7 packages），未变更锁文件或全局环境；独立 build PASS。
+- Root 对该 **fixed built** 实际运行自有专项：注解保留 **4/4**（161.5242 ms）、因果/同候选多事实 **3/3**（203.2257 ms）、声明组合 **3/3**（131.5409 ms）、五期传递撤权 **1/1**（168.3806 ms），合计 **11/11 PASS**。Record v1/v2/v3 三份旧 producer 归档 **3/3** 全 JSON、MD、版本哈希和私有读取边界不变。结束后 detached HEAD 未变且 clean。
+- 作者冻结后的第一次 `npm run check` 仍在 session `27268`：typecheck/build 已通过；首项 Claude fixture setup 报既有 `No such image: observer-v1-05-claude:2.1.252`（503.4033 ms），整套尚未终态。已要求等待真实终态并保留失败，再仅只读核对、同 SHA 定向及完整复跑；不重建、重标签、重启 Docker，不拼接失败/重跑成首跑 PASS。
+
+作者完整 check/smoke 终态、两轴 review、Root 完整 check/smoke 和实际 master 集成复验仍缺，当前不接受、不关票、不开始 #8；无真实 Provider/SMTP/部署操作，无 push。
