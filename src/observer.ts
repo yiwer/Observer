@@ -3,12 +3,14 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import {
-  AgentResultSchema, ProduceRequestSchema, PublishedReportSchema,
-  editionNames, type AgentRunner, type AgentResult, type PublishedReport, type ReportRecord,
+  AgentResultSchema, ProduceRequestSchema, PublishedReportSchema, SixEditionRequestSchema, EditionResearchSchema, EditionResearchEnvelopeSchema, ReportRecordSchema,
+  editionNames, type AgentRunner, type AgentResult, type PublishedReport, type ReportRecord, type EditionRunner, type EditionResearch,
 } from "./contracts.ts";
 import { SourcePolicySchema, policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
 import type { Claim, SemanticVerifier } from "./gate-contracts.ts";
 import { evaluatePublication, gatedMarkdown } from "./publication-gate.ts";
+import { evaluateBatchedPublication } from "./batched-publication-gate.ts";
+import { arrangeEditions, sixEditionMarkdown, consistentRecord } from "./six-edition.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -25,6 +27,7 @@ export interface ObserverOptions {
   mode: "production" | "test-fixture";
   clock?: () => string;
   runner?: AgentRunner;
+  editionRunner?: EditionRunner;
   sourcePolicies?: SourcePolicy[];
   verifier?: SemanticVerifier;
 }
@@ -34,6 +37,7 @@ function digest(text: string): string {
 }
 
 function markdown(record: ReportRecord): string {
+  if (record.schemaVersion === 3) return sixEditionMarkdown(record);
   if (record.schemaVersion === 2) return gatedMarkdown(record);
   const story = record.stories[0]!;
   const overview = Object.entries(editionNames).map(([edition, label]) =>
@@ -80,13 +84,14 @@ export function createObserver(options: ObserverOptions) {
   return {
     async produce(input: unknown, runOptions?: { signal?: AbortSignal }) {
       if (options.mode !== "test-fixture") throw new ObserverError("publication-disabled");
-      if (!options.runner) throw new ObserverError("runner-unavailable");
-      const parsedRequest = ProduceRequestSchema.safeParse(input);
+      const parsedRequest = ProduceRequestSchema.or(SixEditionRequestSchema).safeParse(input);
       if (!parsedRequest.success) throw new ObserverError("invalid-request");
       const request = parsedRequest.data;
+      if (request.schemaVersion === 1 ? !options.runner : request.evidenceBundle.evidence.length > 0 && !options.editionRunner) throw new ObserverError("runner-unavailable");
       const bundle = request.evidenceBundle;
       const modelRequest = structuredClone(request);
-      if (!bundle.evidence.length) throw new ObserverError("evidence-unavailable");
+      if (!bundle.evidence.length && request.schemaVersion === 1) throw new ObserverError("evidence-unavailable");
+      if (request.schemaVersion === 2 && (new Set(request.editions.map((entry) => entry.edition)).size !== 6 || request.editions.some((entry) => new Set(entry.evidenceIds).size !== entry.evidenceIds.length || entry.evidenceIds.some((id) => !bundle.evidence.some((evidence) => evidence.id === id))))) throw new ObserverError("invalid-edition-input");
       if (modelRequest.evidenceBundle.schemaVersion === 2) {
         for (const evidence of modelRequest.evidenceBundle.evidence) {
           const source = checkedPolicy(evidence);
@@ -108,31 +113,63 @@ export function createObserver(options: ObserverOptions) {
         throw new ObserverError("evidence-integrity-failed");
       }
       let runnerOutput: unknown;
-      try { runnerOutput = await options.runner.run(structuredClone(modelRequest), runOptions); }
+      try { runnerOutput = modelRequest.schemaVersion === 1 ? await options.runner!.run(structuredClone(modelRequest), runOptions) : bundle.evidence.length ? await options.editionRunner!.run(structuredClone(modelRequest), runOptions) : {
+        schemaVersion: 2, taskId: request.taskId, evidenceBundleId: bundle.id, configurationId: request.configurationId,
+        editions: modelRequest.editions.map((entry) => ({ edition: entry.edition, status: "no-evidence" })),
+      }; }
       catch { throw new ObserverError("agent-unknown"); }
-      const parsedResult = AgentResultSchema.safeParse(runnerOutput);
-      if (!parsedResult.success) throw new ObserverError("agent-invalid-output");
-      const result = parsedResult.data;
+      let research: EditionResearch | undefined;
+      let results: AgentResult[];
       let publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
-      const protocolFixture = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === "protocol-fixture" && options.verifier;
-      if ((result.provider !== "fixture" && !protocolFixture) || result.startedAtUtc < bundle.cutoffUtc ||
-        result.startedAtUtc > result.finishedAtUtc || result.finishedAtUtc > publishedAtUtc) {
-        throw new ObserverError("invalid-fixture-run");
+      const validFixtureRun = (result: AgentResult) => {
+        const protocolFixture = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === "protocol-fixture" && options.verifier;
+        return (result.provider === "fixture" || !!protocolFixture) && result.startedAtUtc >= bundle.cutoffUtc &&
+          result.startedAtUtc <= result.finishedAtUtc && result.finishedAtUtc <= publishedAtUtc;
+      };
+      if (request.schemaVersion === 2) {
+        const parsed = EditionResearchEnvelopeSchema.safeParse(runnerOutput);
+        if (!parsed.success) throw new ObserverError("agent-invalid-output");
+        research = { ...parsed.data, editions: parsed.data.editions.map((entry) => {
+          const checked = EditionResearchSchema.shape.editions.element.safeParse(entry);
+          return checked.success ? checked.data : { edition: entry.edition, status: "invalid-output" as const };
+        }) };
+        if (research.taskId !== request.taskId || research.evidenceBundleId !== bundle.id || research.configurationId !== request.configurationId ||
+          new Set(research.editions.map((entry) => entry.edition)).size !== 6 || new Set(request.editions.map((entry) => entry.edition)).size !== 6) throw new ObserverError("uncorrelated-agent-result");
+        research.editions = research.editions.map((entry) => {
+          const assigned = request.editions.find((item) => item.edition === entry.edition)!;
+          const invalid = { edition: entry.edition, status: "invalid-output" as const };
+          if (entry.status === "no-evidence") return assigned.evidenceIds.length ? invalid : entry;
+          if (entry.status === "invalid-output") return entry;
+          if (!assigned.evidenceIds.length || entry.result.taskId !== `${request.taskId}:${entry.edition}` ||
+            entry.result.evidenceBundleId !== bundle.id || entry.result.configurationId !== request.configurationId ||
+            !validFixtureRun(entry.result) ||
+            entry.result.status === "succeeded" && entry.result.stories.some((story) => story.edition !== entry.edition || story.claims.some((claim) => claim.evidenceIds.some((id) => !assigned.evidenceIds.includes(id))))) return invalid;
+          return entry;
+        });
+        results = research.editions.flatMap((entry) => entry.status === "completed" ? [entry.result] : []);
+      } else {
+        const parsedResult = AgentResultSchema.safeParse(runnerOutput);
+        if (!parsedResult.success) throw new ObserverError("agent-invalid-output");
+        results = [parsedResult.data];
       }
-      if (result.taskId !== request.taskId || result.evidenceBundleId !== request.evidenceBundle.id || result.configurationId !== request.configurationId) {
-        throw new ObserverError("uncorrelated-agent-result");
+      for (const result of results) {
+        if (!validFixtureRun(result)) throw new ObserverError("invalid-fixture-run");
+        if ((request.schemaVersion === 1 && result.taskId !== request.taskId) || result.evidenceBundleId !== request.evidenceBundle.id || result.configurationId !== request.configurationId) {
+          throw new ObserverError("uncorrelated-agent-result");
+        }
+        if (request.schemaVersion === 1 && result.status !== "succeeded") throw new ObserverError(`agent-${result.failure.category}`, result);
       }
-      if (result.status !== "succeeded") throw new ObserverError(`agent-${result.failure.category}`, result);
-      if (options.verifier && result.stories.some((story) => story.schemaVersion === 1)) throw new ObserverError("legacy-candidate-disabled");
+      const stories = results.flatMap((result) => result.status === "succeeded" ? result.stories : []);
+      if ((options.verifier || research) && stories.some((story) => story.schemaVersion === 1)) throw new ObserverError("legacy-candidate-disabled");
       const evidenceIds = new Set(request.evidenceBundle.evidence.map((evidence) => evidence.id));
-      if (result.stories.some((story) => story.schemaVersion === 1 && story.claims.some((claim) => claim.evidenceIds.some((id) => !evidenceIds.has(id))))) {
+      if (stories.some((story) => story.schemaVersion === 1 && story.claims.some((claim) => claim.evidenceIds.some((id) => !evidenceIds.has(id))))) {
         throw new ObserverError("unknown-evidence-reference");
       }
-      if (result.stories.some((story) => story.schemaVersion === 1 && story.quotations?.some((quote) => !evidenceIds.has(quote.evidenceId)))) throw new ObserverError("unknown-evidence-reference");
-      const gatedCandidates = result.stories.every((story) => story.schemaVersion === 2);
+      if (stories.some((story) => story.schemaVersion === 1 && story.quotations?.some((quote) => !evidenceIds.has(quote.evidenceId)))) throw new ObserverError("unknown-evidence-reference");
+      const gatedCandidates = stories.every((story) => story.schemaVersion === 2);
       if (bundle.schemaVersion === 2 && !gatedCandidates) {
         const quotationTotals = new Map<string, number>();
-        for (const quotation of result.stories.flatMap((story) => story.schemaVersion === 1 ? story.quotations ?? [] : [])) {
+        for (const quotation of stories.flatMap((story) => story.schemaVersion === 1 ? story.quotations ?? [] : [])) {
           const evidence = bundle.evidence.find((item) => item.id === quotation.evidenceId)!;
           const total = (quotationTotals.get(evidence.sourceId) ?? 0) + [...quotation.text].length;
           if (total > checkedPolicy(evidence).citation.maxCharacters) throw new ObserverError("citation-limit");
@@ -143,7 +180,7 @@ export function createObserver(options: ObserverOptions) {
           if (!source.distribution.enabled || !source.distribution.allowDerivedText) throw new ObserverError("distribution-forbidden");
           if (!source.distribution.allowPermanentArchive) throw new ObserverError("archive-forbidden");
           if (!source.citation.enabled) throw new ObserverError("citation-forbidden");
-          const quotations = result.stories.flatMap((story) => story.schemaVersion === 1 ? story.quotations ?? [] : []).filter((quote) => quote.evidenceId === evidence.id);
+          const quotations = stories.flatMap((story) => story.schemaVersion === 1 ? story.quotations ?? [] : []).filter((quote) => quote.evidenceId === evidence.id);
           const researchContent = modelRequest.evidenceBundle.evidence.find((item) => item.id === evidence.id)?.content;
           if (quotations.some((quote) => !evidence.content?.includes(quote.text) || !researchContent?.includes(quote.text))) throw new ObserverError("quotation-unverified");
           for (const field of sourceFields) if (!source.collection.fields.includes(field) || !source.storage.fields.includes(field) || !source.distribution.fields.includes(field)) delete evidence[field];
@@ -152,22 +189,22 @@ export function createObserver(options: ObserverOptions) {
           if (!evidence.url || !evidence.title) throw new ObserverError("citation-unavailable");
         }
       }
-      const story = result.stories[0]!;
+      const story = stories[0];
       const commonRecord = {
         schemaVersion: 1, id: `${request.businessDate}-v1-record`,
         businessDate: request.businessDate, businessTimezone: "Asia/Shanghai",
         configurationId: request.configurationId, taskId: request.taskId, applicationVersion: "0.1.0",
-        evidenceBundle: request.evidenceBundle, stories: result.stories,
+        evidenceBundle: request.evidenceBundle, stories,
         coverageGaps: (Object.keys(editionNames) as Array<keyof typeof editionNames>)
-          .filter((edition) => edition !== story.edition)
+          .filter((edition) => edition !== story?.edition)
           .map((edition) => ({ edition, reason: "not-implemented-in-fixture-spine" })),
         sourcePolicyDecisions: bundle.schemaVersion === 1 ? bundle.evidence.map((evidence) => ({ evidenceId: evidence.id, decision: "test-fixture-only" })) : bundle.evidence.map((evidence) => ({ evidenceId: evidence.id, decision: "source-policy-v1", sourceId: evidence.sourceId, policyVersion: evidence.policyVersion, policySha256: evidence.policySha256, attribution: checkedPolicy(evidence).citation.attribution })),
-        agentResult: result,
+        agentResult: results[0],
       };
       let record: ReportRecord;
-      if (result.stories.every((story) => story.schemaVersion === 2)) {
+      if (stories.every((story) => story.schemaVersion === 2)) {
         const quotationTotals = new Map<string, number>();
-        for (const claim of result.stories.flatMap((story) => story.claims)) {
+        for (const claim of stories.flatMap((story) => story.claims)) {
           if (claim.kind !== "quotation") continue;
           const evidence = bundle.evidence.find((item) => item.id === claim.evidenceIds[0]);
           if (!evidence) continue;
@@ -202,7 +239,7 @@ export function createObserver(options: ObserverOptions) {
           }
           return null;
         };
-        const { completedAtUtc, ...gated } = await evaluatePublication({ request: modelRequest, stories: result.stories, verifier: options.verifier,
+        const { completedAtUtc, ...gated } = await (research ? evaluateBatchedPublication : evaluatePublication)({ request: { ...modelRequest, schemaVersion: 1 }, stories, verifier: options.verifier,
           clock: options.clock ?? (() => new Date().toISOString()), modelPolicyCheck, publicationPolicyCheck: policyCheck });
         publishedAtUtc = completedAtUtc;
         const eligibleIds = new Set([...gated.stories.flatMap((story) => story.claims.flatMap((claim) => claim.evidenceIds)), ...gated.publicationGate.unconfirmedItems.flatMap((item) => item.evidenceIds)]);
@@ -217,15 +254,21 @@ export function createObserver(options: ObserverOptions) {
           }
           return { ...metadata, origin: { kind: "fixture" as const } };
         }) };
-        const { stories: _stories, ...agentMetadata } = result;
+        const result = results[0];
+        const agentMetadata = result?.status === "succeeded" ? (({ stories: _stories, ...metadata }) => metadata)(result) : result;
         record = { ...commonRecord, schemaVersion: 2, evidenceBundle: archiveBundle, agentResult: agentMetadata, ...gated,
           sourcePolicyDecisions: commonRecord.sourcePolicyDecisions.filter((decision) => eligibleIds.has(decision.evidenceId)),
           coverageGaps: Object.keys(editionNames).filter((edition) => !gated.stories.some((story) => story.edition === edition)).map((edition) => ({ edition, reason: "no-publishable-claims" })),
         } as ReportRecord;
+        if (research) {
+          record = arrangeEditions(record as Parameters<typeof arrangeEditions>[0], research);
+        }
       } else {
-        if (result.stories.some((story) => story.schemaVersion !== 1)) throw new ObserverError("agent-invalid-output");
+        if (stories.some((story) => story.schemaVersion !== 1)) throw new ObserverError("agent-invalid-output");
         record = commonRecord as ReportRecord;
       }
+      record = ReportRecordSchema.parse(record);
+      if (record.schemaVersion === 3 && !consistentRecord(record)) throw new ObserverError("canonical-record-invalid");
       const canonicalMarkdown = markdown(record);
       const report = PublishedReportSchema.parse({
         version: {
@@ -234,6 +277,7 @@ export function createObserver(options: ObserverOptions) {
           publishedAtUtc,
           revisionReason: "initial", previousVersionId: null, provenance: "test-fixture",
           reportRecordId: record.id, canonicalMarkdownSha256: digest(canonicalMarkdown),
+          ...(record.schemaVersion === 3 ? { schemaVersion: 2, editorialContract: record.editorialContract, reportRecordSha256: digest(JSON.stringify(record)) } : {}),
         },
         record, canonicalMarkdown,
       });
@@ -250,6 +294,14 @@ export function createObserver(options: ObserverOptions) {
       if (!row) throw new ObserverError("not-found");
       const report = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
+      if (report.record.schemaVersion === 3 || report.version.schemaVersion === 2) {
+        if (report.record.schemaVersion !== 3 || report.version.schemaVersion !== 2 || !consistentRecord(report.record) ||
+          report.version.id !== versionId || report.version.id !== `${report.record.businessDate}-v1` || report.version.briefId !== report.record.businessDate ||
+          report.record.id !== `${report.record.businessDate}-v1-record` || report.version.reportRecordId !== report.record.id ||
+          report.version.businessDate !== report.record.businessDate || report.version.publishedAtUtc !== report.record.publicationGate.checkedAtUtc ||
+          report.version.reportRecordSha256 !== digest(JSON.stringify(report.record)) || report.version.canonicalMarkdownSha256 !== digest(report.canonicalMarkdown) ||
+          sixEditionMarkdown(report.record) !== report.canonicalMarkdown) throw new ObserverError("canonical-integrity-failed");
+      }
       if (report.record.evidenceBundle.schemaVersion !== 1) {
         try {
           const identities = report.record.evidenceBundle.schemaVersion === 2 ? report.record.evidenceBundle.evidence : report.record.evidenceBundle.evidence.flatMap((evidence) => evidence.origin.kind === "collected" ? [{ sourceId: evidence.sourceId, ...evidence.origin }] : []);

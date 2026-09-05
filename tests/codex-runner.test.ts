@@ -48,6 +48,7 @@ test("A complete Codex process candidate reaches the Gate and the private archiv
   const report = observer.readReport(version.id, ownerToken);
   assert.equal(report.record.schemaVersion, 2);
   assert.match(report.canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.equal(report.record.agentResult.provider, "codex");
   assert.equal(version.provenance, "test-fixture");
 });
@@ -57,6 +58,7 @@ test("The saved redacted real-CLI event sample replays through the private repor
   const version = await observer.produce(request);
   const report = observer.readReport(version.id, ownerToken);
   assert.match(report.canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.deepEqual(report.record.agentResult.usage, { inputTokens: 12, outputTokens: 21, cachedInputTokens: 2,
     cacheWriteInputTokens: 0, reasoningOutputTokens: 0, costUsd: null, source: "cli-turn", modelResponses: [] });
 });
@@ -266,6 +268,7 @@ test("Malicious source instructions encounter actual file, environment, privileg
   const report = observer.readReport(version.id, ownerToken);
   assert.equal(await readFile(secret, "utf8"), "host-only-secret-not-for-model");
   assert.equal(JSON.stringify(report).includes("host-only-secret"), false);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.equal(report.record.agentResult.execution?.cleanup, "removed");
 });
 
@@ -292,6 +295,7 @@ test("The pinned real Codex CLI reaches the archived body through an offline Res
   const version = await observer.produce(request);
   const report = observer.readReport(version.id, ownerToken);
   assert.match(report.canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.equal(report.record.agentResult.execution?.cliVersion, "codex-cli 0.153.4");
   assert.equal(report.record.agentResult.execution?.provenance, "protocol-fixture");
   assert.equal(report.record.agentResult.usage?.source, "cli-turn");

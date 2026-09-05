@@ -42,6 +42,7 @@ test("A real isolated Claude candidate reaches the shared Gate and private SQLit
   const version = await observer.produce(request);
   const report = observer.readReport(version.id, ownerToken);
   assert.match(report.canonicalMarkdown, /事实：示例观测站新增了 12 个观测点。/);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.equal(report.record.agentResult.provider, "claude");
   assert.equal(report.record.agentResult.execution?.cliVersion, "2.1.252 (Claude Code)");
   assert.equal(report.record.agentResult.execution?.processKind, "claude-cli");
@@ -57,6 +58,7 @@ test("The redacted real-Claude event sample replays through the public report se
   const version = await observer.produce(request);
   const report = observer.readReport(version.id, ownerToken);
   assert.match(report.canonicalMarkdown, /12 个观测点/);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.equal(report.record.agentResult.usage?.source, "cli-model-tree");
   assert.deepEqual(report.record.agentResult.usage?.modelResponses, []);
 });
@@ -174,6 +176,7 @@ test("Claude accepts cumulative message deltas without adding their output count
   const version = await observer.produce(request);
   const report = observer.readReport(version.id, ownerToken);
   assert.match(report.canonicalMarkdown, /12 个观测点/);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.equal(report.record.agentResult.usage?.outputTokens, 21);
   assert.equal(report.record.agentResult.usage?.source, "model-responses");
   assert.equal(report.record.agentResult.usage?.costUsd, null);
@@ -204,6 +207,7 @@ test("Claude preserves a reported zero output count from a complete Messages str
   const version = await observer.produce(request);
   const report = observer.readReport(version.id, ownerToken);
   assert.match(report.canonicalMarkdown, /12 个观测点/);
+  if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
   assert.equal(report.record.agentResult.usage?.inputTokens, 12);
   assert.equal(report.record.agentResult.usage?.outputTokens, 0);
   assert.deepEqual(report.record.agentResult.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 0]]);
@@ -233,6 +237,7 @@ test("Claude accepts usage-only and null-stop partial deltas before a complete t
     const version = await observer.produce(request);
     const report = observer.readReport(version.id, ownerToken);
     assert.match(report.canonicalMarkdown, /12 个观测点/);
+    if (report.record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
     assert.equal(report.record.agentResult.usage?.outputTokens, 21);
     assert.deepEqual(report.record.agentResult.usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens]), [[12, 21]]);
   }
@@ -249,7 +254,9 @@ test("Claude retains per-field cumulative usage across repeated and nullable par
   const body = claudeMessageFixture().replace(/event: message_delta\ndata: [^\n]+\n\n/, frames);
   const { observer } = await fixture(t, { transport: { provenance: "model-protocol-fixture", respond: async () => ({ status: 200, body }) } });
   const version = await observer.produce(request);
-  const usage = observer.readReport(version.id, ownerToken).record.agentResult.usage;
+  const { record } = observer.readReport(version.id, ownerToken);
+  if (record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
+  const usage = record.agentResult.usage;
   assert.equal(usage?.inputTokens, 12); assert.equal(usage?.outputTokens, 21);
   assert.equal(usage?.cachedInputTokens, 3); assert.equal(usage?.reasoningOutputTokens, 2);
   assert.deepEqual(usage?.modelResponses?.map((receipt) => [receipt.inputTokens, receipt.outputTokens, receipt.cachedInputTokens, receipt.reasoningOutputTokens]), [[12, 21, 3, 2]]);
@@ -322,7 +329,9 @@ test("Claude uses whole-tree usage once, with main-loop and unknown fallbacks", 
   ] as const) {
     const { observer } = await fixture(t, { runtime: protocolRuntime(scenario) });
     const version = await observer.produce(request);
-    const usage = observer.readReport(version.id, ownerToken).record.agentResult.usage;
+    const { record } = observer.readReport(version.id, ownerToken);
+    if (record.schemaVersion !== 2) assert.fail("Expected single-run gated report");
+    const usage = record.agentResult.usage;
     assert.equal(usage?.source, source); assert.equal(usage?.inputTokens, input); assert.equal(usage?.outputTokens, output); assert.equal(usage?.costUsd, cost);
   }
 });

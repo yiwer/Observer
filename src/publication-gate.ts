@@ -4,9 +4,11 @@ import { editionNames, type ProduceRequest, type ReportRecord } from "./contract
 
 export const inputDigest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-interface EvaluationOptions {
+export interface EvaluationOptions {
   request: ProduceRequest;
   stories: CandidateV2[];
+  // Batched evaluation retains the complete identity scope for structural checks.
+  structuralStories?: CandidateV2[];
   verifier: SemanticVerifier | undefined;
   clock: () => string;
   modelPolicyCheck: (evidenceIds: string[], atUtc: string) => string | null;
@@ -15,10 +17,14 @@ interface EvaluationOptions {
 
 export async function evaluatePublication(options: EvaluationOptions) {
   const { request, stories, verifier } = options;
+  const structuralReason = (story: CandidateV2, claim: Claim) =>
+    claim.evidenceIds.some((id) => !request.evidenceBundle.evidence.some((evidence) => evidence.id === id)) ? "unknown-evidence-reference" :
+    new Set(claim.evidenceIds).size !== claim.evidenceIds.length || story.claims.filter((item) => item.id === claim.id).length !== 1 ||
+    (options.structuralStories ?? stories).filter((item) => item.id === story.id).length !== 1 ? "ambiguous-claim-identity" : null;
   const beforeVerifierUtc = options.clock();
   const modelFailures = new Map(request.evidenceBundle.evidence.map((item) => [item.id, options.modelPolicyCheck([item.id], beforeVerifierUtc)]));
   const permitted = new Set([...modelFailures].filter(([, reason]) => reason === null).map(([id]) => id));
-  const reviewStories = stories.map((story) => ({ ...story, title: "陈述级核验", claims: story.claims.filter((claim) => claim.evidenceIds.every((id) => permitted.has(id))) })).filter((story) => story.claims.length > 0);
+  const reviewStories = stories.map((story) => ({ ...story, title: "陈述级核验", claims: story.claims.filter((claim) => !structuralReason(story, claim) && claim.evidenceIds.every((id) => permitted.has(id))) })).filter((story) => story.claims.length > 0);
   const context = { schemaVersion: 1 as const, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId, stories: reviewStories, evidence: request.evidenceBundle.evidence.filter((evidence) => permitted.has(evidence.id)) };
   const input: VerificationInput = { ...context, inputSha256: inputDigest(context) };
   let output: unknown;
@@ -48,11 +54,10 @@ export async function evaluatePublication(options: EvaluationOptions) {
           unconfirmedItems.push({ storyId: story.id, claimId: claim.id, edition: story.edition, description: claim.text, evidenceIds: claim.evidenceIds });
         }
       };
-      const structuralReason = claim.evidenceIds.some((id) => !request.evidenceBundle.evidence.some((evidence) => evidence.id === id)) ? "unknown-evidence-reference" :
-        new Set(claim.evidenceIds).size !== claim.evidenceIds.length || story.claims.filter((item) => item.id === claim.id).length !== 1 || stories.filter((item) => item.id === story.id).length !== 1 ? "ambiguous-claim-identity" : null;
-      if (structuralReason) {
-        decide("quarantined", structuralReason, {
-          structure: { status: "failed", reason: structuralReason }, policy: { status: "not-evaluated", reason: "structure-failed" },
+      const structureFailure = structuralReason(story, claim);
+      if (structureFailure) {
+        decide("quarantined", structureFailure, {
+          structure: { status: "failed", reason: structureFailure }, policy: { status: "not-evaluated", reason: "structure-failed" },
           semantic: { status: "not-evaluated", reason: "structure-failed" } });
         return false;
       }
@@ -103,15 +108,15 @@ export async function evaluatePublication(options: EvaluationOptions) {
   } } };
 }
 
-function claimWording(claim: Claim): string {
+export function claimWording(claim: Claim): string {
   if (claim.kind === "quotation") return `引语（${claim.translated ? `译文 · ${claim.language}` : "原文"}）：${claim.text}${claim.translated ? `\n\n原文：${claim.originalText}` : ""}`;
   const label = claim.kind === "statement" ? `发布者声明（${claim.publisherSourceId}）` : claim.kind === "analysis" ? `分析（${claim.mode === "scenario" ? "情景" : "解释"}）` : "事实";
   return `${label}：${claim.text}`;
 }
 
-const escapeMarkdown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+export const escapeMarkdown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   .replace(/[\\`*_{}\[\]()#+!|~]/g, "\\$&").replace(/[\r\n]+/g, " ");
-const failureExplanations: Record<string, string> = {
+export const failureExplanations: Record<string, string> = {
   "unknown-evidence-reference": "引用的 Evidence 不在本次材料中，已隔离该陈述。",
   "ambiguous-claim-identity": "陈述或证据标识重复，无法建立唯一核验关系。",
   "invalid-verifier-receipt": "语义核验未返回完整且关联正确的结果，尚不能发布。",

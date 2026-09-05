@@ -72,3 +72,11 @@ export const PublicationGateSchema = z.strictObject({
   }),
   verification: VerificationSchema.nullable(),
 });
+
+// Six Editions x 50 stories, with <=50 claims/story, need at most 30 whole-story batches.
+// Each receipt remains the unchanged <=500-assessment Verification v1 contract.
+export const BatchedPublicationGateSchema = PublicationGateSchema.extend({
+  schemaVersion: z.literal(2),
+  verification: z.null(),
+  batches: z.array(PublicationGateSchema.pick({ schemaVersion: true, input: true, verification: true, checkedAtUtc: true })).max(30),
+});

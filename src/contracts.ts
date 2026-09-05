@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CandidateV2Schema, PublicationGateSchema } from "./gate-contracts.ts";
+import { BatchedPublicationGateSchema, CandidateV2Schema, PublicationGateSchema } from "./gate-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const utc = z.iso.datetime({ precision: 3, offset: false });
@@ -129,6 +129,41 @@ export const ProduceRequestSchema = z.strictObject({
 });
 export type ProduceRequest = z.infer<typeof ProduceRequestSchema>;
 
+// The six-Edition seam accepts research outcomes, never a Report Record or final prose.
+const sourceGapReason = z.enum(["source-pending", "collection-forbidden", "storage-forbidden", "model-forbidden", "distribution-forbidden", "rate-limited", "timeout", "http-error", "unsafe-xml", "source-failed", "fetch-failed", "evidence-unavailable", "target-forbidden", "origin-forbidden", "redirect-limit", "response-too-large", "encoding-forbidden", "invalid-feed", "invalid-item", "item-limit"]);
+export const SixEditionRequestSchema = ProduceRequestSchema.extend({
+  schemaVersion: z.literal(2),
+  evidenceBundle: z.discriminatedUnion("schemaVersion", [EvidenceBundleSchema, CollectedBundleSchema.extend({
+    coverageGaps: z.array(CollectedBundleSchema.shape.coverageGaps.element.extend({ reason: sourceGapReason })),
+  })]),
+  editions: z.array(z.strictObject({ edition, evidenceIds: z.array(id) })).length(6),
+});
+export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema>;
+// Six-Edition research appends a known Edition suffix to the unchanged 200-character input ID.
+// This bounded envelope extension does not alter the legacy AgentRunner/CLI contract.
+const editionTaskId = z.string().min(1).max(200 + 1 + Math.max(...Object.keys(editionNames).map((name) => name.length)));
+const EditionAgentResultSchema = z.discriminatedUnion("status", [
+  AgentResultSchema.options[0].extend({ taskId: editionTaskId, stories: z.array(CandidateV2Schema).max(50) }),
+  AgentResultSchema.options[1].extend({ taskId: editionTaskId }),
+]);
+const StoryEditorialSchema = z.strictObject({
+  storyId: id, significanceClaimIds: z.array(id), impactClaimIds: z.array(id), uncertaintyClaimIds: z.array(id),
+  impactNotes: z.array(z.strictObject({ edition, claimIds: z.array(id).min(1) })),
+});
+export const EditionResearchSchema = z.strictObject({
+  schemaVersion: z.literal(2), taskId: id, evidenceBundleId: id, configurationId: id,
+  editions: z.array(z.discriminatedUnion("status", [
+    z.strictObject({ edition, status: z.literal("completed"), result: EditionAgentResultSchema, editorial: z.array(StoryEditorialSchema).max(50).optional() }),
+    z.strictObject({ edition, status: z.literal("no-evidence") }),
+    z.strictObject({ edition, status: z.literal("invalid-output") }),
+  ])).length(6),
+});
+export type EditionResearch = z.infer<typeof EditionResearchSchema>;
+export const EditionResearchEnvelopeSchema = EditionResearchSchema.extend({ editions: z.array(z.looseObject({ edition })).length(6) });
+export interface EditionRunner {
+  run(task: SixEditionRequest, options?: { signal?: AbortSignal }): Promise<unknown>;
+}
+
 // A runner is an external, untrusted boundary: successful resolution is not publication authority.
 export interface AgentRunner {
   run(task: ProduceRequest, options?: { signal?: AbortSignal }): Promise<unknown>;
@@ -147,7 +182,7 @@ const LegacyReportRecordSchema = z.strictObject({
   ])).min(1),
   agentResult: AgentResultSchema,
 });
-export const ReportRecordSchema = z.union([LegacyReportRecordSchema, LegacyReportRecordSchema.extend({
+const GatedReportRecordSchema = LegacyReportRecordSchema.extend({
   schemaVersion: z.literal(2),
   evidenceBundle: ArchivedBundleSchema,
   stories: z.array(CandidateV2Schema),
@@ -156,10 +191,27 @@ export const ReportRecordSchema = z.union([LegacyReportRecordSchema, LegacyRepor
   // Only accepted wording is archived. Rejected input is identified by hash in the gate ledger.
   agentResult: z.strictObject({ ...agentMetadata, status: z.literal("succeeded") }),
   publicationGate: PublicationGateSchema,
-})]);
+});
+const SixEditionRecordSchema = GatedReportRecordSchema.omit({ agentResult: true }).extend({
+  schemaVersion: z.literal(3),
+  editorialContract: z.literal("observer-canonical-v1"),
+  publicationGate: z.union([PublicationGateSchema, BatchedPublicationGateSchema]),
+  // Derived attribution labels may extend a bounded 4000-character Claim.
+  stories: z.array(CandidateV2Schema.extend({ title: z.string().min(1).max(4500) })),
+  editionRuns: z.array(z.discriminatedUnion("status", [
+    z.strictObject({ edition, status: z.literal("completed"), result: z.discriminatedUnion("status", [
+      EditionAgentResultSchema.options[0].omit({ stories: true }), EditionAgentResultSchema.options[1],
+    ]) }),
+    z.strictObject({ edition, status: z.literal("no-evidence") }),
+    z.strictObject({ edition, status: z.literal("invalid-output") }),
+  ])).length(6),
+  editions: z.array(z.strictObject({ edition, candidateStoryIds: z.array(id), storyIds: z.array(id), priorityStoryIds: z.array(id) })).length(6),
+  storyEditorial: z.array(StoryEditorialSchema),
+});
+export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
-export const ReportVersionSchema = z.strictObject({
+const LegacyReportVersionSchema = z.strictObject({
   schemaVersion: z.literal(1), id, briefId: id,
   businessDate: date, version: z.literal(1),
   publishedAtUtc: utc, revisionReason: z.literal("initial"),
@@ -168,6 +220,9 @@ export const ReportVersionSchema = z.strictObject({
   reportRecordId: id,
   canonicalMarkdownSha256: sha256,
 });
+export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [LegacyReportVersionSchema, LegacyReportVersionSchema.extend({
+  schemaVersion: z.literal(2), editorialContract: z.literal("observer-canonical-v1"), reportRecordSha256: sha256,
+})]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({
   version: ReportVersionSchema,
