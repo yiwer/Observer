@@ -14,7 +14,8 @@
     "check": "npm run typecheck && npm test",
     "start": "node dist/main.js",
     "collect": "node dist/collect-main.js",
-    "prepare:codex": "node scripts/prepare-codex-runtime.mjs"
+    "prepare:codex": "node scripts/prepare-codex-runtime.mjs",
+    "prepare:claude": "node scripts/prepare-claude-runtime.mjs"
   },
   "dependencies": {
     "ipaddr.js": "2.2.0",

@@ -4,10 +4,11 @@ import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { fileURLToPath } from "node:url";
-import { ModelBoundaryError, modelResponseHasNoTools, type CodexModelTransport } from "./codex-model-transport.ts";
+import { modelResponseHasNoTools, type CodexModelTransport } from "./codex-model-transport.ts";
+import { claudeModelRequest, claudeResponseAllowed, type ClaudeModelTransport } from "./claude-model-transport.ts";
 
-export interface CodexRuntime {
-  kind: "protocol-fixture" | "codex-cli";
+export interface AgentRuntime {
+  kind: "protocol-fixture" | "codex-cli" | "claude-cli";
   image: string;
   program?: string;
   scenario?: string;
@@ -20,10 +21,14 @@ export interface ContainerResult {
   failure?: RuntimeFailure;
 }
 export type RuntimeFailure = "timeout" | "cancelled" | "output-limit" | "input-limit" | "unavailable" | "cleanup-failed" | "policy-violation" | "evidence-expired";
+export class ModelBoundaryError extends Error {
+  readonly category: "evidence-expired";
+  constructor(category: "evidence-expired") { super(category); this.category = category; }
+}
 interface CommandResult { text: string; code: number | null; failure?: RuntimeFailure; }
 
 function docker(args: string[], cwd: string, options: { signal?: AbortSignal; timeoutMs?: number; input?: string; maxBytes?: number;
-  transport?: CodexModelTransport; model?: string; maxModelRequests?: number } = {}): Promise<CommandResult> {
+  transport?: CodexModelTransport | ClaudeModelTransport; provider?: "codex" | "claude"; model?: string; schema?: unknown; maxModelRequests?: number } = {}): Promise<CommandResult> {
   return new Promise((resolveResult) => {
     if (options.signal?.aborted) { resolveResult({ text: "", code: null, failure: "cancelled" }); return; }
     const env = Object.fromEntries(["PATH", "Path", "SystemRoot", "WINDIR", "TEMP", "TMP"].flatMap((key) =>
@@ -69,11 +74,15 @@ function docker(args: string[], cwd: string, options: { signal?: AbortSignal; ti
         }
         requestIds.add(id);
         // Override provider-requested tool/storage settings at the trusted boundary.
-        const modelBody = { ...body, model: options.model, tools: [], tool_choice: "none", store: false, stream: true, background: false };
+        let modelBody: Record<string, unknown>;
+        try {
+          modelBody = options.provider === "claude" ? claudeModelRequest(body, options.schema) :
+            { ...body, model: options.model, tools: [], tool_choice: "none", store: false, stream: true, background: false };
+        } catch { stop("policy-violation"); continue; }
         void Promise.resolve().then(() => options.transport!.respond(modelBody, modelAbort.signal)).then((response) => {
           if (modelAbort.signal.aborted) return;
           if (!Number.isInteger(response.status) || response.status < 100 || response.status > 599 || Buffer.byteLength(response.body) > 2 * 1024 * 1024) { stop("output-limit"); return; }
-          if (response.status === 200 && !modelResponseHasNoTools(response.body)) { stop("policy-violation"); return; }
+          if (response.status === 200 && !(options.provider === "claude" ? claudeResponseAllowed(response.body) : modelResponseHasNoTools(response.body))) { stop("policy-violation"); return; }
           child.stdin.write(JSON.stringify({ id, status: response.status, body: response.body }) + "\n");
         }).catch((error: unknown) => { if (!modelAbort.signal.aborted) stop(error instanceof ModelBoundaryError ? error.category : "unavailable"); });
       }
@@ -94,11 +103,12 @@ function docker(args: string[], cwd: string, options: { signal?: AbortSignal; ti
 
 // Docker is the external process boundary. Every invocation creates a unique
 // container; its immutable ID owns the complete task process tree.
-export async function runCodexContainer(options: {
-  taskRoot: string; runtime: CodexRuntime; args: string[]; prompt: string; schema: unknown;
+export async function runAgentContainer(options: {
+  provider: "codex" | "claude";
+  taskRoot: string; runtime: AgentRuntime; args: string[]; prompt: string; schema: unknown;
   taskId: string;
   signal?: AbortSignal; timeoutMs: number; maxBytes: number;
-  transport?: CodexModelTransport; model: string; maxModelRequests: number;
+  transport?: CodexModelTransport | ClaudeModelTransport; model: string; maxModelRequests: number;
 }): Promise<ContainerResult> {
   const result: ContainerResult = { stdout: "", exitCode: null, containerId: null, cleanup: "not-created" };
   if (Buffer.byteLength(options.prompt) > 1024 * 1024) return { ...result, failure: "input-limit" };
@@ -109,7 +119,7 @@ export async function runCodexContainer(options: {
     await mkdir(options.taskRoot, { recursive: true, mode: 0o700 });
     directory = await mkdtemp(join(await realpath(options.taskRoot), "run-"));
   } catch { return { ...result, failure: "unavailable" }; }
-  const name = `observer-v1-04-${randomUUID()}`;
+  const name = `observer-${options.provider}-${randomUUID()}`;
   const deadline = performance.now() + options.timeoutMs;
   let createdAt: string | undefined;
   let creationAttempted = false;
@@ -123,13 +133,14 @@ export async function runCodexContainer(options: {
     identity.Name === `/${name}` && identity.Config?.Labels?.["observer.task"] === name && identity.Image === options.runtime.image && typeof identity.Created === "string" &&
     (!result.containerId || identity.Id === result.containerId) && (!createdAt || identity.Created === createdAt);
   try {
-    const program = options.runtime.kind === "protocol-fixture" ? ["python3", "/observer-program.py"] : ["/opt/codex/bin/codex"];
-    const worker = fileURLToPath(new URL("./codex-worker.py", import.meta.url));
+    if (options.runtime.kind !== "protocol-fixture" && options.runtime.kind !== `${options.provider}-cli`) throw new Error("unavailable");
+    const program = options.runtime.kind === "protocol-fixture" ? ["python3", "/observer-program.py"] : [options.provider === "claude" ? "/opt/claude" : "/opt/codex/bin/codex"];
+    const worker = fileURLToPath(new URL("./agent-worker.py", import.meta.url));
     const args = ["create", "--interactive", "--pull=never", "--name", name, "--label", `observer.task=${name}`,
       "--label", `observer.request=${createHash("sha256").update(options.taskId).digest("hex")}`,
       "--log-driver", "none",
       "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges=true",
-      "--pids-limit", "32", "--memory", "256m", "--cpus", "1", "--user", "65534:65534",
+      "--pids-limit", "32", "--memory", options.provider === "claude" ? "512m" : "256m", "--cpus", "1", "--user", "65534:65534",
       "--tmpfs", "/run/observer:rw,noexec,nosuid,size=16777216,mode=700,uid=65534,gid=65534",
       "--mount", `type=bind,source=${await realpath(worker)},target=/observer-worker.py,readonly`,
       "--workdir", "/task", "--entrypoint", "/usr/bin/env"];
@@ -150,9 +161,9 @@ export async function runCodexContainer(options: {
     const run = await docker(["start", "--attach", "--interactive", result.containerId], directory, {
       timeoutMs: Math.max(1, deadline - performance.now()), maxBytes: options.maxBytes,
       ...(options.signal ? { signal: options.signal } : {}),
-      input: JSON.stringify({ program, args: options.args, prompt: options.prompt, schema: options.schema,
+      input: JSON.stringify({ provider: options.provider, program, args: options.args, prompt: options.prompt, schema: options.schema,
         model: options.model, modelTransport: Boolean(options.transport) }),
-      ...(options.transport ? { transport: options.transport, model: options.model, maxModelRequests: options.maxModelRequests } : {}),
+      ...(options.transport ? { transport: options.transport, provider: options.provider, model: options.model, schema: options.schema, maxModelRequests: options.maxModelRequests } : {}),
     });
     result.stdout = run.text; result.exitCode = run.code;
     if (run.failure) result.failure = run.failure;

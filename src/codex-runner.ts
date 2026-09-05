@@ -1,13 +1,15 @@
 import { z } from "zod";
 import type { AgentRunner, ModelUsageReceipt, ProduceRequest } from "./contracts.ts";
 import { CandidateV2Schema } from "./gate-contracts.ts";
-import { runCodexContainer, type CodexRuntime } from "./codex-container.ts";
-import { CandidateOutput, codexVersion, readCodexResult } from "./codex-protocol.ts";
-import { ModelBoundaryError, type CodexModelTransport } from "./codex-model-transport.ts";
-import { readModelUsage, researchUsage, unknownUsage } from "./codex-usage.ts";
+import { ModelBoundaryError, runAgentContainer, type AgentRuntime } from "./agent-container.ts";
+import { codexVersion, readCodexResult } from "./codex-protocol.ts";
+import type { CodexModelTransport } from "./codex-model-transport.ts";
+import { readModelUsage } from "./codex-usage.ts";
+import { CandidateOutput } from "./agent-candidate.ts";
+import { researchUsage, unknownUsage } from "./agent-usage.ts";
 
 export function createCodexRunner(options: {
-  taskRoot: string; edition: z.infer<typeof CandidateV2Schema>["edition"]; model: string; runtime: CodexRuntime;
+  taskRoot: string; edition: z.infer<typeof CandidateV2Schema>["edition"]; model: string; runtime: AgentRuntime;
   timeoutMs?: number; maxOutputBytes?: number;
   transport?: CodexModelTransport; maxModelRequests?: number;
   clock?: () => string;
@@ -41,7 +43,7 @@ export function createCodexRunner(options: {
         return response;
       },
     };
-    const process = await runCodexContainer({ taskRoot: options.taskRoot, taskId: task.taskId, runtime: options.runtime, args, prompt, schema: z.toJSONSchema(CandidateOutput),
+    const process = await runAgentContainer({ provider: "codex", taskRoot: options.taskRoot, taskId: task.taskId, runtime: options.runtime, args, prompt, schema: z.toJSONSchema(CandidateOutput),
       timeoutMs, maxBytes, model: options.model, maxModelRequests, ...(transport ? { transport } : {}), ...runOptions });
     const output = readCodexResult(process.stdout, task, options.edition);
     const metadata = {

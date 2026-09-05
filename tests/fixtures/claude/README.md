@@ -1,0 +1,5 @@
+# Claude 2.1.252 controlled protocol recording
+
+`success.jsonl` records the real Linux/amd64 binary (SHA-256 `a715a45105e593fc9808d035d77781f88480b9897975a9df41837f0c591bd4b3`) run inside the V1-05 isolated runtime on 2026-09-05. The external Messages API was the Owner-authored, credential-free `claudeMessageFixture`; no real model produced the candidate. The four CLI events are init, assistant StructuredOutput call, user data-tool acknowledgement and successful result. Session ID was replaced with `recorded-fixture-session`; UUIDs and timestamps were removed. CLI durations/cost estimates remain observations of this synthetic API run, never a provider bill.
+
+The source and candidate are the repository's fictional Owner-authored observatory material; no third-party article or credential is included. This sample may be stored and replayed for Observer tests. Replay verifies CLI grammar through the public production seam but does not qualify account access, supported region, model quality, cost or real API compatibility.

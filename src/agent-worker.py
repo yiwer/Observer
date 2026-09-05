@@ -19,6 +19,7 @@ def frame(kind, **fields):
 
 
 launch = json.loads(sys.stdin.readline())
+is_claude = launch.get("provider") == "claude"
 os.makedirs(os.environ["CODEX_HOME"], mode=0o700, exist_ok=True)
 with open("/run/observer/schema.json", "w", encoding="utf-8") as schema:
     json.dump(launch["schema"], schema)
@@ -50,7 +51,7 @@ if launch.get("modelTransport"):
 
         def do_POST(self):
             global next_id
-            if self.path != "/v1/responses":
+            if self.path != ("/v1/messages?beta=true" if is_claude else "/v1/responses"):
                 return self.deny("path")
             if self.headers.get("Host") != "127.0.0.1:8765":
                 return self.deny("host")
@@ -87,10 +88,21 @@ if launch.get("modelTransport"):
     broker.timeout = 5
     threading.Thread(target=broker.serve_forever, daemon=True).start()
     os.environ["OBSERVER_MODEL_BASE_URL"] = "http://127.0.0.1:8765/v1"
+    if is_claude:
+        os.environ["ANTHROPIC_BASE_URL"] = "http://127.0.0.1:8765"
+        # Inert broker credential, never a real provider key.
+        os.environ["ANTHROPIC_API_KEY"] = "observer-inert-local-broker"
+if is_claude:
+    os.environ["TMPDIR"] = "/run/observer"
+    os.environ["CLAUDE_CONFIG_DIR"] = "/run/observer/claude"
+    os.environ["DISABLE_UPDATES"] = "1"
+    os.environ["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
+    os.environ["DISABLE_TELEMETRY"] = "1"
+    os.environ["DISABLE_ERROR_REPORTING"] = "1"
 version = subprocess.run(launch["program"] + ["--version"], capture_output=True, timeout=10)
 actual_version = version.stdout.decode("utf-8", errors="strict").strip()
 frame("version", value=actual_version)
-if version.returncode != 0 or actual_version != "codex-cli 0.153.4":
+if version.returncode != 0 or actual_version != ("2.1.252 (Claude Code)" if is_claude else "codex-cli 0.153.4"):
     sys.exit(78)
 child = subprocess.Popen(launch["program"] + launch["args"], stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)

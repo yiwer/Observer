@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { CandidateV2Schema } from "./gate-contracts.ts";
 import type { ProduceRequest } from "./contracts.ts";
+import { CandidateOutput } from "./agent-candidate.ts";
 
 export const codexVersion = "codex-cli 0.153.4";
-export const CandidateOutput = z.strictObject({ schemaVersion: z.literal(1), taskId: z.string(), evidenceBundleId: z.string(),
-  configurationId: z.string(), stories: z.array(CandidateV2Schema).min(1).max(20) });
 const count = z.number().int().nonnegative().nullable();
 const Usage = z.object({ input_tokens: count.optional(), output_tokens: count.optional(), cached_input_tokens: count.optional(), cache_write_input_tokens: count.optional(), reasoning_output_tokens: count.optional() });
 const Frame = z.discriminatedUnion("kind", [

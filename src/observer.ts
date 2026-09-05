@@ -114,7 +114,7 @@ export function createObserver(options: ObserverOptions) {
       if (!parsedResult.success) throw new ObserverError("agent-invalid-output");
       const result = parsedResult.data;
       let publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
-      const protocolFixture = result.provider === "codex" && result.execution?.provenance === "protocol-fixture" && options.verifier;
+      const protocolFixture = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === "protocol-fixture" && options.verifier;
       if ((result.provider !== "fixture" && !protocolFixture) || result.startedAtUtc < bundle.cutoffUtc ||
         result.startedAtUtc > result.finishedAtUtc || result.finishedAtUtc > publishedAtUtc) {
         throw new ObserverError("invalid-fixture-run");
