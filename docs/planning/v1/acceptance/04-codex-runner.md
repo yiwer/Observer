@@ -38,6 +38,12 @@
 - 为避免 Windows bind mount 权限语义掩盖 Linux UID 不匹配，实施 agent 将采用受控 stdin 投送；编译产物也须包含进程辅助资产并实测。
 - 拟获取固定且校验完整性的 Linux CLI，以本地无凭证模型协议替身测试实际工具拒绝；这项尚未完成，不能把计划写成实测。
 
+## Root 网络前提核查
+
+Root 实际打开 Docker 官方 [network create](https://docs.docker.com/reference/cli/docker/network/create/#network-internal-mode---internal) 和 [gateway modes](https://docs.docker.com/engine/network/port-publishing/#gateway-modes)：普通 `--internal` bridge 仍可访问网关地址上的宿主服务，包含监听所有地址的服务；`isolated` gateway mode 配合 internal 才不向 bridge 分配地址。因此仅检查 `Internal=true` 及已连接容器名单，不能证明模型专用网络已隔离宿主旁路。
+
+已将此约束传给实施 agent：专用网络须核验实际等效隔离条件，并同时保留代理正常可达和宿主旁路拒绝证据，覆盖启用的地址族。不修改用户已有网络或全局 daemon。此处是官方行为与实现验收前提，尚非候选代码的实测通过结论。
+
 ## Standards
 
 等待固定非空三点 diff 后独立 review；当前没有结论。
