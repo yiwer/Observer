@@ -79,16 +79,38 @@ export const CandidateStorySchema = z.strictObject({
 });
 export type CandidateStory = z.infer<typeof CandidateStorySchema>;
 
+const tokenUsage = {
+  inputTokens: z.number().int().nonnegative().nullable(),
+  outputTokens: z.number().int().nonnegative().nullable(),
+  cachedInputTokens: z.number().int().nonnegative().nullable(),
+  cacheWriteInputTokens: z.number().int().nonnegative().nullable(),
+  reasoningOutputTokens: z.number().int().nonnegative().nullable(),
+  costUsd: z.number().nonnegative().nullable(),
+};
+const TokenUsageSchema = z.strictObject(tokenUsage);
+const ModelUsageReceiptSchema = z.strictObject({ request: z.number().int().min(1).max(8), ...tokenUsage });
+export type TokenUsage = z.infer<typeof TokenUsageSchema>;
+export type ModelUsageReceipt = z.infer<typeof ModelUsageReceiptSchema>;
+
 const agentMetadata = {
   schemaVersion: z.literal(1),
   taskId: id, evidenceBundleId: id, configurationId: id,
   provider: z.enum(["fixture", "codex", "claude"]),
   model: id, runnerVersion: id,
   startedAtUtc: utc, finishedAtUtc: utc,
-  usage: z.strictObject({
-    inputTokens: z.number().int().nonnegative().optional(),
-    outputTokens: z.number().int().nonnegative().optional(),
-    costUsd: z.number().nonnegative().optional(),
+  execution: z.strictObject({
+    provenance: z.enum(["protocol-fixture", "codex-cli"]),
+    processKind: z.enum(["protocol-fixture", "codex-cli"]),
+    modelTransport: z.enum(["not-used", "model-protocol-fixture", "openai-api"]),
+    cliVersion: id, durationMs: z.number().int().nonnegative(),
+    exitCode: z.number().int().nullable(),
+    terminal: z.enum(["completed", "failed", "missing", "invalid"]),
+    containerId: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
+    cleanup: z.enum(["removed", "not-created", "unverified"]),
+  }).optional(),
+  usage: TokenUsageSchema.partial().extend({
+    source: z.enum(["cli-turn", "model-responses", "unknown"]).optional(),
+    modelResponses: z.array(ModelUsageReceiptSchema).max(8).optional(),
   }).optional(),
 };
 export const AgentResultSchema = z.discriminatedUnion("status", [
@@ -96,7 +118,7 @@ export const AgentResultSchema = z.discriminatedUnion("status", [
   z.strictObject({
     ...agentMetadata,
     status: z.enum(["failed", "cancelled"]),
-    failure: z.strictObject({ category: z.enum(["timeout", "nonzero-exit", "invalid-output", "unavailable", "cancelled", "unknown"]), retryable: z.boolean() }),
+    failure: z.strictObject({ category: z.enum(["timeout", "nonzero-exit", "invalid-output", "unavailable", "cancelled", "unknown", "output-limit", "input-limit", "cleanup-failed", "policy-violation", "evidence-expired", "version-mismatch"]), retryable: z.boolean() }),
   }),
 ]);
 export type AgentResult = z.infer<typeof AgentResultSchema>;
@@ -109,7 +131,7 @@ export type ProduceRequest = z.infer<typeof ProduceRequestSchema>;
 
 // A runner is an external, untrusted boundary: successful resolution is not publication authority.
 export interface AgentRunner {
-  run(task: ProduceRequest): Promise<unknown>;
+  run(task: ProduceRequest, options?: { signal?: AbortSignal }): Promise<unknown>;
 }
 
 const LegacyReportRecordSchema = z.strictObject({

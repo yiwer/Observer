@@ -7,13 +7,14 @@
     "node": ">=24.18.0 <25"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-runtime-assets.mjs",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test tests/*.test.ts",
     "smoke": "npm run build && node --test tests/http.test.ts tests/collection-process.test.ts",
     "check": "npm run typecheck && npm test",
     "start": "node dist/main.js",
-    "collect": "node dist/collect-main.js"
+    "collect": "node dist/collect-main.js",
+    "prepare:codex": "node scripts/prepare-codex-runtime.mjs"
   },
   "dependencies": {
     "ipaddr.js": "2.2.0",

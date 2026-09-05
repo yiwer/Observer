@@ -4,15 +4,16 @@
 
 ## 本地检查
 
-需要 Node **24.18.0 或较新的 24.x**、npm。锁定依赖已写入 `package-lock.json`。
+需要 Node **24.18.0 或较新的 24.x**、npm。完整检查还需要本机 Linux/amd64 Docker Engine、curl、tar，以及一次显式准备 Codex 测试运行时；准备脚本不会启动 Docker 或调用模型。锁定依赖已写入 `package-lock.json`。
 
 ```sh
 npm ci
+npm run prepare:codex
 npm run check
 npm run smoke
 ```
 
-`check` 独立执行 `tsc --noEmit`，构建 `dist/`，再运行全部业务测试。`smoke` 构建并验证真实进程退出／重启后的 HTTP 私有读取和生产入口隔离，不需要网络、真实 Provider 或外部凭证。`npm ci` 首次安装需要 npm registry；测试用的 `example.org` 来源只作为不可联网的固定出处。
+`check` 独立执行 `tsc --noEmit`，构建 `dist/`，再运行全部业务测试（包括真实隔离容器和 Codex CLI，但模型 API 是无凭证协议替身）。`smoke` 是其中 3 个进程／HTTP 测试的子集，不额外增加覆盖数，也不需要 Docker。准备后检查不需要外网或模型凭证；`npm ci` 和 `prepare:codex` 首次获取依赖需要网络，后者校验固定官方 CLI 包的 SHA-512，并使用固定 Python 基础镜像摘要。CLI 压缩包约 129 MB，本机构建镜像约 459 MB。测试用的 `example.org` 来源只作为不可联网的固定出处。
 
 ```sh
 npm run typecheck
@@ -44,3 +45,9 @@ npm run build
 V1-02 增加独立的持续 RSS/Atom 采集进程：`npm run build` 后，设置 `OBSERVER_SOURCE_CONFIG` 指向 Owner 审阅的 JSON 配置，再运行 `npm run collect`；`-- --once` 只执行一轮。缓存路径由 `OBSERVER_COLLECTION_DATABASE_PATH` 配置，默认 `data/collection.sqlite`，必须与不可变报告数据库分开。
 
 [示例配置](config/sources.example.v1.json) 默认待审、禁用，只有许可明确的自有测试数据；没有启用真实出版者、FRED、行情或社交源。来源政策分别限制采集、保存、模型输入和分发，过期原文不会复制进永久报告。运行方式、Bundle v2 兼容语义、实际验证范围和来源启用记录见 [V1-02 实现说明](docs/implementation/v1-02.md)。真实研究与生产发布仍未启用。
+
+## 隔离 Codex 候选研究
+
+V1-04 的 `createCodexRunner` 实现共有 `AgentRunner`：单栏 Bundle 经固定 Codex CLI 0.153.4 的完整终态输出进入现有 Gate 和私有归档。容器禁止外部网络、宿主凭证和执行工具；模型请求只通过宿主固定 Responses 通道。测试替身有显式 provenance，生产入口仍拒绝发布和读取测试归档。真实模型认证、地域资格、事实质量和费用均未实测。
+
+运行参数、安全层、事件样本许可、已实现的授权接入代码与尚未验证的部署资格见 [V1-04 实现说明](docs/implementation/v1-04.md)。
