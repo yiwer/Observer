@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CandidateV2Schema, PublicationGateSchema } from "./gate-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const utc = z.iso.datetime({ precision: 3, offset: false });
@@ -81,7 +82,7 @@ const agentMetadata = {
   }).optional(),
 };
 export const AgentResultSchema = z.discriminatedUnion("status", [
-  z.strictObject({ ...agentMetadata, status: z.literal("succeeded"), stories: z.array(CandidateStorySchema).min(1) }),
+  z.strictObject({ ...agentMetadata, status: z.literal("succeeded"), stories: z.array(z.union([CandidateStorySchema, CandidateV2Schema])).min(1) }),
   z.strictObject({
     ...agentMetadata,
     status: z.enum(["failed", "cancelled"]),
@@ -101,7 +102,7 @@ export interface AgentRunner {
   run(task: ProduceRequest): Promise<unknown>;
 }
 
-export const ReportRecordSchema = z.strictObject({
+const LegacyReportRecordSchema = z.strictObject({
   schemaVersion: z.literal(1), id,
   businessDate: date, businessTimezone: z.literal("Asia/Shanghai"),
   configurationId: id, taskId: id, applicationVersion: id,
@@ -114,6 +115,15 @@ export const ReportRecordSchema = z.strictObject({
   ])).min(1),
   agentResult: AgentResultSchema,
 });
+export const ReportRecordSchema = z.union([LegacyReportRecordSchema, LegacyReportRecordSchema.extend({
+  schemaVersion: z.literal(2),
+  stories: z.array(CandidateV2Schema),
+  coverageGaps: z.array(z.strictObject({ edition, reason: z.string().min(1) })),
+  sourcePolicyDecisions: z.array(LegacyReportRecordSchema.shape.sourcePolicyDecisions.element),
+  // Only accepted wording is archived. Rejected input is identified by hash in the gate ledger.
+  agentResult: z.strictObject({ ...agentMetadata, status: z.literal("succeeded") }),
+  publicationGate: PublicationGateSchema,
+})]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
 export const ReportVersionSchema = z.strictObject({

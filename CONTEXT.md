@@ -100,6 +100,18 @@ _Avoid_: Context, search result
 The cutoff-time snapshot of eligible Evidence supplied to Research Agents for one Daily Brief.
 _Avoid_: Agent browsing history, arbitrary web context
 
+**Claim**:
+A single assessable statement in a Candidate Story, presented as a fact, a publisher's statement, Editorial Analysis, or a quotation and linked to specific Evidence.
+_Avoid_: Story-wide citation, implicitly verified paragraph
+
+**Upstream Origin**:
+The original observation or report from which a piece of Evidence derives; multiple republications of that origin do not provide independent corroboration.
+_Avoid_: Hosting domain, number of links
+
+**Semantic Assessment**:
+An explicit judgment of how particular Evidence supports, contradicts, or is unrelated to a Claim, including whether the wording preserves attribution and uncertainty.
+_Avoid_: Schema validation, truth proof, calibrated confidence score
+
 **Publication Gate**:
 The evidence and quality standard a Candidate Story must satisfy before it can appear as a stated fact in an Edition.
 _Avoid_: Approval, human review
