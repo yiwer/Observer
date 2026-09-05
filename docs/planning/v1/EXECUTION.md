@@ -15,8 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 已完成票：#1、#2、#3、#4、#5、#6、#7，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
-- 当前实施票：#8，**可版本化兴趣配置与全球覆盖底线**。最终冻结 **06fc8b33b4bbb3f063d865f53dfe8086599c7e13** 已通过独立冻结验收：作者/Root detached全检各 **167/167**、smoke各 **3/3**，Root本票专项6/6、事件14/14、旧归档5/5；Standards 0 hard / 2非阻断P3，Spec 0，原发送计数P2已关闭。首次c0a4522的165/166失败与Root2RED保留。现在允许本地集成，实际master复验及关闭尚待完成；不启动#9。见 [#8执行记录](acceptance/08-explicit-interest-and-global-coverage.md)。
+- 已完成票：#1–#8，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
+- 最新验收：#8 最终实施 **06fc8b33b4bbb3f063d865f53dfe8086599c7e13**、本地集成 **8079271c3cc2911257f5a54153b3ec16969c6b67**。作者/Root detached/实际master全检各 **167/167**、smoke各 **3/3**，Root冻结/集成本票专项各6/6、事件各14/14、旧归档各5/5；Standards 0 hard / 2非阻断P3，Spec0，原P2关闭。首次c0a4522失败保留。[GitHub验收回写](https://github.com/yiwer/Observer/issues/8#issuecomment-5551977141)已读回，#8 CLOSED（2026-09-05T12:58:25Z）。下一票#9的原生依赖#6已实际验证closed，待fresh实施；代码未push，生产未启用。见 [#8记录](acceptance/08-explicit-interest-and-global-coverage.md)。以下#7/#6等停止点为历史过程，非当前待验收。
 - 最新验收：#7 最终实施 **7fae122cbe1d7abf1ebd12615091221abb6d7fda**，本地集成 **8e02377a60544c7dd7cfb3e759bc02d5d45fb760**。作者、Root detached、实际 master 完整检查均 **152/152**、smoke各 **3/3**；Root frozen/master 专项各 **14/14**、旧Record1/2/3各 **3/3**。Standards0 hard/1非阻断P3、Spec0且独立6/6；原四项阻断已关闭，失败历史保留。[GitHub验收回写](https://github.com/yiwer/Observer/issues/7#issuecomment-5551782570)已读回，#7 CLOSED（2026-09-05T12:21:57Z）。#8 dependency 已验证 #7 closed，下一步 fresh 实施 #8。以下 #7/#6 条目为历史过程，不是仍待验收；#5–#7代码未push，生产未启用。
 - 当前实施票：#7；原生依赖 #6 已 CLOSED。fresh-context `/root/implement_v1_07`、worktree `O:/GenesisCode/Observer-worktrees/v1-07`、branch `ticket/v1-07`、fixed base `5da81976dd2ba166066977c038e6f46451890283`。第二冻结 **7fae122cbe1d7abf1ebd12615091221abb6d7fda**（13 files、+945/-25）已通过独立冻结验收：作者第二次与 Root 首次 full 各 **152/152**、smoke 各 **3/3**；Root built 专项 **14/14**、旧档 **3/3**。Standards 0 hard / 原 1 非阻断 P3；Spec 0、自有6/6，原四项阻断全部关闭。作者首次151/152与旧候选63e93dc的失败记录保留于 [#7验收记录](acceptance/07-event-history-and-updates.md)。当前允许本地集成，尚待实际 master 复验；#7未关闭，#8未开始，未push。以下 #6 条目为历史过程，#6当前已接受集成并CLOSED，以其[验收记录](acceptance/06-six-edition-canonical-brief.md)为准。
 - #6 首次冻结 `ac55dc418425d02030441156bf9eef9224873f1c`，8 files、+682/-40；作者第二轮和 Root 独立 check 均 120/120、smoke 各 3/3，旧 Record v1/v2 built-reader 兼容 2/2；作者首轮 119/120 的 Docker tag 查询失败另行保留。Standards 0 hard / 1 非阻断 P3；Spec **2 P2 阻断**（六栏总 Claims 超 500 全体误拒、局部重复身份污染正常五栏），Root 自有磁盘 SQLite / built-reader 专项 **1 PASS / 4 RED** 复现。已交原 implement agent 窄范围 TDD 修复，当前候选不接受、不集成、不启动 #7；详见验收记录。
@@ -31,7 +31,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；预检时未实施/触发模型/升级，现已交给 #5 fresh 实施 agent，仍须实测目标 Linux CLI 和完整隔离契约。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
-- 最新已验收集成提交：8e02377a60544c7dd7cfb3e759bc02d5d45fb760。
+- 最新已验收集成提交：8079271c3cc2911257f5a54153b3ec16969c6b67。
 - 2026-09-05 17:59:25 +08:00 后读到 `origin/master` 与 `git ls-remote` 均为 `e475bc18620d1d052f6effcb648fbc4ec66150d2`；已确认 #1–#4 实施和集成提交都可从该远端提交到达。该 push 不是本次 orchestrator 执行；#5 候选仍未集成、未推送（远端无 ticket/v1-05）。远端代码存在不代表生产部署或模型资格通过。Root 新出现未跟踪 `.idea/`，保留不纳入任务提交。
 - #3 首轮测试虽通过，但两轴及 Root 额外发现阻断；最终重新冻结、复审关闭全部发现，再集成验收。Root 在最终工作区及 master 均复跑 check 52/52、smoke 3/3；smoke 属于总测试子集。详见 [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)。
 
@@ -46,7 +46,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 协作容量
 
-#7 的 fresh implementation、独立 Standards/Spec 两轴以及同 reviewer 的第二轮并行复审均实际启动成功；最终已接受并 CLOSED。#8 仍需新的实施上下文，不复用 #7 作者或 reviewer。
+#8 的 fresh implementation、独立 Standards/Spec 两轴及同reviewer第二轮并行复审均实际启动成功，最终接受并CLOSED。#9仍须新的实施上下文，不复用旧票作者或reviewer。
 
 #2 的第二个 reviewer spawn 曾返回 `collab spawn failed: agent thread limit reached`。Standards 使用独立新 reviewer，Spec 复用未参与 #2 实施的 #1 agent，两轴没有互换报告内容。后续实施仍要求 fresh context；若平台无法释放线程，不得把旧实施上下文冒充 fresh context，需核实容量或请求 Owner 调整会话。
 

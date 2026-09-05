@@ -1,6 +1,6 @@
 # V1-08 执行与待验收记录
 
-状态：**最终冻结 06fc8b3 已通过独立验收，允许本地集成；尚待master复验**。GitHub #8 OPEN，已分配 yiwer，未关闭。首次冻结 c0a4522 的失败过程保留于下文。
+状态：**已验收、已本地集成，GitHub #8 CLOSED**。最终实施06fc8b3，集成8079271；未push、生产未启用。首次冻结c0a4522的失败过程保留于下文。
 
 - 范围：[GitHub #8](https://github.com/yiwer/Observer/issues/8)、[本地票](../tickets/08-explicit-interest-and-global-coverage.md)；PRD US8/64–66、AC17、D1/D3/D6。
 - Fixed base：**`b1b6ac3ab557f0098ae5b133f20f4ca32b9182aa`**；包含 #7 最终实施7fae122、集成8e02377及关闭记录。
@@ -171,3 +171,27 @@ Root另建detached `O:/GenesisCode/Observer-worktrees/accept-v1-08-r2` 固定新
 两方检查前后HEAD不变/clean；typecheck/build均通过，没有修改镜像、tag、daemon或凭证。作者日志 `v1-08/data/v1-08-06fc8b3-a94d/check-first.log` / `smoke.log`；Root完整输出保存在 `accept-v1-08-r2/data/root-acceptance-06fc8b3-9c10/check.log`，该日志合并的是**同一次exec session的连续输出块**，不是把不同测试运行拼为成功。Root smoke另有工具终态。
 
 结合原脚本新built专项6/6、旧事件14/14、旧归档5/5与两轴复审，最终冻结允许进入本地master集成。此时没有实际master复验、Issue关闭或push；真实多语言召回/模型质量、Source Policy许可、部署和人工长期核查仍未通过，生产保持禁用。
+
+## 实际master集成与关闭
+
+Root先提交冻结验收文档3d8fdf3，再no-ff集成 **8079271c3cc2911257f5a54153b3ec16969c6b67**；实际核对所有产品src/tests/config/scripts/package文件与06fc8b3完全相同，Root仅持有验收文档差异，用户`.idea/`未读未改。
+
+- 实际master `npm run check` **exit0，167/167，128174.9173 ms**；typecheck/build通过。工具中一段逐项输出被输出预算截断，但最终计数/exit完整观察；保存为ignored `data/root-acceptance-v1-08-8079271/check-output-excerpt.log`，明确不是完整逐项日志，不因此重写或合并其它运行结果。
+- 实际master smoke **exit0，3/3，1324.0238 ms**。检查前后HEAD8079271不变，仅用户`.idea/`untracked；`docker ps`为空，没有遗留运行容器。
+- 本票专项：capacity1/1（95.3245 ms）、共享coverage1/1（78.9758 ms）、dispatch4/4（133.2086 ms），共6/6。
+- 事件专项：因果3/3（138.202 ms）、注解4/4（109.9649 ms）、声明3/3（93.67 ms）、许可传递1/1（159.5351 ms）、Version时间3/3（131.9964 ms），共14/14。
+- 旧producer不可变Record1/2/3/两期4共5/5；没有用新代码生成旧预期。
+
+[验收回写](https://github.com/yiwer/Observer/issues/8#issuecomment-5551977141)已实际读回完整正文/作者yiwer，随后GitHub #8 CLOSED（2026-09-05T12:58:25Z）。manifest同步accepted/closed与两个SHA；下一票#9原生依赖API已确认#6closed。最后实际`git ls-remote`仍为master **e475bc18620d1d052f6effcb648fbc4ec66150d2**，无ticket/v1-08远端；本轮没有push或实际Provider/SMTP调用。
+
+### 后续Record5兼容基线
+
+Root用已验收冻结06fc8b3的built producer创建新自有 `O:/GenesisCode/Observer-worktrees/accept-v1-08-r2/data/root-v1-09-compat-06fc8b3-r2`。生成器先核对指定producer路径/HEAD/clean，拒绝覆盖已有baseline；公开T1使用9个独立虚构事件，优先第9个、最终7条/3重点、Profile v1、实际核验IDs、真实SQLite与重启读回。单例1/1 PASS（66.5405 ms）。
+
+首次非-r2目录的JSON封装曾写入字面`\\n`尾缀，是Root生成器错误；该目录及材料保留，**不作为oracle**。只在新-r2目录修正生成器，并增加生成后重新JSON.parse一致性检查；未修改任何已保存报告正文或旧样本。
+
+- 有效`generate-baseline.ts` SHA **07df151cb711ac6bb96f2e8c13f6d4352f186e9c34fa7bc819156e037f0ff49a**。
+- `verify-reader.ts` SHA **8dc6070c1b271b2452fbf2a43b3b6206becc904e50bd5d02a8df275e4034503a**。
+- `baseline.json` SHA **06f21d79b2398ffbf1fbd0b1611d7b2ea3c759570e13b474f86b9d92b0823ea7**。
+- Record5 / Version4 / canonical-v3；MD **9983 bytes**，SHA **a517fb4a1b295454bedf8d6a82f9f92952c79f3e83fc1e32ecc207d29550b487**；完整JSON SHA **68a61883f716e8f79a9be4ba718c472a0bd811862fefea4de0f974052b9afd57**。
+- 冻结built reader与实际master built reader分别1/1：完整JSON/正文/显式配置/实际发送IDs一致，错误Owner拒绝、production隐藏fixture。该新增oracle供后票只读验证，不改变本票旧档5/5的基准定义。

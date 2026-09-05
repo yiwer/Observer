@@ -309,7 +309,7 @@
       "number": 8,
       "title": "可版本化兴趣配置与全球覆盖底线",
       "file": "tickets/08-explicit-interest-and-global-coverage.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-07"
@@ -333,8 +333,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/8",
       "issueDatabaseId": 5355737356,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "06fc8b33b4bbb3f063d865f53dfe8086599c7e13",
+        "integrationCommit": "8079271c3cc2911257f5a54153b3ec16969c6b67",
+        "acceptanceFile": "acceptance/08-explicit-interest-and-global-coverage.md",
+        "qualification": "local-annotated-verifier-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-09",
