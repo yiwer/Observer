@@ -216,6 +216,7 @@ const EventRecordSchema = SixEditionRecordSchema.extend({
     impactNotes: z.array(z.strictObject({ edition, claims: z.array(z.strictObject({ storyId: id, claim: ClaimSchema })).max(1) })),
   })),
   eventSelections: z.array(EventSelectionSchema).max(300),
+  historyCoverage: z.strictObject({ status: z.enum(["classified", "legacy-unclassified"]), versionIds: z.array(id) }),
 });
 export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;

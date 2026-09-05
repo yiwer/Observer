@@ -16,6 +16,7 @@ const gapExplanations: Record<string, string> = {
   "no-candidates": "研究已完成，但未返回候选。",
   "candidates-rejected": "候选陈述未通过发布门，详见本栏待确认或隔离原因。",
   "editorial-reference-unavailable": "编辑分析引用缺失或未通过核验，对应说明与 Impact Note 未生成。",
+  "legacy-history-unclassified": "此前报告缺少已核验的事件身份，历史覆盖尚未完全分类；当前条目仍按本期证据选题。",
 };
 function gapText(reason: string): string {
   if (gapExplanations[reason]) return gapExplanations[reason];
@@ -89,6 +90,10 @@ export function sixEditionMarkdown(record: SixRecord): string {
     return `来源：${policy?.decision === "source-policy-v1" ? escapeMarkdown(policy.attribution) + " — " : ""}[直达原始材料](<${url}>) [${escapeMarkdown(id)}]`;
   }).join("\n\n");
   const claimText = (claim: Claim) => `${escapeMarkdown(claimWording(claim))}\n\n${sources(claim.evidenceIds)}`;
+  const storyClaimText = (storyId: string, claim: Claim) => {
+    const development = record.schemaVersion === 4 ? record.eventClusters.flatMap((cluster) => cluster.developments).find((entry) => entry.storyId === storyId && entry.claimId === claim.id) : undefined;
+    return `${development?.coverage === "late-discovered" ? `补报事实（Late-discovered Story）：首次公开披露 ${development.disclosure.atUtc}。\n\n` : ""}${claimText(claim)}`;
+  };
   return [
     `# Observer Daily Brief — ${record.businessDate}`,
     `版本：${record.businessDate}-v1 · 正文契约：${record.editorialContract}`,
@@ -120,9 +125,9 @@ export function sixEditionMarkdown(record: SixRecord): string {
             ...(cluster.historyMetadata === "source-policy-withheld" ? ["历史时间元数据因当前来源权限不可分发；仅保留去重指纹与前次版本关联。"] : []),
             `事件发生：${cluster.occurrence.atUtc ?? "未知"}；首次公开披露：${cluster.firstDisclosure.atUtc ?? "未知"}；首次发现：${cluster.firstDiscoveredAtUtc ?? "未知"}；实质进展发生：${cluster.materialDevelopment.atUtc ?? "未知"}。`,
           ]) : []),
-          ...(priority ? sections.flatMap(([label, ids]) => [`#### ${label}`, ...(ids.length ? ids.map((id) => claimText(story.claims.find((claim) => claim.id === id)!)) : [`内容缺口：未提供通过核验的${label}陈述。`])]) : story.claims.map(claimText)),
-          ...(priority ? story.claims.filter((claim) => !sections.some(([, ids]) => ids.includes(claim.id))).map(claimText) : []),
-          ...(record.schemaVersion === 4 ? record.eventClusters.filter((cluster) => cluster.primary.storyId === story.id).flatMap((cluster) => cluster.supportingClaims.map((entry) => claimText(entry.claim))) : []),
+          ...(priority ? sections.flatMap(([label, ids]) => [`#### ${label}`, ...(ids.length ? ids.map((id) => storyClaimText(story.id, story.claims.find((claim) => claim.id === id)!)) : [`内容缺口：未提供通过核验的${label}陈述。`])]) : story.claims.map((claim) => storyClaimText(story.id, claim))),
+          ...(priority ? story.claims.filter((claim) => !sections.some(([, ids]) => ids.includes(claim.id))).map((claim) => storyClaimText(story.id, claim)) : []),
+          ...(record.schemaVersion === 4 ? record.eventClusters.filter((cluster) => cluster.primary.storyId === story.id).flatMap((cluster) => cluster.supportingClaims.map((entry) => storyClaimText(entry.storyId, entry.claim))) : []),
         ];
       }),
       ...record.storyEditorial.flatMap((editorial) => editorial.impactNotes.filter((note) => note.edition === entry.edition).flatMap((note) => {

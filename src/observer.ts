@@ -11,9 +11,10 @@ import type { Claim, SemanticVerifier } from "./gate-contracts.ts";
 import { evaluatePublication, gatedMarkdown } from "./publication-gate.ts";
 import { evaluateBatchedPublication } from "./batched-publication-gate.ts";
 import { arrangeEditions, sixEditionMarkdown, consistentRecord } from "./six-edition.ts";
-import { arrangeEvents } from "./event-history.ts";
+import { arrangeEvents, legacyFingerprint, type LegacyHistory } from "./event-history.ts";
 import { projectEventReceipt } from "./event-projection.ts";
 import { consistentEvents } from "./event-integrity.ts";
+import { consistentArchive } from "./archive-integrity.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -88,9 +89,7 @@ export function createObserver(options: ObserverOptions) {
     const row = database.prepare("SELECT payload FROM reports WHERE id = ?").get(versionId);
     if (!row) return undefined;
     const report = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
-    if (report.record.schemaVersion !== 4 || report.version.schemaVersion !== 3 || report.version.id !== versionId ||
-      report.version.reportRecordSha256 !== digest(JSON.stringify(report.record)) || report.version.canonicalMarkdownSha256 !== digest(report.canonicalMarkdown) ||
-      !consistentRecord(report.record) || sixEditionMarkdown(report.record) !== report.canonicalMarkdown) throw new ObserverError("history-integrity-failed");
+    if (report.record.schemaVersion !== 4 || report.version.schemaVersion !== 3 || !consistentArchive(report, versionId)) throw new ObserverError("history-integrity-failed");
     return report;
   };
 
@@ -277,13 +276,21 @@ export function createObserver(options: ObserverOptions) {
         } as ReportRecord;
         if (research) {
           if (request.schemaVersion === 3) {
-            let legacyHistory = false;
+            const legacyHistory: LegacyHistory = { versionIds: [], fingerprints: new Set() };
             const withheldHistory = new Set<string>();
-            const history = database.prepare("SELECT payload FROM reports WHERE id < ? ORDER BY id").all(`${request.businessDate}-v1`).flatMap((row) => {
+            const history = database.prepare("SELECT id, payload FROM reports WHERE id < ? ORDER BY id").all(`${request.businessDate}-v1`).flatMap((row) => {
               const old = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
+              if (!consistentArchive(old, String(row.id))) throw new ObserverError("history-integrity-failed");
               if (old.record.businessDate >= request.businessDate || old.version.publishedAtUtc > bundle.cutoffUtc || old.record.evidenceBundle.cutoffUtc > bundle.cutoffUtc) return [];
-              if (old.record.schemaVersion !== 4 || old.version.schemaVersion !== 3) { legacyHistory ||= old.record.stories.some((story) => story.edition !== "github-projects"); return []; }
-              if (old.version.reportRecordSha256 !== digest(JSON.stringify(old.record)) || old.version.canonicalMarkdownSha256 !== digest(old.canonicalMarkdown) || !consistentRecord(old.record) || !consistentEvents(old.record, historicalReport) || sixEditionMarkdown(old.record) !== old.canonicalMarkdown) throw new ObserverError("history-integrity-failed");
+              if (old.record.schemaVersion !== 4 || old.version.schemaVersion !== 3) {
+                if (old.record.stories.some((story) => story.edition !== "github-projects")) legacyHistory.versionIds.push(old.version.id);
+                for (const story of old.record.stories) if (story.edition !== "github-projects") for (const claim of story.claims) {
+                  const fingerprint = legacyFingerprint(claim, old.record.evidenceBundle.evidence);
+                  if (fingerprint) legacyHistory.fingerprints.add(fingerprint);
+                }
+                return [];
+              }
+              if (!consistentEvents(old.record, historicalReport)) throw new ObserverError("history-integrity-failed");
               for (const evidence of [...old.record.evidenceBundle.evidence.flatMap((evidence) => evidence.origin.kind === "collected" ? [{ sourceId: evidence.sourceId, ...evidence.origin }] : []), ...old.record.eventClusters.flatMap((cluster) => cluster.historyPolicies)]) {
                 try {
                   const source = checkedPolicy(evidence);
@@ -327,14 +334,7 @@ export function createObserver(options: ObserverOptions) {
       if (!row) throw new ObserverError("not-found");
       const report = PublishedReportSchema.parse(JSON.parse(String(row.payload)));
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
-      if (report.record.schemaVersion >= 3 || report.version.schemaVersion >= 2) {
-        if ((report.record.schemaVersion !== 3 && report.record.schemaVersion !== 4) || (report.version.schemaVersion !== 2 && report.version.schemaVersion !== 3) || report.record.schemaVersion - 1 !== report.version.schemaVersion || report.record.editorialContract !== report.version.editorialContract || !consistentRecord(report.record) ||
-          report.version.id !== versionId || report.version.id !== `${report.record.businessDate}-v1` || report.version.briefId !== report.record.businessDate ||
-          report.record.id !== `${report.record.businessDate}-v1-record` || report.version.reportRecordId !== report.record.id ||
-          report.version.businessDate !== report.record.businessDate || report.version.publishedAtUtc !== report.record.publicationGate.checkedAtUtc ||
-          report.version.reportRecordSha256 !== digest(JSON.stringify(report.record)) || report.version.canonicalMarkdownSha256 !== digest(report.canonicalMarkdown) ||
-          sixEditionMarkdown(report.record) !== report.canonicalMarkdown) throw new ObserverError("canonical-integrity-failed");
-      }
+      if (!consistentArchive(report, versionId)) throw new ObserverError("canonical-integrity-failed");
       if (report.record.schemaVersion === 4 && !consistentEvents(report.record, historicalReport)) throw new ObserverError("canonical-integrity-failed");
       if (report.record.evidenceBundle.schemaVersion !== 1) {
         try {

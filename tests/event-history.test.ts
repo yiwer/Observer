@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { test, type TestContext } from "node:test";
 import { createObserver, type ObserverOptions } from "../src/observer.ts";
 import { editionNames } from "../src/contracts.ts";
@@ -57,7 +58,7 @@ async function fixture(t: TestContext, sourcePolicies?: ObserverOptions["sourceP
     verifier: { verify: async (input) => receipt(input, annotations) } };
   let observer = createObserver(options);
   t.after(() => observer.close()); // Retain this task's bounded SQLite evidence; no broad cleanup.
-  return { async publish(input: ReturnType<typeof task>, stories: Story[], labels: Record<string, unknown>) {
+  return { databasePath: options.databasePath, async publish(input: ReturnType<typeof task>, stories: Story[], labels: Record<string, unknown>) {
     currentTask = input; candidates = stories; annotations = labels;
     return observer.readReport((await observer.produce(input)).id, ownerToken);
   }, restart(policies?: ObserverOptions["sourcePolicies"]) { observer.close(); if (policies) options.sourcePolicies = policies; observer = createObserver(options); }, read(id: string) { return observer.readReport(id, ownerToken); } };
@@ -225,7 +226,8 @@ test("Earlier legacy coverage is explicitly unclassified instead of silently pro
   app.restart();
   const report = await app.publish(task("2026-09-06"), [story("repeat", "ai", "evidence-1")], { repeat: annotation("evidence-1") });
   assert.equal(report.record.stories.length, 0);
-  assert.match(report.canonicalMarkdown, /legacy-history-unclassified/);
+  assert.match(report.canonicalMarkdown, /历史覆盖尚未完全分类/);
+  assert.ok(report.record.coverageGaps.some((gap) => gap.reason === "legacy-history-unclassified"));
   assert.equal(JSON.stringify(app.read(original.version.id)), bytes);
 });
 
@@ -384,4 +386,78 @@ test("Observed facts keep their supporting attributed reactions and statement-on
     assert.match(report.canonicalMarkdown, /分析（解释）：新增覆盖对持续观测有重大意义/);
     assert.equal(report.canonicalMarkdown.includes("事实：示例观测站新增了 12"), mixed);
   }
+});
+
+test("Unclassified legacy history remains visible while independently evidenced new events continue across later issues", async (t) => {
+  const app = await fixture(t);
+  const original = await app.publish({ ...task(), schemaVersion: 2 }, [story("legacy", "world-affairs", "evidence-1")], { legacy: annotation("evidence-1") });
+  for (const date of ["2026-09-06", "2026-09-07"]) {
+    app.restart();
+    const day = date === "2026-09-06" ? "2026-09-05" : "2026-09-06";
+    const evidence = [{ ...request.evidenceBundle.evidence[0]!, id: `new-${date}`, url: `https://example.net/new-${date}`,
+      publishedAtUtc: `${day}T22:00:00.000Z`, discoveredAtUtc: `${day}T22:05:00.000Z`, retrievedAtUtc: `${day}T22:06:00.000Z` }];
+    const report = await app.publish(task(date, evidence), [story("new", "ai", evidence[0]!.id, "另一机构公布了独立的研究成果。")], { new: annotation(evidence[0]!.id, { identity: { ...identity, subject: "另一机构", discriminator: date } }) });
+    assert.equal(report.record.stories.length, 1);
+    if (report.record.schemaVersion !== 4) assert.fail("Expected event-aware record");
+    assert.deepEqual(report.record.historyCoverage, { status: "legacy-unclassified", versionIds: [original.version.id] });
+    assert.match(report.canonicalMarkdown, /历史覆盖尚未完全分类/);
+    assert.equal(report.record.eventClusters[0]!.previousCoverage, null);
+  }
+});
+
+test("A current disclosure and a missed older material fact in one cluster label the older fact itself as late", async (t) => {
+  const app = await fixture(t);
+  const older = { ...request.evidenceBundle.evidence[0]!, id: "older", url: "https://example.net/earlier", publishedAtUtc: "2026-08-01T10:00:00.000Z" };
+  const report = await app.publish(task("2026-09-05", [request.evidenceBundle.evidence[0]!, older]), [story("today", "world-affairs", "evidence-1"),
+    story("missed", "ai", "older", "该计划此前已经开放公共数据。")], { today: annotation("evidence-1"), missed: annotation("older", { fact: "开放公共数据" }) });
+  assert.equal(report.record.stories.length, 1);
+  assert.match(report.canonicalMarkdown, /补报事实（Late-discovered Story）：首次公开披露 2026-08-01T10:00:00.000Z/);
+  if (report.record.schemaVersion !== 4) assert.fail("Expected event-aware record");
+  assert.equal(report.record.eventClusters[0]!.developments.find((development) => development.storyId === "missed")!.coverage, "late-discovered");
+  assert.equal(report.record.eventClusters[0]!.developments.find((development) => development.storyId === "today")!.coverage, "current-disclosure");
+});
+
+test("Newly discovered earlier disclosure corrects the current cluster timeline while the earlier published version stays immutable", async (t) => {
+  const app = await fixture(t);
+  const first = await app.publish(task(), [story("first", "world-affairs", "evidence-1")], { first: annotation("evidence-1") });
+  const original = JSON.stringify(first);
+  app.restart();
+  const earlier = { ...request.evidenceBundle.evidence[0]!, id: "earlier", url: "https://example.net/early-disclosure", publishedAtUtc: "2026-08-01T10:00:00.000Z",
+    discoveredAtUtc: "2026-09-05T20:00:00.000Z", retrievedAtUtc: "2026-09-05T20:01:00.000Z" };
+  const report = await app.publish(task("2026-09-06", [earlier]), [story("earlier", "ai", "earlier", "该计划更早已向公众开放数据。")], { earlier: annotation("earlier", { fact: "开放数据" }) });
+  if (report.record.schemaVersion !== 4) assert.fail("Expected event-aware record");
+  assert.equal(report.record.eventClusters[0]!.firstDisclosure.atUtc, "2026-08-01T10:00:00.000Z");
+  assert.equal(report.record.eventClusters[0]!.firstDisclosure.versionId, "2026-09-06-v1");
+  assert.equal(JSON.stringify(app.read(first.version.id)), original);
+});
+
+test("Damaged archived publication times are rejected before causal history filtering instead of creating false newness", async (t) => {
+  for (const timestamp of ["2026-09-10T23:40:00.000Z", "2026-09-04T22:30:00.000Z"]) {
+    const app = await fixture(t);
+    const original = await app.publish(task(), [story("first", "world-affairs", "evidence-1")], { first: annotation("evidence-1") });
+    const damaged = structuredClone(original);
+    damaged.version.publishedAtUtc = timestamp;
+    // External archive corruption fixture. All expectations remain at produce/readReport.
+    const archive = new DatabaseSync(app.databasePath);
+    try {
+      archive.exec("DROP TRIGGER immutable_report_update");
+      archive.prepare("UPDATE reports SET payload = ? WHERE id = ?").run(JSON.stringify(damaged), original.version.id);
+      archive.exec("CREATE TRIGGER immutable_report_update BEFORE UPDATE ON reports BEGIN SELECT RAISE(ABORT, 'immutable report'); END;");
+    } finally { archive.close(); }
+    app.restart();
+    await assert.rejects(app.publish(task("2026-09-06"), [story("repeat", "ai", "evidence-1")], { repeat: annotation("evidence-1") }), { code: "history-integrity-failed" });
+    assert.throws(() => app.read("2026-09-06-v1"), { code: "not-found" });
+  }
+});
+
+test("Legacy denial cannot confuse repeated template text at a static URL with a later independently evidenced event", async (t) => {
+  const app = await fixture(t);
+  await app.publish({ ...task(), schemaVersion: 2 }, [story("legacy", "world-affairs", "evidence-1")], { legacy: annotation("evidence-1") });
+  const later = { ...request.evidenceBundle.evidence[0]!, eventTimeUtc: "2026-09-05T20:00:00.000Z", publishedAtUtc: "2026-09-05T22:00:00.000Z",
+    discoveredAtUtc: "2026-09-05T22:05:00.000Z", retrievedAtUtc: "2026-09-05T22:06:00.000Z" };
+  const report = await app.publish(task("2026-09-06", [later]), [story("independent", "ai", "evidence-1")], {
+    independent: annotation("evidence-1", { identity: { ...identity, discriminator: "另一独立期次" } }),
+  });
+  assert.equal(report.record.stories.length, 1);
+  assert.match(report.canonicalMarkdown, /历史覆盖尚未完全分类/);
 });
