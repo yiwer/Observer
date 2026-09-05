@@ -38,3 +38,16 @@ Root 保留 #5 producer 的 Record1/2（`accept-v1-05/data/root-v1-06-compat-4ca
 - `C:/Users/16348/AppData/Local/Temp/observer-six-ip5kK3`
 
 新的测试使用自有唯一目录并保留证据，不广泛删除。代码未push、生产未启用；真实来源/模型质量及14天人工核查不能由本票替身证明。
+
+## 首片方案确认（未实现/冻结）
+
+作者已亲读所需技能/项目规范，实际确认 fixed base 与 clean；仅 `npm ci --ignore-scripts` 安装7个锁定依赖，尚无测试结果。Root 已确认以下方案属于既有 PRD T1 的配置输入及公开 `createObserver` Interface，不新增 HTTP 配置路由或测试专用业务入口：
+
+- Interest Profile v1 严格JSON，显式主题/实体/地区优先级与排除、目标语言；初始空主题/实体/排除、CN/US/EU等权，有限语言列表仍须在实施说明中解释，不代表已有采集能力。
+- 拟增加本地 Owner `importInterestProfile(filePath)` / `exportInterestProfile(filePath)`；输入文件与应用持有的有效active快照分开，显式import验证后同目录原子切换，版本单调、同版同内容幂等、同版异内容/回滚拒绝。同步只约束本进程，不宣称跨进程事务；export新文件不覆盖档案或active。无效输入保持上个版本，直接损坏active不得静默造默认。
+- 拟 request4 → Record5 / Version4 / canonical-v3，并保留request1/2/3与旧Record1–4；Record4继续作为已分类事件历史，不能降成legacy。所有版本/归档关联和旧字节兼容待实测。
+- 选择metadata拟来自现有SemanticVerifier与合格Claim/证据关联，最终Gate后仅归档明确projection的hash/enum/qualifiedIDs；新optional注解也不能从旧request入口泄漏隔离自由文。来源字段不可用、语言/地区不明保持unknown，不以标题或域名推造。
+- 硬门/事件历史资格 → 合格metadata与兴趣排除（证据支持的baseline可跨该排除）→ 每栏baseline、显式priority、稳定平手 → 最终7/3软截断。必须保留第8个及以后已合格候选通过偏好上升的机会；多成员metadata不能借未合格内容授权，不重展开Impact Note。
+- baseline只保留资格，不强制凑数或保证入选；声明类条目只能依据已证声明行为，不能以未证承诺结果主张重大影响。覆盖统计区分本期可用证据、已核验标注和已选故事，未知/未标注单列，不宣称全球召回。
+
+第一个竖切：两份独立磁盘archive使用相同Evidence/空历史，仅显式priority不同，观察两候选排序交换及Report里的固定配置版本/hash。后续逐片加入invalid保持、文件往返/重启、在途冻结、baseline硬门、语言/地域缺口、旧档兼容。Root已批准先写此一片RED，不以计划描述充当实现或PASS。
