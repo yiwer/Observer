@@ -1,11 +1,20 @@
 # V1-04 审查与验收记录
 
-状态：**实施中，尚未验收**。GitHub #4 OPEN；没有固定实施候选或双轴最终结论。此文是执行与证据边界，不是通过证明。
+状态：**候选已冻结，双轴审查中，尚未验收**。GitHub #4 OPEN；Root 独立自动化已通过，双轴尚无最终结论，不能据此关闭票或宣告生产通过。
 
 - 范围：[GitHub #4](https://github.com/yiwer/Observer/issues/4)、[本地票](../tickets/04-codex-runner.md)。
 - 固定起点：`320ab620a2d3f22c09e13334a68f06a3b664af05`；fresh agent `/root/implement_v1_04`。
 - 工作区：`O:/GenesisCode/Observer-worktrees/v1-04`，分支 `ticket/v1-04`。
 - [启动记录](https://github.com/yiwer/Observer/issues/4#issuecomment-5550300477)；依赖 #3 已关闭且本地验收集成。
+
+## 冻结候选与独立复跑
+
+- 候选 SHA：`f836d7d49bb907b4b36a3843932e7b4e6297c403`；固定起点至 HEAD 只有 `f836d7d feat: add isolated Codex research runner (#4)`。Root 已核实三点 diff 非空（18 files，1117+/15-），实施工作树干净。
+- 两个 fresh reviewer `/root/review_v1_04_standards` 与 `/root/review_v1_04_spec` 并行只读审查同一 SHA；不与作者互换结论。
+- Root 独立 detached worktree：`O:/GenesisCode/Observer-worktrees/accept-v1-04`，HEAD 同上。`npm ci` 安装 7 个锁定包；`npm run check` typecheck/build 成功、**70/70**、0 skipped，测试阶段 **45.835 秒**；`npm run smoke` **3/3**（旧测试子集）。工作树 tracked diff 为空。
+- Root 另在该工作树 ignored `data/root-acceptance/codex-first-send.test.ts` 通过公开 produce/readReport seam 加测 **2/2**：启动阶段后、首次实际模型发送前到期时 sends=0，错误为 `agent-evidence-expired`，没有报告；同样材料未到期时 sends=1，正文正常。两者都按返回的精确容器 ID 读回已不存在。此脚本不是产品测试计数的一部分。
+- 70 个产品测试包含原生 Linux Codex 0.153.4 + 无凭证 Responses 协议替身、恶意工具拒绝、超时/取消后代清理、编译运行资产、第二次发送 TTL 及实际 Docker `none` 日志测试。因此后文“未冻结”阶段问题已有候选内修复与上述独立回归；保留阶段记录用于追踪，不把其早期状态误读为当前结论。
+- 尚未本地集成，未 push；Standards/Spec 或 Root 后续发现若导致代码变化，必须重新冻结并复跑，不沿用该 SHA 的通过证据。
 
 ## 运行时预检
 
@@ -79,11 +88,11 @@ Root 实际打开 Docker 官方 [network create](https://docs.docker.com/referen
 
 ## Standards
 
-等待固定非空三点 diff 后独立 review；当前没有结论。
+已固定上述非空三点 diff，独立 reviewer 正在审查；当前没有最终结论。
 
 ## Spec
 
-等待固定非空三点 diff 后独立 review；当前没有结论。
+已固定上述非空三点 diff，独立 reviewer 正在审查；当前没有最终结论。
 
 ## 外部门槛
 
