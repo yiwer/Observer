@@ -12,7 +12,7 @@ export function consistentArchive(report: PublishedReport, storedId: string): bo
     version.canonicalMarkdownSha256 !== createHash("sha256").update(canonicalMarkdown, "utf8").digest("hex")) return false;
   if (record.schemaVersion !== 1 && version.publishedAtUtc !== record.publicationGate.checkedAtUtc) return false;
   if (record.schemaVersion < 3) return version.schemaVersion === 1;
-  return (record.schemaVersion === 3 || record.schemaVersion === 4) && version.schemaVersion !== 1 &&
+  return (record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5) && version.schemaVersion !== 1 &&
     record.schemaVersion - 1 === version.schemaVersion && record.editorialContract === version.editorialContract &&
     version.reportRecordSha256 === inputDigest(record) && consistentRecord(record) && sixEditionMarkdown(record) === canonicalMarkdown;
 }
