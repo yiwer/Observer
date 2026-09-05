@@ -59,6 +59,18 @@ Root 独立读过 `config/codex-runtime.Dockerfile`，inspect 精确镜像身份
 
 未冻结实现的接入检查发现：已有 Observer 在调用 Runner 前核验 Bundle v2 TTL，但容器启动和多轮 Responses 往返会跨越时间。每次实际 `ModelTransport.respond` 必须依据可信任务快照重新检查材料有效期，不能信任 CLI 请求体自行声称的 expiry。已交实施 agent 补延迟首请求及后续请求过期的红绿回归，保留未过期正常路径。此项目前是待实现/验收的 D6 约束，不记已修复或 PASS。
 
+实施 agent 随后报告 red→green：受控时钟在第一次 Responses 后到期，旧实现仍发送第 2 次；现第 2 次发送前拒绝 `agent-evidence-expired`、清理容器且无报告，同一场景未过期正例仍发送两次并归档。Root 仍须在最终冻结 SHA 独立复跑。
+
+## Root Docker 日志旁路检查
+
+Root 实际读取 daemon logging driver 为 `json-file`，未冻结的 create 参数尚未覆盖它；可信 supervisor 的 stdout 含完整 `model-request` 控制帧，不能因为宿主只保留脱敏分类就推断容器日志未缓存原文。Docker 官方[日志说明](https://docs.docker.com/engine/logging/configure/)确认默认内部 JSON 缓存、可按容器选择 driver，`none` 不提供容器日志。
+
+已要求只对本任务显式关闭原始 Docker 日志或做等效保护，验证 attach/正常业务仍可用且日志不可取原文；不修改全局 daemon 或既有容器。此项尚待修复与最终实测。
+
+## 临时测试产物
+
+实施 agent 报告 compiled 产物用例初次因 after 清理先于 SQLite close 而出现 EBUSY；改为 try/finally close 后转绿。那次失败遗留 `C:/Users/16348/AppData/Local/Temp/observer-codex-O2hbGJ`（仅本任务虚构归档）。其 PowerShell 清理命令被自动策略拒绝，未重试或换工具绕过，Root 也保持不触碰。该残留不代表用户原有数据被删；最终交接须保留此说明，不把 Git clean 扩写成全部临时目录已清理。实施 agent 报告当前没有任务容器残留。
+
 ## Root 网络前提核查
 
 Root 实际打开 Docker 官方 [network create](https://docs.docker.com/reference/cli/docker/network/create/#network-internal-mode---internal) 和 [gateway modes](https://docs.docker.com/engine/network/port-publishing/#gateway-modes)：普通 `--internal` bridge 仍可访问网关地址上的宿主服务，包含监听所有地址的服务；`isolated` gateway mode 配合 internal 才不向 bridge 分配地址。因此仅检查 `Internal=true` 及已连接容器名单，不能证明模型专用网络已隔离宿主旁路。
