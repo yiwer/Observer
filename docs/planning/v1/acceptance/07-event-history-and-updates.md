@@ -1,6 +1,6 @@
 # V1-07 执行与待验收记录
 
-状态：**首个候选已冻结，双轴 review 与完整验收进行中，未接受/集成**。GitHub #7 OPEN，assignee=yiwer。下方 WIP 条目保留为历史过程，以本文最后的冻结记录为准。
+状态：**首个冻结候选被双轴 review 拒绝，4 项阻断交回原作者 TDD 修复，未接受/集成**。GitHub #7 OPEN，assignee=yiwer。下方 WIP/冻结进行中条目保留为历史过程，以本文最后的审查记录为准。
 
 - 范围：[GitHub #7](https://github.com/yiwer/Observer/issues/7)、[本地票](../tickets/07-event-history-and-updates.md)。
 - Fixed base：`5da81976dd2ba166066977c038e6f46451890283`，包含 #6 最终接受、集成与关闭记录。
@@ -113,3 +113,36 @@ Root 新增自有公开 T1 探针，仍位于 `accept-v1-06/data/root-v1-07-revi
 - 作者冻结后的第一次 `npm run check` 仍在 session `27268`：typecheck/build 已通过；首项 Claude fixture setup 报既有 `No such image: observer-v1-05-claude:2.1.252`（503.4033 ms），整套尚未终态。已要求等待真实终态并保留失败，再仅只读核对、同 SHA 定向及完整复跑；不重建、重标签、重启 Docker，不拼接失败/重跑成首跑 PASS。
 
 作者完整 check/smoke 终态、两轴 review、Root 完整 check/smoke 和实际 master 集成复验仍缺，当前不接受、不关票、不开始 #8；无真实 Provider/SMTP/部署操作，无 push。
+
+## 首次冻结审查结论：63e93dc 不接受
+
+作者 first full check 已实际结束：**146/147 PASS、1 FAIL**，0 skipped/cancelled，**184574.0204 ms**。唯一失败为 `tests/claude-runner.test.ts:40` 首个 fixture 的固定镜像 tag inspect（503.4033 ms）；不是事件业务失败。随后同 SHA 只读 tag 与 exact ID 都返回固定 `sha256:0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269`，无环境/镜像改变；该单项重跑 **1/1 PASS**（2527.5009 ms）。首轮失败保留，根因仍未知，不算完整 PASS。由于本轮 review 已确认需改代码，Root 要求不再补跑被拒绝 SHA 的第二次 full/smoke；Root 此 SHA 也未运行完整 check/smoke，不以专项代替。
+
+### Standards
+
+独立 `/root/review_v1_07_standards` 完整读取 12 文件固定 diff，静态审查；**hard 1、heuristic 1，worst P2**。
+
+- **P2 hard**：`src/observer.ts:284` 在完整关联校验前按 `old.version.publishedAtUtc` 过滤历史，`:286` 及 `historicalReport`（`:91`）未执行普通读取在 `:334` 已有的 `publishedAtUtc === publicationGate.checkedAtUtc` 关系。只损坏未包含在 Record/MD 摘要里的 Version 时间，便可丢弃既有报道或错误纳入历史。违反 `docs/implementation/v1-07.md:70` 的历史损坏失败关闭及因果窗口约束。需先完整验证版本/Record/Gate 关系，再做时间过滤，并复用相同核对。
+- **P3 possible Duplicated Code**：`event-history.ts:14`、`event-integrity.ts:9`、`six-edition.ts:148` 重复展开单批/多批核验回执。可共享纯访问函数降低版本分支漂移；属非阻断维护判断，不是明确规范违反。
+
+Root 另对同 **63e93dc built** 运行 `history-version-time-probe.ts`：**1 PASS / 2 RED**（120.631 ms，exit 1）。未损坏对照后期 0 故事；只将旧 Version 时间改到未来，竟再出版 1 条；改早也不拒绝损坏。两种损坏均应 `history-integrity-failed`。故障仅注入 Root 新建的 `version-time-run-*` SQLite（临时移除/恢复其更新触发器），原始对象由公开 reader 取得，业务断言仍公开 `produce/readReport`，没有用 SQL 观察业务结果。脚本 SHA-256 `25b18850cbd772b6232944c932134793eb3edd6bec1b15e226344a4ca8cb7c4d`，同其它 Root 证据保留于 `accept-v1-06/data/root-v1-07-review`。
+
+### Spec
+
+独立 `/root/review_v1_07_spec` 完整核对原票、PRD、固定 diff、SHA/clean/GitHub OPEN，**3 项，worst P1**。
+
+- **P1**：任意旧 Record1/2/3 新闻令 `legacyHistory` 永久为真，随后所有 v3 新闻在身份判断前被拒绝（`observer.ts:285`、`event-history.ts:19`）。连续两期不同主体、今日首次披露事件均 0 故事，违反 PRD:272“新披露可入选”和票:19“独立新事实”回放。没有 Owner 授权永久全局停报；实现说明不能覆盖原需求。
+- **P2**：同 Cluster 包含今日新事实和重大漏采旧事实时，`event-history.ts:96` 的 `eligible.some(inWindow)` 只把整组标成 new-disclosure；旧事实已刊登却没有任何补报标签。违反票:18 及 PRD:55 的显式补报要求。
+- **P2**：后续新发现更早披露时，`event-history.ts:89` 无条件继承 `last.firstDisclosure`；当前 development 已记录 8 月 30 日披露，当前组首次披露仍显示 9 月 4 日。违反票:17 与 PRD:159–166；可更新当前元数据而不改旧刊。
+
+Spec 自有 T1：`O:/GenesisCode/Observer-worktrees/v1-07/data/spec-v1-07-c9a641/probe.test.mjs`，真实 SQLite、外部 Runner/Verifier/时钟、公开 `produce → readReport`，**0/3 PASS、3 个业务 RED**（411.4376 ms）；旧刊重启后字节不变。Root 已完整阅读探针，断言与三项发现一致；未修改/清理其独立证据。该脚本原本绑定作者 source，后续复验须再次确认当时实际 SHA，不能把变化中的 WIP 误标为冻结结果。
+
+### 整改与状态
+
+两轴各自保留结论，不把维护建议混为 Spec 缺陷。当前 **4 项阻断**交回原 fresh implementation agent 逐片 TDD；P3 不要求扩大重构。此前 11/11 专项与旧档 3/3 不能遮蔽这些新发现；此 SHA 不接受、不集成、不关 #7、不开始 #8。
+
+作者提出的 legacy 窄修正已获 Root 同意：取消全局永久停报，以带实际旧版本范围的 `legacy-unclassified` 审计/栏目缺口表达历史不确定性，当前通过证据规则的新披露/重大进展仍可选题，不把 previousCoverage=null 当成从未报道证明。若加本地精确重复否定约束，须同时匹配 Claim 类型/声明归因和可验证相同来源证据身份，不能仅以模板句文字哈希误杀独立事件；缺字段保持未知。不重写旧刊、不新增人工编辑或历史原文模型发送。
+
+其余整改：完整版本关联校验先于因果过滤；对每条实际刊登的漏采事实标明补报；当前 firstDisclosure 取可分发历史与当前证据中的最早真实披露。修复后必须新提交、新 full check/smoke、两轴复审和 Root 独立验收，不能复用被拒绝候选的计数。
+
+[GitHub 首轮不接受回写](https://github.com/yiwer/Observer/issues/7#issuecomment-5551655286)已发布并实际读回正文；#7 仍 OPEN、assignee=yiwer。仅状态与证据回写，没有 push 或生产操作。
