@@ -309,7 +309,7 @@
       "number": 8,
       "title": "可版本化兴趣配置与全球覆盖底线",
       "file": "tickets/08-explicit-interest-and-global-coverage.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-07"
