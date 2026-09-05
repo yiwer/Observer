@@ -1,6 +1,6 @@
 # V1-07 执行与待验收记录
 
-状态：**第二冻结 7fae122 已通过独立冻结验收，允许本地集成；实际 master 复验尚待完成，未关票**。GitHub #7 OPEN，assignee=yiwer。首个候选 63e93dc 的拒绝和失败证据保留为历史过程，以本文最后的审查记录为准。
+状态：**已接受并完成本地 master 集成验收，GitHub #7 已 CLOSED**。最终实施 `7fae122`，集成 `8e02377`；代码未 push，仅本地标注替身资格。首个候选 63e93dc 的拒绝和失败证据保留为历史过程，以本文最后的审查记录为准。
 
 - 范围：[GitHub #7](https://github.com/yiwer/Observer/issues/7)、[本地票](../tickets/07-event-history-and-updates.md)。
 - Fixed base：`5da81976dd2ba166066977c038e6f46451890283`，包含 #6 最终接受、集成与关闭记录。
@@ -185,3 +185,26 @@ Root 完整 check/smoke、双轴结论及实际 master 集成复验仍缺；当�
 Root clean detached `7fae122` 的首次完整 `npm run check` 自然结束 exit 0：typecheck/build PASS，**152/152 PASS**、0 fail/skip/cancel，**151077.6439 ms**。随后同 SHA `npm run smoke` **3/3 PASS**（1404.4045 ms），它是完整检查的子集，不相加制造额外覆盖。结束后 HEAD 未变且工作区 clean；按两个固定镜像 ID 只读检查，均无运行中容器残留。
 
 结合 Root built 专项 **14/14**、旧 producer 归档 **3/3**、独立 Spec **6/6** 与两轴原阻断关闭，允许候选进入本地集成。唯一保留的 Standards P3 是非阻断回执展开重复；不增加无关重构。尚需实际 master 合并提交上的 full/smoke/专项/旧档复验后才能关闭 #7；代码未 push、生产未启用，真实 Provider/来源/人工质量资格未验证。
+
+## 本地集成与后续历史基线
+
+Root 先提交冻结验收账本 `d8f922d`，确认 root 仅保留用户 `.idea/` 未跟踪，再以 no-ff 合并固定作者 SHA。实际 master 集成提交为 **`8e02377a60544c7dd7cfb3e759bc02d5d45fb760`**；对作者最终 SHA 的 src/tests/config/包锁及 TypeScript 配置比较为空，无合并冲突。完整 check 已在该实际提交启动，尚待终态。
+
+Root 对 master built 复跑原脚本且不改预期：注解保留 **4/4**（104.9041 ms）、因果 **3/3**（168.1673 ms）、声明 **3/3**（117.2221 ms）、传递来源许可 **1/1**（213.595 ms）、历史版本时间 **3/3**（179.6643 ms），合计 **14/14 PASS**；#5/#6 producer 三份旧档 **3/3** JSON/MD/鉴权兼容通过。
+
+为下一票保留新 Record v4 兼容基线，Root 用已独立接受的 clean frozen producer **7fae122 built** 在自有 ignored `O:/GenesisCode/Observer-worktrees/accept-v1-07/data/root-v1-08-compat-9b22d0` 实际生成两期 SQLite 日报，关闭每期 writer、重启后读取核对。虚构来源/外部标注替身，不调用真实 Provider；包含同事件的世界要闻主故事、AI Impact Note、第二期重大更新、前次版本关联、首次披露继承和逐事实覆盖标签。
+
+- `generate-baseline.ts` SHA-256 `5c22947eaec1d8eb58817c78c3ec8e21c9606bb45172f6208d3598cfb3086bb0`；守卫固定 producer/clean，并拒绝覆盖数据库。
+- `record-v4.sqlite` 内两期均 **Record4 / Version3 / canonical-v2**；`baseline.json` SHA-256 `d8361014002220d032f245e6dfd1b8933f925074e5d85649ee6231ce57deaf30`。
+- `2026-09-05-v1`：MD **4356 bytes**，MD SHA-256 `ca99e005c4bcf8a29a1b05197676d61f93736a104c8d9c6faa364d22895df3c3`，完整 JSON SHA-256 `aad500bebc3d0183459e0a5d3e93fd5cdf8645f3bc9444159368d1bdd5557664`。
+- `2026-09-06-v1`：MD **4421 bytes**，MD SHA-256 `bd9b3aa004c51a6365d8b9004a2c4e67db780df6e43d0516895cd208e815be44`，完整 JSON SHA-256 `14168c49a2ce25d7a54a5f7f31d2f1930c58d0fab236910d1448cb71248fb06c`。
+- `verify-reader.ts` SHA-256 `1d2fb2f7bd684ad5d57cf96a31fbc4b1f049d2eac9ef2e800fc8f6541d3f35e6`；输入绝对 built module 路径，公开读取并校验字节、完整 JSON、Record/MD 摘要、错误 Owner 和 production fixture 隐藏，无内部 SQL 断言。
+- producer 自读 **2/2**、master **8e02377 built 2/2** 均通过。这是新旧兼容的下游 oracle，不把当前版本自己生成的档冒充历史版本回归；后续实现不能重新生成它。
+
+### 集成验收与关闭终态
+
+实际 master **8e02377** 的完整 check 自然结束 exit 0：typecheck/build PASS，**152/152 PASS**、0 fail/skip/cancel，**165825.8869 ms**；随后 smoke **3/3 PASS**（1330.2991 ms）。结束时 HEAD 未变，只有本账本的 Root 文档更新和原用户 `.idea/`；没有验收中代码/配置修改。两个固定 CLI 镜像 ID 的运行容器查询均为空。
+
+六项票内 AC 已有公开业务 seam 与独立证据支持；Standards 原硬阻断关闭、保留1项非阻断P3，Spec0。上述完整检查、14/14专项、3/3原旧档及新两期归档核对绑定实际集成提交，允许关闭开发票。首次失败与被拒绝候选未删除，生产和真实 Provider/来源/14天人工门槛仍未通过。
+
+[GitHub 验收回写](https://github.com/yiwer/Observer/issues/7#issuecomment-5551782570)已发布并实际读回完整正文、作者 yiwer 与 comment ID；随后关闭并读回 **CLOSED**，closedAt **2026-09-05T12:21:57Z**。#8 原生 dependency API 已返回 #7 closed，可在此已接受集成基线上派发新的 fresh-context 实施；未 push 或正式部署。

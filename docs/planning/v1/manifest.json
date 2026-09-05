@@ -271,7 +271,7 @@
       "number": 7,
       "title": "Event Cluster、跨栏去重与跨日报更新",
       "file": "tickets/07-event-history-and-updates.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-06"
@@ -294,13 +294,13 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/7",
       "issueDatabaseId": 5355736681,
-      "githubState": "open",
+      "githubState": "closed",
       "dependenciesVerified": true,
       "execution": {
         "implementationCommit": "7fae122cbe1d7abf1ebd12615091221abb6d7fda",
-        "integrationCommit": null,
+        "integrationCommit": "8e02377a60544c7dd7cfb3e759bc02d5d45fb760",
         "acceptanceFile": "acceptance/07-event-history-and-updates.md",
-        "qualification": "frozen-accepted-awaiting-integration",
+        "qualification": "local-annotated-verifier-only",
         "pushed": false
       }
     },
