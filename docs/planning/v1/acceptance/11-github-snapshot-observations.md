@@ -71,3 +71,9 @@ Root另建公开观察→SQLite重启→produce7/鉴权Report的`rename-history-
 Root固定capturer记录实际模块目录、脚本摘要、前后HEAD/status与原始日志；上述均明确为变化中工作树，不以未变HEAD冒充代码已冻结。测试只写自身ignored证据目录，不旁读产品SQL、不改作者代码或旧oracle。
 
 后续已交作者的重点：选资格后再分配7个位置；日报只携带有界相关双快照/查询证据，不反复复制所有历史小时run或让无关古老policy毒化本期；Record8连续两日普通事件/历史来源门保持；项目正文补human-facing原始仓库链接。采用无条件GET且非预期304明确Gap，不为研究建议额外实现缓存，也不宣称支持304。
+
+作者身份切片`11-identity-red.log`为3项2PASS/1FAIL、386.3947ms；12-green为3/3、397.3028ms，均已由Root亲读。fallback改为优先最新已知地址。Root原`rename-history-probe.mjs`及期待不变复跑**2/2、135.5764ms**，log `wip-known-rename-fixed.log` SHA256 **a0613d771e700b55da10ebc9bdd192b3d7d13e90e4c3118896d20ec7758bbe2e**；此反例局部关闭，仍待最终冻结重验。
+
+Root补充公共观察/生产/重启的`cutoff-availability-probe.mjs`，SHA256 **50779ff78596726769c6403f9a770a8ba6c51f58db40e203e4a5262a0e66b096**：完整详情响应恰好cutoff可用→+5/+1 measured；晚1毫秒→没有measured、未来名称不在整个永久Report、GitHub正文明确current-missing，重启相同。**2/2、123.7327ms**，`wip-cutoff-availability-valid-token.log` SHA256 **7ba55f2d6fe0d3f4c43a8ff2940b4c4ea3c4256e636957bfe60a46403b59ed86**。首次Root自有fixture Owner token不足32字节，被正确拒绝；仅改该输入、保留`wip-cutoff-availability-first.log`，不计产品RED。
+
+新增未冻结Snapshot的有界identity summary已获Root协调：保存真实firstSeen/必要名称连续性及来源/配置/截止证据，完整小时历史留在观察库；新summary不能把未来首次发现或名称提前投影到旧cutoff，读旧刊不依赖可变重新选样。Root捕获工具后续增加相关模块前后摘要，仍不能把WIP结果冒充正式冻结。
