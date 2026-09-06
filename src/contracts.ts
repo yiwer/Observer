@@ -3,7 +3,8 @@ import { BatchedPublicationGateSchema, CandidateV2Schema, ClaimSchema, Publicati
 import { EventClusterSchema, EventSelectionSchema } from "./event-contracts.ts";
 import { InterestSnapshotSchema, InterestSelectionSchema, InterestCoverageSchema } from "./interest-contracts.ts";
 import { DiscourseSnapshotSchema } from "./discourse-contracts.ts";
-import { GitHubSnapshotSchema } from "./github-contracts.ts";
+import { GitHubSnapshotSchema, GitHubRankingSnapshotSchema } from "./github-contracts.ts";
+import { GitHubRankingSchema } from "./github-ranking-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const utc = z.iso.datetime({ precision: 3, offset: false });
@@ -147,7 +148,8 @@ export const InterestEditionRequestSchema = SixEditionRequestSchema.extend({ sch
 export const DomainEditionRequestSchema = SixEditionRequestSchema.extend({ schemaVersion: z.literal(5) });
 export const DiscourseEditionRequestSchema = SixEditionRequestSchema.extend({ schemaVersion: z.literal(6), discourseSamples: z.array(z.unknown()).max(10).optional() });
 export const GitHubEditionRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(7) });
-export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema> | z.infer<typeof EventEditionRequestSchema> | z.infer<typeof InterestEditionRequestSchema> | z.infer<typeof DomainEditionRequestSchema> | z.infer<typeof DiscourseEditionRequestSchema> | z.infer<typeof GitHubEditionRequestSchema>;
+export const GitHubHeatRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(8) });
+export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema> | z.infer<typeof EventEditionRequestSchema> | z.infer<typeof InterestEditionRequestSchema> | z.infer<typeof DomainEditionRequestSchema> | z.infer<typeof DiscourseEditionRequestSchema> | z.infer<typeof GitHubEditionRequestSchema> | z.infer<typeof GitHubHeatRequestSchema>;
 // Six-Edition research appends a known Edition suffix to the unchanged 200-character input ID.
 // This bounded envelope extension does not alter the legacy AgentRunner/CLI contract.
 const editionTaskId = z.string().min(1).max(200 + 1 + Math.max(...Object.keys(editionNames).map((name) => name.length)));
@@ -236,7 +238,8 @@ const DiscourseRecordSchema = DomainRecordSchema.extend({ schemaVersion: z.liter
   })).max(10) }),
 });
 const GitHubRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v6"), github: GitHubSnapshotSchema });
-export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema]);
+const GitHubHeatRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v7"), github: GitHubRankingSnapshotSchema, githubRanking: GitHubRankingSchema });
+export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema, GitHubHeatRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
 const LegacyReportVersionSchema = z.strictObject({
@@ -260,6 +263,8 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
   schemaVersion: z.literal(6), editorialContract: z.literal("observer-canonical-v5"), reportRecordSha256: sha256,
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(7), editorialContract: z.literal("observer-canonical-v6"), reportRecordSha256: sha256,
+}), LegacyReportVersionSchema.extend({
+  schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v7"), reportRecordSha256: sha256,
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({

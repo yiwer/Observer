@@ -1,0 +1,21 @@
+{
+  "status": "proposal-not-adopted",
+  "base": "48d4767561459db66575125d18c8a89dce185068",
+  "evidence": "Owned synthetic inputs; no real GitHub data, user satisfaction or safety evidence",
+  "fixedExpectations": [
+    { "id": "two-signals", "input": [{"id":"star-spike","starsDelta":100,"forksDelta":0},{"id":"balanced","starsDelta":2,"forksDelta":2},{"id":"star-mid","starsDelta":10,"forksDelta":1},{"id":"low","starsDelta":1,"forksDelta":0}], "expect": ["balanced ranks before star-spike", "star-mid ranks strictly before balanced"] },
+    { "id": "stock-invariance", "change": "multiply current and historical stocks by adding the same 1000000 to both; preserve net changes", "expect": ["measured order unchanged"] },
+    { "id": "topic-proportionality", "input": "same cohort, equal base score, topic priorities 0 and 100", "expect": ["the explicit topic match wins", "topic gain does not overcome a twofold base-score advantage", "topic never bypasses cooldown or attention floor"] },
+    { "id": "cold-attention-floor", "input": [{"id":"bare-stock","stars":5,"forks":0},{"id":"corroborated","stars":4,"forks":2},{"id":"star-attention","stars":10,"forks":0},{"id":"zero","stars":0,"forks":0}], "expect": ["bare-stock is too weak for an ordinary cold-start slot", "corroborated and star-attention remain eligible", "zero cannot fill quota"] },
+    { "id": "frequency", "input": "same momentum and recovery, recent report counts 1 and 4", "expect": ["one previous report remains below never reported", "four reports is at most 70 percent of the same score with one previous report"] },
+    { "id": "novelty-quota", "input": "7 desired slots, 3 eligible novel and 10 eligible returning", "expect": ["publish at most 6", "do not fill seventh from weak or returning candidates", "every actual result has at least ceil(actual count / 2) novel projects"] },
+    { "id": "partition", "input": "one eligible measured candidate and one arbitrarily high-stock cold-start candidate", "expect": ["measured appears before cold-start", "cold-start retains its distinct proxy label"] },
+    { "id": "language-cohort", "input": "four Rust and twelve Python measured candidates within same age group; one leading Rust and one leading Python", "expect": ["both language leaders have room in the result", "removing a language filter is not simulated by filtering unknown language"] }
+  ],
+  "candidateParameters": {
+    "starsWeight": [0.75, 0.6, 0.5],
+    "topicGain": [0.15, 0.3],
+    "coldFloor": [{"stars":5,"forks":1},{"stars":10,"forks":2}],
+    "frequencyPenalty": [0.25, 0.5]
+  }
+}
