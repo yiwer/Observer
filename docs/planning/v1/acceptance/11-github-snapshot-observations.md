@@ -106,3 +106,13 @@ Root实际读回作者以下原日志及相关公开Interface代码，均为作�
 - 37/38-opaque：自创node ID字符表错误拒绝`opaque/+node==`，25/26→26/26（1327.0766ms）；按opaque字节保留，只保留Observer自身长度/危险控制字符资源限制。
 
 上述问题是当前票的资格、来源与时序契约，不扩展为#12排名或全局调度。跨重启退避、余下失败/撤权矩阵和最终规格仍待作者收敛，尚无clean候选SHA、票末full/smoke、双轴审查或Root冻结/实际master验收。Root不关闭#11或启动#12实施。
+
+## 退避、来源隔离与额外因果回放
+
+Root亲读39-restart-rate-red（26/27、1361.2416ms）：重建观察库实例及Adapter后仍提前发送请求。Root批准未冻结Adapter只读`resumeAtUtc()`及Run的UTC/null同名字段，保存已解析的最早恢复时间，按同源最后收据约束重启后的请求；不存原头、正文或令牌，不改变SQLite表结构或旧Record。40-green为27/27、1364.1447ms。41-protocol-failure-matrix为既有行为验证49/49、2403.5964ms，覆盖资格排除/未知、必填畸形、访问失败/304、秘密异常、凭证到期和预取消，不补造RED；42-typecheck通过。
+
+作者自行发现已知地址fallback未按sourceId隔离，43-source-switch-red为49/50、2476.4876ms，新来源仍采集旧来源的已发现地址；44-green过滤同源历史后50/50、2436.2734ms。Root已亲读原日志；仍为未冻结切片。
+
+Root按既定T1公开观察→实际SQLite重启→produce7/鉴权读取建立独立`data/root-v1-11-review/latest-failure-causality-probe.mjs`，SHA **afca4865dd5de1ae6d77542099314510e3f9eb6b2ab9b35c2ce5b67e5a7a5e7c**。四例固定期待：较新成功+6；截稿前401或未知template阻止回退到此前有效+5；晚于截稿1毫秒的401不能抹掉此前截止内+5；原错误体不入永久Report，报告库重启读回一致。首次**4/4、297.2999ms**，没有产品RED；log `wip-latest-failure-causality-first.log` SHA **3f209268042be98bd4b24eeb8ad6959dddf92c22fba0c2bc8c0c68ab9181a19a**，UTC 2026-09-06T01:47:42.255Z–01:47:42.953Z。相关15模块前后摘要一致，但HEAD仍base且工作树未提交，最终须在固定SHA复跑。
+
+当前下一动作：作者更新真实技术规格和路由、形成clean候选，票末full/smoke后由fresh双轴review与Root独立冻结验收；以上50项及Root四项均不替代完整套件、旧Record1–7 oracle或实际master验收。
