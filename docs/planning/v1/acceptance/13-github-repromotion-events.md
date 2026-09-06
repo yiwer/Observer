@@ -52,6 +52,16 @@ Root不读取作者测试helper，仅依公开新契约独立准备`Observer/dat
 
 Root等待首片GREEN/类型通过后的短暂源码冻结再执行独立诊断，避免测试半接线或并发漂移代码。所有原失败/归档/旧oracle继续保留。
 
+## 2026-09-06晚间UTC：实核接续
+
+新的goal continuation中，Root实时agent inventory只返回Root，原实施作者handle已不存在，并非因等待超时推断停止。实际作者树仍为`ticket/v1-13` / `ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3`，有10个src修改及6个新增文档/产品/测试文件；未有产品提交，切片证据仍只有原01-red。Root主树仅无关`.idea/`，#13重新实读OPEN、assignee yiwer，Node v24.18.0。
+
+Root以现态运行`npm run typecheck`，exit1；唯一TS2345在`src/observer.ts:493:91`，失败路径的`schemaVersion:1|2`联合类型不能传给新authorizer。此为恢复时只读诊断，未创建当时自动metadata，不作为固定SHA关闭证据。
+
+已派fresh `/root/implement_v1_13_resume`接续原WIP，保留原代码/测试期待/失败，不reset或重建。新作者仍是唯一产品writer，须亲读skills与完整票/已批准方案，先恢复首tracerGREEN，再推进整票Release、GHSA、动量；后两类尚未冻结的参数/证明须继续协调，不能把首片当完整交付。Root额外指出当前WIP尚缺的事件归档依赖复核、旧development比较上下文和中途developmentConfiguration授权，要求后续逐片公开负向验证。
+
+另准备未执行的Root `event-history-integrity-probe.mjs`，SHA **9F9934352ACBA2D008D6E717815F6295DE325C0557C026CA7AA4B6FFC19894D4**：仅在新建Owned测试库做可恢复故障注入，去掉真实旧刊的已消费发展，再用公开重算/正文函数构造内部自洽的错误新刊；公开read必须因与真实旧刊历史不符而拒绝。其SQL仅用于注入并finally恢复，不用SQL断言产品结论。目前只通过语法检查，不计PASS。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
