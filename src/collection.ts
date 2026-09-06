@@ -22,6 +22,10 @@ export const SourcePolicySchema = z.strictObject({
   distribution: z.strictObject({ enabled: z.boolean(), fields, allowDerivedText: z.boolean(), allowPermanentArchive: z.boolean() }),
   citation: z.strictObject({ enabled: z.boolean(), attribution: text, maxCharacters: z.number().int().nonnegative().max(10000) }),
   deletion: z.strictObject({ mode: z.enum(["owner-request", "unsupported"]), instructions: text }),
+  github: z.strictObject({ allowedQueries: z.array(z.string().min(1).max(200)).min(1).max(3), allowApiResponseProcessing: z.boolean(),
+    allowRepositorySnapshots: z.boolean(), allowIdentityHistory: z.boolean(), allowDerivedPublication: z.boolean(), irrevocableExportAllowed: z.boolean(),
+    deletionScope: z.enum(["raw-only", "derived-and-exports", "unknown"]),
+  }).optional(),
   social: z.strictObject({ platform: z.literal("mastodon"), allowedTags: z.array(z.string().regex(/^[\p{L}\p{N}_]{1,64}$/u)).min(1).max(10),
     allowApiResponseProcessing: z.boolean(), allowStatusKeys: z.boolean(), allowAnonymousText: z.boolean(), irrevocableExportAllowed: z.boolean(),
     deletionScope: z.enum(["raw-only", "derived-and-exports", "unknown"]),
@@ -39,7 +43,8 @@ export type SourceProposal = z.infer<typeof ProposalSchema>;
 export interface CoverageGap { sourceId: string; edition: SourcePolicy["edition"]; reason: string }
 
 export interface SourceResponse { status: number; body: string; headers: Record<string, string>; finalUrl?: string }
-export interface SourceReadRequest { source: SourcePolicy; headers: Record<string, string>; signal: AbortSignal }
+export interface SourceReadRequest { source: SourcePolicy; headers: Record<string, string>; signal: AbortSignal; validateUrl?: (url: URL) => boolean;
+  readErrorBody?: (status: number, headers: Readonly<Record<string, string>>) => boolean }
 export interface CollectionOptions {
   databasePath: string; sources: unknown; clock?: () => string;
   read?: (url: string, request: SourceReadRequest) => Promise<SourceResponse>;
