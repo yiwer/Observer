@@ -467,7 +467,7 @@
       "number": 12,
       "title": "Observer GitHub Heat 与历史报道降权",
       "file": "tickets/12-github-heat-and-novelty.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-08",
