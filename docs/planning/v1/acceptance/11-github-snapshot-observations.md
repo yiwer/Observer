@@ -1,6 +1,6 @@
 # V1-11 执行与待验收记录
 
-状态：**in-progress；首片、身份/截稿独立回放及普通跨日历史已有局部通过；官方契约已移交，作者继续限流/并发/权限可靠性切片；尚无冻结或完整验收结论**。GitHub #11 OPEN / yiwer。
+状态：**in-progress；首轮固定候选 3cbff88 已完成双轴审查、Root 全量与独立回放，但 Spec 两项 P2 均被 Root 复现，明确拒收；作者逐项修复中，未合入/关闭**。GitHub #11 OPEN / yiwer。
 
 ## 固定任务与依赖
 
@@ -116,3 +116,53 @@ Root亲读39-restart-rate-red（26/27、1361.2416ms）：重建观察库实例�
 Root按既定T1公开观察→实际SQLite重启→produce7/鉴权读取建立独立`data/root-v1-11-review/latest-failure-causality-probe.mjs`，SHA **afca4865dd5de1ae6d77542099314510e3f9eb6b2ab9b35c2ce5b67e5a7a5e7c**。四例固定期待：较新成功+6；截稿前401或未知template阻止回退到此前有效+5；晚于截稿1毫秒的401不能抹掉此前截止内+5；原错误体不入永久Report，报告库重启读回一致。首次**4/4、297.2999ms**，没有产品RED；log `wip-latest-failure-causality-first.log` SHA **3f209268042be98bd4b24eeb8ad6959dddf92c22fba0c2bc8c0c68ab9181a19a**，UTC 2026-09-06T01:47:42.255Z–01:47:42.953Z。相关15模块前后摘要一致，但HEAD仍base且工作树未提交，最终须在固定SHA复跑。
 
 当前下一动作：作者更新真实技术规格和路由、形成clean候选，票末full/smoke后由fresh双轴review与Root独立冻结验收；以上50项及Root四项均不替代完整套件、旧Record1–7 oracle或实际master验收。
+
+## 第一轮固定候选与拒收（2026-09-06）
+
+作者候选 **3cbff88a7d1aca6dc2db995302d9c1c7912cb019**，`ticket/v1-11` clean；Root验证base可达、`git diff 0cc3ae6c7137f63283b03dd538b177cd440f5915...3cbff88a7d1aca6dc2db995302d9c1c7912cb019`非空，21文件 +1305/−30。Root另建clean detached `O:/GenesisCode/Observer-worktrees/accept-v1-11`，`npm ci`及build通过。作者和Root使用固定镜像、串行Docker、独立TEMP；本轮未做真实来源/Provider/PAT/SMTP/部署或push。
+
+### 完整测试证据
+
+- 作者首次 `data/author-full-3cbff88-1/` 完整check **274/275，1 FAIL**（129318.19ms），唯一错误为Claude原短标签`No such image`；log SHA **cd1272b403838ebd35f3d3f4bc2ffe162e5a686382867d92ee3dcc1f4f6c3d3a**。原日志完整保留，只读核对固定镜像后，在新目录同SHA重跑，不拼接PASS。
+- 作者 `data/author-full-3cbff88-2/` 完整check **275/275**（123709.7956ms），UTC01:58:23.8688242–02:00:32.7559402，log SHA **ffa85d7864743592d116aef186b733ceaa48534bf8c2c1479b8292d5cc7d764e**；smoke **3/3子集**（1318.3765ms），log SHA **dff71f222671dd2dcd144e4fc784e23732acfabcc714fd757eb3fad1118152fc**。Root亲读result和原log尾/count/hash。
+- Root detached `data/root-full-3cbff88-1/` 完整check **275/275**（122564.6799ms），UTC02:01:41.759–02:03:49.767，log SHA **cec73d2f99a036fdde534ac1f11ffc9566f8e9bce4248cf97cc352ca36de1a45**；smoke **3/3子集**（1328.8974ms），UTC02:06:51.880–02:06:56.337，log SHA **800324c0ac4ec1fdb11227b85c64e512d5a64217ec894ddb52a19ce0254f6a5d**。捕获工具保留raw stdout/stderr、时间和前后clean固定HEAD；两个result已读回。完整套件通过不能覆盖下方独立反例失败。
+
+### Root 冻结回放
+
+固定29次既有调用全部exit0（含Record1–6九份旧Report/MD），不是29项单元测试；结果 `data/root-v1-10-review/frozen-v1-11-3cbff88-independent-result.json`。Record7两份旧刊用原reader读取新built通过，整个Report/MD均未变，未重新生成baseline。以上开始/结束固定clean。
+
+四份Root独立探针原SHA及期待不变，新构建实际SQLite/生产/鉴权读取与受控来源协议均通过：
+
+| 探针 / 日志前缀 `data/root-v1-11-review/` | 结果 | log SHA256 |
+| --- | --- | --- |
+| `frozen-3cbff88-redirect` | 3/3，12.818ms | c8efc5f0bc1e71189c49ce1451a560a1116fac36d9ecff87a7a18b761897101d |
+| `frozen-3cbff88-rename` | 2/2，166.6736ms | 4bd0a9f5ffebfcbb81fd799202b95803c63574d52ffb4fe18fac742236573d7f |
+| `frozen-3cbff88-cutoff` | 2/2，143.8435ms | 8373d544b9b7242d05e86c144e281c07dc8405ff179f0609a08f66e37dc83784 |
+| `frozen-3cbff88-latest-causality` | 4/4，290.0886ms | 007b99d513e97ed3f0d7bea19f22d53ebf04705299b3b74dbaad3b867573368e |
+
+各result的15个相关built模块前后摘要一致、固定HEAD且status为空。这11项不包含以下新Spec反例；不得合并计为“所有反例通过”。
+
+### Standards
+
+fresh `/root/review_v1_11_standards`完整读21文件diff，开始/结束clean固定SHA；**0硬性违反，2项P3维护性判断**：`observer.ts:450`事件版本分支可能Repeated Switches（Record8读取重复检查，与出版枚举不对称）；`:131/:165`同步清除Evidence/Edition引用可能Duplicated Code。来自code-review固定异味基线而非仓库硬规范；未运行测试，不以此要求扩大重构。
+
+### Spec
+
+fresh `/root/review_v1_11_spec`与另一轴并行、未交换发现，完整读票/原生#6依赖/21文件diff；开始/结束clean固定SHA。作者原53项自有运行通过，另建实际HTTP→真实SourceReader→SQLite重启→produce7/鉴权readReport独立反例，**两项P2，2/2 FAIL，exit1**：
+
+1. `github-observations.ts:131–133/:164`把详情node冲突的未验证名称用于历史回退及名称沿革，违反实现规格“同来源最近验证的已知地址”。一次错误Search地址后，重启空Search仍访问错误地址；有效旧地址可得+7却不生成Watch Item。
+2. `github-adapter.ts:44`与SourceReader的非200丢正文组合，漏判正文明确secondary-limit、remaining=100且无Retry-After的403。原始独立结果立即发3次请求、仅access-unavailable、resumeAtUtc=null，应1次、明确限流、至少60秒退避。Root亦实际浏览核对[GitHub官方规则](https://docs.github.com/en/rest/using-the-rest-api/troubleshooting-the-rest-api#rate-limit-errors)，并未请求真实候选API。
+
+原Spec脚本 `data/root-v1-11-spec-review/identity-recovery.test.mjs` SHA **b9711595161ef8638edf597476963d97781b1f1df25428c77ec97b53440e143d**、原结果 `independent-results.json`（497.4296ms）保留。Root亲读完整脚本/结果，另复制成可选绝对built路径的 `data/root-v1-11-review/spec-r1-counterexamples-probe.mjs`，SHA **7549a54ec96a1f9f82e6a11e8d85d3edb567ea994000c9cc39164fd6c03e1fdf**；只改变import/自有输出及相同profile路径，no-index diff确认全部行为期待不变。Profile SHA **3984c0345d0e1ca32ba0338c1d6792aff784ad1893eaafac7706cccf89bc4737**。
+
+Root固定built复跑 **0/2 PASS，2 FAIL**（176.0753ms），UTC02:08:17.581–02:08:18.099；`frozen-3cbff88-spec-r1.log` SHA **c2d593951714828864213a5e679b382a5dfb5e3605d5da7fb09f76967947b4ec**。前后HEAD/clean/15模块摘要一致，两个同样错误均独立复现。
+
+**首轮汇总：Standards 2项、最重P3（非阻断）；Spec 2项、最重P2（阻断）。本候选拒收，不能合并/关闭#11或启动#12实施；已有275/275不替代反例修复。** 作者继续逐项TDD后提交新SHA，必须重新冻结并完整验收。
+
+[首轮拒收回写](https://github.com/yiwer/Observer/issues/11#issuecomment-5556273579)已单次发布，并由Root通过独立API读回完整正文、ID与URL；Issue保持OPEN。GitHub回写不等于代码push。
+
+## 第二轮修复协调（尚未验收）
+
+Root批准以同node详情已验证且reason为null/ineligible/risk-unknown的记录作已验证身份；transport/parse/identity-changed保留失败事实，但不覆盖已验证地址/名称历史。当前失败仍阻断复用旧good数值，不修改四个Root因果期待。
+
+Root依codebase-design的小Interface原则批准可信装配专用可选`SourceReadRequest.readErrorBody(status, headers)`：reader仅4xx/5xx且回调true才按原尺寸/UTF8/encoding/abort限额读错误体，缺省保持旧行为。GitHub仅对无法由头分类的403启用；已经由remaining=0/Retry-After判定的403/429无需读体，避免坏正文破坏已知限流退避。Adapter仅解析受限合法JSON message分类，不保存/发布原错误体，普通403不冒充限流。此为本票必要共享Interface窄改，不新增SourcePolicy/持久Schema、排名或全局调度。
