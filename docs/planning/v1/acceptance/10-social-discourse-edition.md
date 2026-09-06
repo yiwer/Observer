@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**首轮冻结候选未通过独立评审，作者正在修复三个评审阻断及Root补充的时间解析反例；尚未合并或完成本票验收**。GitHub #10 OPEN / assignee yiwer。
+状态：**前两轮候选被独立评审拒绝；第三轮修订 af2b9b4 已提交，正在重新冻结评审与验收，尚未合并**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -133,3 +133,30 @@ Root的可移植评审探针只参数化模块路径/诊断SHA，固定业务期
 作者第3片修复过程还遇到关联失败：移除已撤来源后，Runner仍返回该已知失效组候选会使原Edition assignment检查拒绝整栏。Root批准仅Request6/social入口先隔离**本期配置中已sticky失效组**的候选，再执行原assignment检查；不能让未知group、未知Evidence或错误Edition借此绕过校验。Root另指出反向时序A等待期间撤B：每组I/O前也须读取当前政策，不能只依赖整轮开始的旧数组；这是同一多组生命周期修复，不要求每个socket监听磁盘。作者报告正反向都已取得真实RED→GREEN，仍待新冻结独立验证。
 
 Root额外运行唯一时间解析反例：R1 Adapter的created_at/edited_at只验证string，JavaScript Date会把日期-only补成UTC午夜，导致缺失实际时刻的记录被采纳进时间窗。`adapter-creation-time-probe.mjs` SHA256 `3c1569a2cb6a03239b129b0a52fbea381c4fd21808f071f70a6eebf2449fb45b`在R1 detached built的明确时刻对照通过，`created_at=2026-09-04`的6条负例却全被采纳；2项中1失败、19.271ms，原日志 `adapter-creation-time-r1-red.log`。Root要求created及非null edited必须是有明确时区的合法ISO实际时刻，允许合法offset规范到UTC；日期-only、缺时区及无效日历隔离，不能发明缺失时间。此为Root补充检查，不重写原Standards/Spec报告计数。
+
+## 第二轮固定候选 R2：拒绝合并
+
+R2 `96a8c9d014608043fa87f3d95f23e2c7a47461b3` 相比R1仅5文件212+/19-，Root确认固定base三点差异有效非空、作者前后clean。作者全检 `v1-10/data/v1-10-final-check-8ERABK` 为216/216、exit0、125607.8974ms，smoke `v1-10-final-smoke-J8eeyN` 为3/3、exit0、1352.0426ms，无取消/跳过；smoke仍是子集。stdout SHA256分别为 `5edf6ef228e1a987ea040abd02b24238d1f8dc553e45ddfc77ad5b5d281b5425` 和 `6d8e38b649a63a2aa31ef6c95f23cb09239e0fb5319a4752a74a3df010771902`。Root亲读结果与摘要，但**没有运行R2独立完整check/smoke**，不能把作者执行重标为Root。
+
+Root另建clean detached `accept-v1-10-r2`、锁依赖并build：全部14份旧reader/公司/Profile/Event探针通过，9份历史Report/MD字节保持；旧#9 Spec原字节机械复制后导入本树dist，3/3、110.2628ms。本票四个既有Root探针各1/1；native-group、多组撤权、最终普通TTL、日期-only四个原反例各2/2通过，日志 `Observer/data/root-v1-10-review/frozen-96a8c9d-*.log`。这证明R1已知问题已修复，不等于本票验收完成。
+
+### Standards
+
+fresh `/root/review_v1_10_r2_standards`：**0项硬性违规，1项P3判断性 possible Repeated Switches**，保持前轮版本能力重复判断的非阻断结论。独立补查最后社交await撤销普通distribution.enabled，发布Claim/自由回执被隔离，native保留、最终时间一致、鉴权重启一致：`root-v1-10-r2-standards-review/final-rights-probe.mjs` 2/2、321.4675ms；脚本SHA256 `1b74feb54986c59c27c4a72502d56b4c2c692f9dd3687ce512f8baba17ff7906`。首次准备缺publishedAtUtc分发grant的错误fixture已保留说明，不算产品RED。此项当时是评审agent执行，Root已亲读脚本/结果，尚未独立复跑。
+
+### Spec
+
+fresh `/root/review_v1_10_r2_spec`：**2项，最高P1**。
+
+1. **P1：当前配置独有的社交来源绕过模型输入隔离。** `observer.ts:119` 从启动policies判source.edition，后续却从sourcePolicyReader核验当前许可；只由reader登记且缺social特殊用途、无采样组的源，经普通Bundle/world-affairs路径把未投影canary送EditionRunner。违反本票仅合法capture路径取得社会材料的用途边界。启动策略对照正确隔离。仅证明替身Runner输入泄露，未调用真实模型，不追加声称永久正文泄露。
+2. **P2：公共revalidate最后响应到期仍返回unchanged。** `mastodon-adapter.ts:164–175` 仅入口检查TTL；最后HTTP把clock推进到receipt.expiresAtUtc，仍返回null。违反技术规格公共Adapter自己守TTL的规则。Observer已有await后复查，因此这是公共Adapter契约缺陷，不是已证明的出版绕过。
+
+Root亲读并原样复跑 `root-v1-10-r2-spec-review/current-source-and-ttl.mjs`：4项中2对照通过/2负例失败，Root263.4572ms（原评审350.0923ms），SHA256 `b39eed0733b892b725c034d718a9ac197e60feaa34c627bc364ad178ba9a67d7`。Root发现原普通Evidence的24h TTL与1h政策不匹配，另做portable副本仅参数化built路径并将发现/取得23:10、到期次日00:10，业务断言不变；在R2 detached仍2/4失败、59.1618ms，排除该准备问题。副本 `root-v1-10-review/r2-portable/current-source-and-ttl.mjs` SHA256 `d4046a2a36e164d295910bb01cd02dec20dc869b36b8b4c3e731c6bb5396f717`，原脚本/失败均保留，后续新冻结/master固定此副本期待。
+
+Root拒绝R2并要求窄修：最后采样await后，同一份当前政策Authority完成来源分类与grant/digest检查，补等待期间才登记社交源的同根因动态变体；公共revalidate最后返回前保留取消/实际deadline优先再查TTL，失效receipt不可回拨复活。无需监听每个socket、不扩旧Request、不为P3重构历史版本。
+
+## 第三轮 R3：验收进行中
+
+作者将两项修复及回归/规格提交clean `af2b9b4599c40a324213ee6339fe393eaf3d345e`，R2至R3仅4文件93+/5-。作者局部单文件32/32、2218.6185ms，八相关文件152/152、4266.8765ms，固定portable反例4/4、58.7692ms；它们不是完整或Root冻结结果。Root验证完整base三点差异19文件1654+/48-、三个提交可达，创建独立detached `accept-v1-10-r3` 并安装锁依赖/build；已派fresh Standards/Spec两轴重新审查。当前不启动#11。
+
+Docker环境仍间歇出现原短标签NoSuchImage、固定ID却正常。R2在23:47、R3在2026-09-06T00:02:31Z以同一个daemon ID/29.6.1、固定CLI和显式host复现；只读限定名称对照中Codex请求5秒超时，Claude成功后短名恢复。两次相关性相同，**根因仍未证明，限定名超时不算PASS**。原日志分别 `docker-r2-differential.log`、`docker-r3-differential.log`；没有升级/重建/retag/重启/prune。R3完整suite须在原三镜像检查就绪后再启动，保留任何整次失败，不拼接结果。
