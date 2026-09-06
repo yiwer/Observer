@@ -388,7 +388,7 @@
       "number": 10,
       "title": "合规社交样本到话语观察 Edition",
       "file": "tickets/10-social-discourse-edition.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-07"
@@ -411,8 +411,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/10",
       "issueDatabaseId": 5355739420,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "853be14fa9275fb7d99be19524014963a6857ef4",
+        "integrationCommit": "0210cf1a0faa2fbc857d25948ca1860119abad1e",
+        "acceptanceFile": "acceptance/10-social-discourse-edition.md",
+        "qualification": "local-owned-social-protocol-and-annotated-verifier-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-11",

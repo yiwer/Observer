@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**R6 853be14 已通过作者与 Root 独立冻结完整验收、双轴评审和29份固定检查；接受进入本地集成，尚待实际 master 验收**。GitHub #10 OPEN / assignee yiwer。以下 R1–R5 拒绝记录是历史，不代表当前候选。
+状态：**R6 853be14 已接受，本地 master 0210cf1 集成验收通过**。GitHub 关闭回写见末节；以下 R1–R5 拒绝记录是历史，不代表当前候选。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -267,3 +267,20 @@ R6准备时再次遇到既有Docker短标签读取异常，按固定ID可读；�
 ### Record7 后续兼容基线
 
 在R6冻结验收通过后一次性捕获此前Root独立探针已生成的native与unavailable-gap两份报告，不重生成业务数据。目录 `O:/GenesisCode/Observer-worktrees/accept-v1-10-r6/data/root-v1-11-compat-853be14`；`baseline.json` SHA256 **00b47b35ab43e47edc58e92aa4932163741c4930a4228e981f0e68297ece87af**，producer固定853be14。新reader必须以待验收built绝对路径读取，检查整Report/MD、Record7/Version6、错误鉴权及production拒绝fixture。禁止重跑freeze或覆盖基线。旧R4准备脚本未执行且明确NOT-FROZEN，不得用作oracle。
+
+Reader `verify-reader.mjs` SHA256 **ba06065f080cdcc945c5381c31943f75c813e5773a4cc54018a4525302a0bfa6**；Root已在853be14及实际0210cf1 built分别执行，两份整Report与MD不变，鉴权/production拒绝均通过。
+
+## 实际 master 验收与关闭
+
+Root no-ff集成 **0210cf1a0faa2fbc857d25948ca1860119abad1e**。与853be14差异仅Root的EXECUTION、manifest及本验收记录三个规划文件，产品/测试/依赖/构建配置无差异；前后仅Owner无关`.idea/`未跟踪，未读取或纳入提交。
+
+首次完整check 221/222、exit1、126752.2514ms，唯一失败为Claude原镜像短标签 `No such image`；2026-09-06T00:47:28.491Z–00:49:40.535Z，`data/root-master-0210cf1-full`，combined SHA256 **7a40a9a5e7d87243a6783fd9413c0a21d077f56f5ea40eda98f3a32b123e6542**。未改变Docker环境；00:48:38及00:50:08原CLI三项精确镜像摘要均只读PASS，根因未知。保留失败整次后，同SHA新目录完整重跑：
+
+- check **222/222**，exit0，**122731.2091ms**，00:50:08.504Z–00:52:16.382Z；combined SHA256 **8acc220402ca44bbe8d6050411eb35b45d1849ac978658ef71c8b50003c161bb**。
+- smoke **3/3**，exit0，**1336.8938ms**，00:52:33.405Z–00:52:37.599Z；combined SHA256 **cd770c986d8e2de64224d9e67529837d5a6caca256e1369bdecd20abdc641cd9**。
+- 最终目录 `data/root-master-0210cf1-retry-full`；两次均前后同master SHA、无失败/取消/跳过。smoke是完整套件子集。
+- 同built固定**29份检查调用全exit0**，`data/root-v1-10-review/master-0210cf1-independent-result.json`前后SHA/status不变，旧Record1–6九份字节不变；新增Record7两份reader另通过。Root亲读master native-only、post-Verifier Gap与failed-unconfirmed中文MD，合格观察保留、被拒正文不再进入可读投影。
+
+本票开发范围接受；真实来源、Provider质量、PDF/邮件、部署及14天人工核查仍不由替身结果替代。代码未push，未重新发SMTP或读取秘密。
+
+[GitHub验收回写](https://github.com/yiwer/Observer/issues/10#issuecomment-5555910060)已实际发布并以独立API读回完整正文/ID/URL；随后关闭并读回 **#10 CLOSED，2026-09-06T00:53:44Z，assignee yiwer**。下游#11原生唯一依赖#6 CLOSED，其集成 **d24c0526b7fff852aeb8b0cb8ab0e61c76632ae4** 在本master可达；可以派发下一fresh implementation。
