@@ -1,6 +1,6 @@
 # V1-11 执行与待验收记录
 
-状态：**in-progress；首轮固定候选 3cbff88 已完成双轴审查、Root 全量与独立回放，但 Spec 两项 P2 均被 Root 复现，明确拒收；作者逐项修复中，未合入/关闭**。GitHub #11 OPEN / yiwer。
+状态：**in-progress；第二轮固定候选 14f6889 的原两项 Spec P2 已由原期待独立回放关闭，最终 Standards 0 hard / 2 非阻断 P3、Spec 0；Root 旧刊及13项回放通过，仍待本轮完整冻结/实际master验收，未合入/关闭**。GitHub #11 OPEN / yiwer。
 
 ## 固定任务与依赖
 
@@ -166,3 +166,55 @@ Root固定built复跑 **0/2 PASS，2 FAIL**（176.0753ms），UTC02:08:17.581–
 Root批准以同node详情已验证且reason为null/ineligible/risk-unknown的记录作已验证身份；transport/parse/identity-changed保留失败事实，但不覆盖已验证地址/名称历史。当前失败仍阻断复用旧good数值，不修改四个Root因果期待。
 
 Root依codebase-design的小Interface原则批准可信装配专用可选`SourceReadRequest.readErrorBody(status, headers)`：reader仅4xx/5xx且回调true才按原尺寸/UTF8/encoding/abort限额读错误体，缺省保持旧行为。GitHub仅对无法由头分类的403启用；已经由remaining=0/Retry-After判定的403/429无需读体，避免坏正文破坏已知限流退避。Adapter仅解析受限合法JSON message分类，不保存/发布原错误体，普通403不冒充限流。此为本票必要共享Interface窄改，不新增SourcePolicy/持久Schema、排名或全局调度。
+
+## 第二轮固定候选与复审
+
+作者修复提交 **14f6889a207db393a96bb0fff7f4ba7867e6714d**，相对首轮仅7文件111+/6−，base不变；Root验证clean/分支与非空三点diff。Root亲读完整修复及规格澄清，另建clean detached `O:/GenesisCode/Observer-worktrees/accept-v1-11-r2`，npm ci/build通过。原首轮SHA、日志及oracle均保留，未将作者WIP冒充固定构建。
+
+Root亲读作者局部日志：48身份恢复50/51 RED→49 **51/51**（2556.5045ms）；50真实SourceReader secondary403的1/2 RED（3次≠1）→51 **2/2**（356.4385ms），跨小时slot并重建Adapter/store验证resume前不请求。52未知资格但已确认身份控制**52/52**（2601.5868ms）；53普通403、有头超长/gzip/停滞体及旧SourceReader回归**9/9**（1557.7582ms）；54 typecheck通过。后两项是覆盖，不补造RED。
+
+### Standards
+
+原独立Standards reviewer与Spec复审并行，完整读7文件修复及新规格，并复用上一轮全部21文件阅读。**0硬性违反、2项P3判断项，最重P3**；原observer版本枚举及Evidence同步移除重复未改，无新增发现。不强制与阻断修复无关的重构。
+
+### Spec
+
+原Spec reviewer完整读修复、新规格及原验收要求；**未关闭问题0，最重无，原两项P2关闭，无新增范围扩张**。原脚本/期待不变**2/2**（475.0772ms），结果 `data/root-v1-11-spec-review/round2-independent-results.json`；另运行既有GitHub与SourceReader五文件**63/63**（3607.5874ms），`round2-existing-results.json`，Root均已亲读。两轴开始/结束均clean且固定14f6889。
+
+隔离说明：R2 Spec重新读取GitHub评论时，公开首轮验收评论附带了Standards两项摘要；reviewer主动报告这一暴露，未读另一轴报告文件或据此改变Spec判断。Root如实记录，不宣称本轮完全没有另一轴信息暴露；原独立Spec反例与Root固定built重放仍是两项关闭的直接证据。
+
+### Root 第二轮独立回放
+
+29份原固定调用全部exit0，结果 `data/root-v1-10-review/frozen-v1-11-14f6889-independent-result.json`，前后clean固定。Record7原reader读取新built的两份Report/MD全部原字节，baseline未重建。以下探针原SHA/期待未改，前后clean固定14f6889、15相关built模块摘要一致，Root已核对log实际hash与count：
+
+| `data/root-v1-11-review/` 日志前缀 | 结果 | log SHA256 |
+| --- | --- | --- |
+| `frozen-14f6889-redirect` | 3/3，16.5224ms | 4aeaa5881cf8c8da679205d9236fd5df16faa6ed5e5d0b1bbebee78e20f3df75 |
+| `frozen-14f6889-rename` | 2/2，207.7336ms | 888220f24c88e2384081f973fb371d73af6d950c73bf26a414f4cd26e2f4af0d |
+| `frozen-14f6889-cutoff` | 2/2，176.6751ms | 46e139b7805fbf091f6ffa5f4910fc39ef6ed8bbd81e4376bee1a0c4cdc7a7ea |
+| `frozen-14f6889-latest-causality` | 4/4，331.495ms | 680f57a3c7eb54d415db42741129e908ce0412e8ef4b1103027e2504493ca0e7 |
+| `frozen-14f6889-spec-r1` | 2/2，207.5197ms | 5fe458259cb1b284d400122244ffece80d784ee3c79586d90cba906e2006d9f1 |
+
+本轮13项合计仅指上述独立探针，不将29次调用、旧刊数或smoke混为完整测试数。实际MD已读GitHub成功与失败部分：+6及两点实际间隔/存量/来源/有限候选披露一致；截止前失败仅隔离/缺样，无旧增长或原错误体。
+
+作者本轮首个全量 `data/author-full-14f6889-1/` **281/282，1FAIL**（127292.7146ms），UTC02:14:12.1944355–02:16:24.7793289，唯一原Claude短标签`No such image`；log SHA **8b5b1df6ccb4abc94c8ddf96ff082e1674bf0d0f8710077165665abdff79114f**。Root亲读result/原log并校验hash；只读原镜像核对SHA未变，结果SHA **71e562aada1a53a6644482b996d4d1ff761b2c53e6662e4e5ed771090e7dcd9a**。作者正在同SHA新目录整次重跑，不能将局部通过拼成282/282。
+
+### 第二轮完整冻结通过
+
+- 作者 `data/author-full-14f6889-2/` 同SHA新目录完整check **282/282**（123007.8792ms），UTC02:17:22.1306272–02:19:30.5905616，log SHA **ef913beaec8229b88a21caa49194897dc638e80f100f9bb5fbd359b5129b1897**；smoke **3/3子集**（1361.8369ms），UTC02:19:53.0994875–02:19:57.3991961，log SHA **3c71d0bc9235dc65b42e2fde8fa6c35bb99ca3d770ed24dce159c055265b3109**。Root核对原log hash及元数据。smoke-result.json是作者随后从原终态工具输出登记的索引，不冒充执行时原生捕获文件；原smoke.log未改。
+- Root detached `data/root-full-14f6889-1/` 完整check **282/282**（122190.828ms），UTC02:20:20.649–02:22:28.220，log SHA **1bb1e9f18524cc764e27aeffcd490936c70472c114ecf979b8e3cdcb6c9ef13d**；smoke **3/3子集**（1320.0443ms），UTC02:22:48.133–02:22:52.481，log SHA **ed8f66adca0426e3d6b063fcb4f06d17552e50d3af9575268580316bd61c3a03**。前后clean固定14f6889、完整退出0，原生capture result已读回；没有剪裁或拼接失败。
+
+Root额外固定Record8四份已独立断言的永久Report/MD：成功+6、截止前访问失败、截止后失败仍+5、未知风险隔离。目录 `O:/GenesisCode/Observer-worktrees/accept-v1-11-r2/data/root-v1-12-compat-14f6889`，baseline SHA **ec54671f5c22b72661cf19037e8f4c95211a66ed68d7c78937e292f240d73638**，reader SHA **4a6c7ea75cd19d5d30aa7c4b2ed7e95aeac17676c612873c8af3e9a0069308d2**。原报告库没有重建，reader读新built四份全Report/MD原字节，错误Owner token被拒绝。首次freeze脚本将两个随机输出目录对应关系写反，被固定+5期待拒绝；按原日志修正路径映射后才首次写出baseline，未改变期待、不计产品RED。此后禁止再次freeze或改基准；生产者仍须完成实际master验收。
+
+### 验收项映射（开发资格）
+
+| #11 验收项 | 固定验证证据 |
+| --- | --- |
+| 有限官方候选、稳定身份、排除/未知隔离 | Search/详情协议、opaque/转移/改名回退、资格矩阵及Spec原身份反例 |
+| 小时相位与截止前可用选样 | 同slot/重启/迟到poll、当前/历史容忍、Root恰好截稿及晚1ms |
+| 正零负净差、冷启动/缺样分离及真实时刻 | 生产/重启报告矩阵及Root四项因果回放，MD人工阅读 |
+| 不完整、限流、权限/网络降级可见 | 分页/总候选限制、来源版本/撤权、401/403/429/304、正文限流及持久resume |
+| 秘密只读到期声明、受控I/O | 虚构PAT过期/脱敏、逐跳路由/DNS/权限验证，不克隆或下载执行 |
+| 观察到归档及后续复用 | 实际SQLite→produce7/鉴权/重启，全量282、13专项、旧刊1–7与新Record8四份 |
+
+**固定候选满足本票自动化开发验收，允许本地集成；实际master重验尚未完成，因此尚不关闭#11。** 真实PAT权限/有效期、来源许可、GitHub实际容量、模型/地区/正式生产/人工质量仍未验证；无生产资格替代或#12实施。
