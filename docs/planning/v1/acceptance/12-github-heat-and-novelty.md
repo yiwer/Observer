@@ -66,3 +66,11 @@ Root要求保留原提案，扩展另成版本；将描述性场景落实成完�
 - 通过：实际成功发布时间距本期cutoff为7天−1ms、7天、7天+1ms时，稳定node分别冷却、冷却、恢复极小正资格；实际失败的重复Request7不会将未发表候选加入下期历史。均通过公开鉴权读取和重启一致性。
 - 待完成：90天−1ms的旧source已撤销，历史确实标unavailable且不选，但正文尚未说明；90天及+1ms仍被窗口外旧source问题挡住。Root已将三个原期待交作者落实异常历史/Gap竖片，后续保持此脚本期待重跑；这是WIP诊断，不是最终Spec review评级。
 - 首次`wip-history-01`同为4/7，但后三项先遇Root夹具换source未增加configuration version，导致正确的`github-configuration-version-conflict`。这是harness错误而非产品RED；原脚本副本`publication-history-probe-v1-harness.mjs`、原结果/日志完整保留。当前脚本仅在换source时增加版本，没有改任何业务断言。首次log SHA **a04da6ca41907b02062b00fcdc7dded4cd5f8734c4314946fb4455a2aeb4ed10**；7天和失败发布四项也通过，但不以部分通过拼凑全体资格。
+
+### 原期待复跑及后续逐片进展
+
+作者落实窗口外历史淘汰和窗口内显式本栏Gap后，Root原脚本SHA **11844966cae83a8b988904435587e330af095104d8ee99858bbf2310474d0a4a**原7项断言不变，执行同命令仅label换`wip-history-03`：**7/7、598.169ms、exit0**，2026-09-06T02:57:45.294Z–02:57:46.297Z；原log SHA **c50032238f3cacb8be80e51350f5d1532c8217344b9433fee152d73d68f93e41**。Root核对实际日志hash及结果before/after完整身份一致；ranking SHA **2cb25bf03aa49696b5a31e441f267ac96161f951c9f088dc762262a4f6f09344**、observer SHA **a5bed0db503bc404c737e0ce0a7dfb68ecc2721802d762c47667e86e7cc3d8fd**。前述3项WIP行为已按原期待闭合；尚未冻结，不能替代固定SHA验收。
+
+Root也实读作者后续原RED/GREEN输出：05恢复半程4/5→5/5（573.3547ms）；06质量不足配额5/6→6/6（682.3533ms）；07cold/负增6/7→最终7/7（697.0922ms），中间`07-cold-green.log`保留未匹配转义下划线标题的实现失败，不覆盖；08恰90天旧源权限7/8→8/8（808.8981ms）；09近90天未知历史Gap8/9→9/9（848.8474ms）。后五个最终GREEN日志SHA依次为 **25eac4d8dca962b35d51c6957103fda636496becc2f6bf886f1a26a5c5a58614**、**f6c454c985ba99e6dda1c7f75cfefecbf8145dc532e8207e7a9cd9258bb9a5af**、**0025ab96f19175c2e608394c4e09988b3e9be50d89e4fe14c5c05e54b40bae5d**、**9ef2db2de11473b6263518d13aa12c552569eb528e535f9b881818c9b20d6ae4**、**d0fec7e7e8b4bedc214c2365b4507aac153041c1200e1508f5adde5d45f87ac6**。
+
+剩余仍包括兴趣权重/排除、精确边界完整覆盖、完整性异常局部退化/并发失败、规则审计与完整参数回放评审，然后才最终提交和双轴/全量/历史回归。Root再次实际读取GitHub #12为OPEN/yiwer，未关闭、未push、未启用生产；#13未启动。
