@@ -426,7 +426,7 @@
       "number": 11,
       "title": "GitHub 候选、稳定身份与真实快照增量",
       "file": "tickets/11-github-snapshot-observations.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-06"
