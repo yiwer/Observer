@@ -80,6 +80,24 @@ Root以现态运行`npm run typecheck`，exit1；唯一TS2345在`src/observer.ts
 
 此阶段只证明上述两个正向诊断通过，并明确一个未修复缺口；未进行本票完整check/smoke、最终双轴、固定SHA或实际master验收，GHSA/动量仍待继续实现。
 
+### 归档历史缺口已在WIP原反例闭合
+
+作者独立新增第二条公开测试，`06-history-red`实际1/2、532.7645ms、UTC19:33:31.732Z→19:33:32.339Z、exit1，`Missing expected exception`，log SHA **eeb94b36ecec75500a389c722776b15d18b4e67b2b7a2f24449da3e0940100ed**。修复新Record10公开read：核本刊development来源权限，再从实际旧刊重导完整eventHistory并比较entries与unavailable，既覆盖字段伪造，也覆盖整条遗漏。
+
+`07-history-green`实际2/2、543.4837ms、UTC19:34:17.730Z→19:34:18.343Z、exit0，log SHA **dd7d692b5e7d5c33b153ab009a609cd5b009b48e12172be04bd4e628ad5e6e37**；`08-history-typecheck`19:34:19.081Z→19:34:21.052Z exit0、空log。Root亲读06–08log、解析metadata、重算hash并检查before/after一致，不把新2/2覆盖原失败。
+
+作者再次短冻结后，Root原3脚本及输入不变重跑，全部1/1；实际模块/脚本/status前后不变：
+
+| Root目录 | 实际时长 | UTC（2026-09-06） | 原始log SHA |
+| --- | --- | --- | --- |
+| `wip-history-fix-release-01` | 189.4683ms | 19:35:04.657Z→19:35:05.062Z | `4de3cf9c765b6818272671078bb66bdc1994b3b37c47cb273c731d1db1a2f4bd` |
+| `wip-history-fix-long-01` | 227.9043ms | 19:35:05.745Z→19:35:06.183Z | `227213daa2095cf40478f567c883cef3c4d68112e65f530b780281f652f7112f` |
+| `wip-history-fix-integrity-01` | 188.5587ms | 19:35:06.864Z→19:35:07.253Z | `cda26570d9d2b195a458f8439ea3add34af3b1bd8aeafec58c42a523bf5750f1` |
+
+Root只读核对`observer.ts`确实重导真实历史，已解除冻结让作者继续中途development配置/版本权威及Release跨修订上下文；此修复仅WIP闭合，不替代本票完整验收。
+
+为并行推进未冻结动量设计，Root派`/root/v1_13_momentum_design`只在`Observer/data/v1-13-momentum-design/`写Owned固定输入/预声明偏好/独立参数比较和episode证明建议，不写作者src/tests/正式规格，不自动批准阈值。主作者已协调不重复另写模拟，仍为唯一产品writer，获批后必须用实际公开TDD落实；模拟结果不是产品测试或真实GitHub质量证据。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
