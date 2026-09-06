@@ -42,4 +42,10 @@ export const GitHubSnapshotSchema = z.strictObject({ schemaVersion: z.literal(1)
   cutoffUtc: utc, configuration: GitHubConfigurationSchema.nullable(), configurationSha256: sha256.nullable(),
   runs: z.array(GitHubRunSchema).max(101), identities: z.array(GitHubIdentitySummarySchema).max(50), reasons: z.array(GitHubReasonSchema), watchItems: z.array(GitHubWatchItemSchema).max(7), exclusions: z.array(GitHubWatchItemSchema).max(50) });
 export type GitHubSnapshot = z.infer<typeof GitHubSnapshotSchema>;
-export interface GitHubObservationReader { snapshot(cutoffUtc: string): GitHubSnapshot; authorize(snapshot: GitHubSnapshot): GitHubReason | null; }
+export const GitHubRankingSnapshotSchema = GitHubSnapshotSchema.extend({ schemaVersion: z.literal(2), watchItems: z.array(GitHubWatchItemSchema).max(50) });
+export type GitHubRankingSnapshot = z.infer<typeof GitHubRankingSnapshotSchema>;
+export interface GitHubObservationReader {
+  snapshot(cutoffUtc: string): GitHubSnapshot;
+  rankingSnapshot?(cutoffUtc: string): GitHubRankingSnapshot;
+  authorize(snapshot: GitHubSnapshot | GitHubRankingSnapshot): GitHubReason | null;
+}

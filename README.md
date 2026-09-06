@@ -60,3 +60,7 @@ V1-11 提供有限官方 Search/仓库 GET、小时 xx:25 观察、独立 SQLite
 ## 隔离 Claude 候选研究
 
 V1-05 的 `createClaudeRunner` 使用同一 `AgentRunner` 和 Gate：固定 Claude Code 2.1.252、模型标识 `claude-sonnet-4-6`，通过非交互 CLI 的 `StructuredOutput` 数据工具返回单栏候选。独立校验进程退出、最终结构与终态；复用整容器回收，并在宿主模型边界拒绝执行工具、远程 MCP 和过期 Evidence。真实 CLI 与无凭证 Messages 替身已可贯通 SQLite 报告；实际账户、地域、付费模型、质量和生产发布仍未验证或启用。详见 [实现及复跑说明](docs/implementation/v1-05.md)。
+
+## Observer GitHub Heat
+
+V1-12 的 Request 8 从完整有界观察候选中按语言/年龄 cohort、实测动量或冷启动代理、显式 topic 与真实出版历史选择项目。保存固定公式、全部排名/落选理由和可独立重算输入，七天冷却、随后三十天恢复及最终实际位置的新颖性配额均为确定规则；热度不代表代码质量或安全。旧 Request 7 Watch Item 与旧刊正文不重排。详见 [技术规格与边界](docs/implementation/v1-12.md) 和 [参数比较](docs/implementation/v1-12-parameters/README.md)。真实 GitHub 与生产发布仍未启用。

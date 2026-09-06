@@ -6,7 +6,7 @@ import type { InterestSnapshot } from "./interest-contracts.ts";
 import { selectInterests, interestCoverage } from "./interest-selection.ts";
 
 type GatedRecord = Parameters<typeof arrangeEditions>[0];
-type EventRecord = Extract<ReportRecord, { schemaVersion: 4 | 5 | 6 | 7 | 8 }>;
+type EventRecord = Extract<ReportRecord, { schemaVersion: 4 | 5 | 6 | 7 | 8 | 9 }>;
 export interface LegacyHistory { versionIds: string[]; fingerprints: Set<string>; }
 export function legacyFingerprint(claim: { text: string; kind?: string; publisherSourceId?: string; evidenceIds: string[] }, evidence: ReadonlyArray<{ id: string; sourceId: string; url?: string | undefined; contentSha256?: string | undefined; publishedAtUtc?: string | null | undefined; eventTimeUtc?: string | null | undefined }>): string | null {
   if (claim.kind !== "fact" && claim.kind !== "statement" || claim.kind === "statement" && !claim.publisherSourceId) return null;

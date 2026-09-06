@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
 import { SourcePolicySchema, policyDigest, type SourcePolicy } from "./collection.ts";
 import { GitHubConfigurationSchema, GitHubRepositorySchema, GitHubRunSchema, GitHubSnapshotSchema, GitHubWatchItemSchema, githubRules,
-  type GitHubConfiguration, type GitHubObservation, type GitHubReason, type GitHubRun, type GitHubSnapshot } from "./github-contracts.ts";
+  GitHubRankingSnapshotSchema, type GitHubRankingSnapshot, type GitHubConfiguration, type GitHubObservation, type GitHubReason, type GitHubRun, type GitHubSnapshot } from "./github-contracts.ts";
 import { createGitHubAdapter, githubDigest, githubFailure, type GitHubAdapter } from "./github-adapter.ts";
 
 export function githubPermission(source: SourcePolicy | undefined, configuration: GitHubConfiguration, atUtc: string, publication = false): boolean {
@@ -69,8 +69,9 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       return null;
     } finally { db.exec("COMMIT"); }
   }
-  function authorize(snapshot: GitHubSnapshot): GitHubReason | null {
+  function authorize(snapshot: GitHubSnapshot | GitHubRankingSnapshot): GitHubReason | null {
     try {
+      (snapshot.schemaVersion === 1 ? GitHubSnapshotSchema : GitHubRankingSnapshotSchema).parse(snapshot);
       const config = configuration();
       if (githubDigest(config) !== snapshot.configurationSha256) return "github-configuration-changed";
       const source = policies().find((source) => source.sourceId === config.sourceId);
@@ -78,6 +79,38 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       if (!githubPermission(source, config, clock(), true) || snapshot.runs.some((run) => !run.policy || run.policy.policySha256 !== policyDigest(source!))) return "github-permission-changed";
       return null;
     } catch { return "github-permission-changed"; }
+  }
+  function takeSnapshot(cutoffUtc: string, ranking: boolean): GitHubSnapshot | GitHubRankingSnapshot {
+    utc.parse(cutoffUtc);
+    const config = configuration();
+    const source = policies().find((source) => source.sourceId === config.sourceId);
+    const all = history().filter((run) => run.availableAtUtc <= cutoffUtc && run.configuration.sourceId === config.sourceId);
+    const compatible = all.filter((run) => run.configurationSha256 === githubDigest(config) && run.policy?.policySha256 === (source ? policyDigest(source) : null));
+    const currentNodes = new Set(compatible.at(-1)?.observations.map((entry) => entry.nodeId) ?? []);
+    const identities: GitHubSnapshot["identities"] = [...currentNodes].sort().map((nodeId) => {
+      const entries = all.flatMap((run) => run.observations).filter((entry) => entry.nodeId === nodeId);
+      const verified = entries.filter(hasVerifiedIdentity);
+      const names = verified.filter((entry, index) => index === 0 || verified[index - 1]!.fullName !== entry.fullName).map(({ fullName, observedAtUtc }) => ({ fullName, observedAtUtc }));
+      return { nodeId, firstSeenAtUtc: entries[0]!.observedAtUtc, historySha256: githubDigest(names), names: names.slice(-8), truncated: names.length > 8 };
+    });
+    const snapshot: GitHubSnapshot | GitHubRankingSnapshot = { schemaVersion: ranking ? 2 : 1, rulesVersion: githubRules.version, cutoffUtc, configuration: config, configurationSha256: githubDigest(config),
+      runs: compatible.map((run) => ({ ...run, observations: run.observations.filter((entry) => currentNodes.has(entry.nodeId)) })), identities, reasons: [], watchItems: [], exclusions: [] };
+    // Authorize the bounded publication projection after the full history has supplied the pair.
+    const failure = authorize({ ...snapshot, runs: [], identities: [] });
+    if (failure) { snapshot.runs = []; snapshot.identities = []; snapshot.reasons = [failure]; }
+    else {
+      const items = selectGitHubItems(snapshot.runs, cutoffUtc, identities);
+      snapshot.watchItems = items.filter((item) => item.status === "measured" || item.status === "cold-start").slice(0, ranking ? githubRules.maxCandidates : githubRules.maxWatchItems);
+      snapshot.exclusions = items.filter((item) => item.status !== "measured" && item.status !== "cold-start");
+      snapshot.reasons = [...new Set<GitHubReason>([...(snapshot.runs.at(-1)?.reasons ?? ["github-no-observations"]), ...snapshot.exclusions.flatMap((item) => item.reason ? [item.reason] : [])])];
+      const displayed = [...snapshot.watchItems, ...snapshot.exclusions];
+      const retained = new Set(displayed.flatMap((item) => [item.current?.id, item.historical?.id,
+        snapshot.runs.flatMap((run) => run.observations).filter((entry) => entry.nodeId === item.nodeId).at(-1)?.id].filter((id) => id !== undefined)));
+      const latestRunId = snapshot.runs.at(-1)?.id;
+      snapshot.runs = snapshot.runs.map((run) => ({ ...run, observations: run.observations.filter((entry) => retained.has(entry.id)) })).filter((run) => run.id === latestRunId || run.observations.length > 0);
+      snapshot.identities = identities.filter((identity) => displayed.some((item) => item.nodeId === identity.nodeId));
+    }
+    return (ranking ? GitHubRankingSnapshotSchema : GitHubSnapshotSchema).parse(snapshot);
   }
   return {
     async observeDue(input: { signal?: AbortSignal } = {}): Promise<GitHubRun> {
@@ -164,37 +197,8 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       })();
       try { return await active; } finally { active = undefined; }
     },
-    snapshot(cutoffUtc: string): GitHubSnapshot {
-      utc.parse(cutoffUtc);
-      const config = configuration();
-      const source = policies().find((source) => source.sourceId === config.sourceId);
-      const all = history().filter((run) => run.availableAtUtc <= cutoffUtc && run.configuration.sourceId === config.sourceId);
-      const compatible = all.filter((run) => run.configurationSha256 === githubDigest(config) && run.policy?.policySha256 === (source ? policyDigest(source) : null));
-      const currentNodes = new Set(compatible.at(-1)?.observations.map((entry) => entry.nodeId) ?? []);
-      const identities: GitHubSnapshot["identities"] = [...currentNodes].sort().map((nodeId) => {
-        const entries = all.flatMap((run) => run.observations).filter((entry) => entry.nodeId === nodeId);
-        const verified = entries.filter(hasVerifiedIdentity);
-        const names = verified.filter((entry, index) => index === 0 || verified[index - 1]!.fullName !== entry.fullName).map(({ fullName, observedAtUtc }) => ({ fullName, observedAtUtc }));
-        return { nodeId, firstSeenAtUtc: entries[0]!.observedAtUtc, historySha256: githubDigest(names), names: names.slice(-8), truncated: names.length > 8 };
-      });
-      const snapshot: GitHubSnapshot = { schemaVersion: 1, rulesVersion: githubRules.version, cutoffUtc, configuration: config, configurationSha256: githubDigest(config),
-        runs: compatible.map((run) => ({ ...run, observations: run.observations.filter((entry) => currentNodes.has(entry.nodeId)) })), identities, reasons: [], watchItems: [], exclusions: [] };
-      const failure = authorize(snapshot);
-      if (failure) { snapshot.runs = []; snapshot.identities = []; snapshot.reasons = [failure]; }
-      else {
-        const items = selectGitHubItems(snapshot.runs, cutoffUtc, identities);
-        snapshot.watchItems = items.filter((item) => item.status === "measured" || item.status === "cold-start").slice(0, githubRules.maxWatchItems);
-        snapshot.exclusions = items.filter((item) => item.status !== "measured" && item.status !== "cold-start");
-        snapshot.reasons = [...new Set<GitHubReason>([...(snapshot.runs.at(-1)?.reasons ?? ["github-no-observations"]), ...snapshot.exclusions.flatMap((item) => item.reason ? [item.reason] : [])])];
-        const displayed = [...snapshot.watchItems, ...snapshot.exclusions];
-        const retained = new Set(displayed.flatMap((item) => [item.current?.id, item.historical?.id,
-          snapshot.runs.flatMap((run) => run.observations).filter((entry) => entry.nodeId === item.nodeId).at(-1)?.id].filter((id) => id !== undefined)));
-        const latestRunId = snapshot.runs.at(-1)?.id;
-        snapshot.runs = snapshot.runs.map((run) => ({ ...run, observations: run.observations.filter((entry) => retained.has(entry.id)) })).filter((run) => run.id === latestRunId || run.observations.length > 0);
-        snapshot.identities = identities.filter((identity) => displayed.some((item) => item.nodeId === identity.nodeId));
-      }
-      return GitHubSnapshotSchema.parse(snapshot);
-    },
+    snapshot(cutoffUtc: string): GitHubSnapshot { return takeSnapshot(cutoffUtc, false) as GitHubSnapshot; },
+    rankingSnapshot(cutoffUtc: string): GitHubRankingSnapshot { return takeSnapshot(cutoffUtc, true) as GitHubRankingSnapshot; },
     authorize,
     close() { db.close(); },
   };
