@@ -805,3 +805,78 @@ test("Final group eligibility and interest failures remove the whole social rece
     assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
   }
 });
+
+test("Final coverage follows retained discourse annotations without rewriting actual Verifier dispatch counts", async (t) => {
+  for (const excluded of [false, true]) {
+    const app = await sampleFixture(t);
+    if (excluded) {
+      const profileFile = join(app.directory, "language-exclusion.json");
+      await writeFile(profileFile, JSON.stringify({ schemaVersion: 1, version: 2, topics: [], entities: [], regions: [], exclusions: { topics: ["observation-methods"], entities: [], regions: [] }, coverageLanguages: ["zh"] }));
+      app.observer.importInterestProfile(profileFile);
+    }
+    const original = app.options.verifier.verify;
+    app.options.verifier.verify = async (input) => {
+      const result = await original(input);
+      for (const assessment of result.assessments) if (assessment.discourse) Object.assign(assessment, { selection: {
+        topics: ["observation-methods"], entities: [], regions: [], evidenceLanguages: [{ evidenceId: "discourse-linked", language: "zh" }], impact: "ordinary", impactClaimIds: [],
+      } });
+      return result;
+    };
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+    assert.equal(report.record.schemaVersion, 7);
+    if (report.record.schemaVersion !== 7) return;
+    assert.deepEqual(report.record.stories.map((story) => story.id), ["news"]);
+    assert.equal(report.record.discourse.observations.length, excluded ? 0 : 1);
+    assert.equal(report.record.coverage.inputEvidenceCount, 2);
+    assert.deepEqual(report.record.publicationGate.input.dispatchedEvidenceIds, ["evidence-1", "discourse-linked"]);
+    assert.deepEqual(report.record.coverage.languages.find((entry) => entry.key === "zh")!.evidenceIds, excluded ? [] : ["discourse-linked"]);
+    assert.deepEqual(report.record.coverage.unknownLanguageEvidenceIds, excluded ? ["discourse-linked", "evidence-1"] : ["evidence-1"]);
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+});
+
+test("Original candidate and Claim membership governs whole-group eligibility without restoring unsanitized payloads", async (t) => {
+  for (const variant of ["all-safe", "mixed-claims", "mixed-candidates"] as const) {
+    const app = await sampleFixture(t);
+    const configuration = { ...app.options.discourse.configuration, groups: [app.options.discourse.configuration.groups[0]!, { ...app.options.discourse.configuration.groups[0]!, id: "valid" }] };
+    app.options.discourse.configuration = configuration;
+    app.task.discourseSamples = [];
+    for (const group of configuration.groups) app.task.discourseSamples.push(await app.adapter.capture({ sourcePolicy: app.source, configuration, groupId: group.id,
+      businessDate: app.task.businessDate, windowStartUtc: app.task.evidenceBundle.windowStartUtc, cutoffUtc: app.task.evidenceBundle.cutoffUtc }));
+    const originalStory = app.socialStories[0]!;
+    originalStory.title = "UNTRUSTED-ORIGINAL-CANDIDATE-TITLE";
+    const second = { ...structuredClone(originalStory.claims[0]!), id: "second", text: variant === "all-safe" ? "样本也讨论进一步公开观测方法。" : "FAILED-MEMBER-RAW-CANARY" };
+    if (variant === "mixed-candidates") app.socialStories.push({ ...structuredClone(originalStory), id: "discarded-candidate", claims: [second] });
+    else originalStory.claims.push(second);
+    app.socialStories.push({ ...structuredClone(originalStory), id: "z-valid", eventClusterId: "valid", claims: [{ ...structuredClone(originalStory.claims[0]!), evidenceIds: ["discourse-valid"] }] });
+    const originalVerify = app.options.verifier.verify;
+    app.options.verifier.verify = async (input) => {
+      const result = await originalVerify(input);
+      for (const assessment of result.assessments) if (assessment.discourse) {
+        if (variant !== "all-safe" && assessment.claimId === "second") {
+          Object.assign(assessment.discourse, { scope: "population" });
+          assessment.evidence[0]!.upstreamOriginId = "FAILED-MEMBER-RAW-CANARY";
+        } else if (assessment.storyId === "z-valid") assessment.evidence[0]!.upstreamOriginId = "QUALIFIED-GROUP-AUDIT";
+      }
+      return result;
+    };
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+    assert.equal(report.record.schemaVersion, 7);
+    if (report.record.schemaVersion !== 7) return;
+    assert.deepEqual(report.record.stories.map((story) => story.id), ["news"]);
+    assert.equal(report.record.discourse.observations.length, variant === "all-safe" ? 2 : 1, variant);
+    assert.equal(report.record.discourse.groups.find((group) => group.id === "linked")!.reason, variant === "all-safe" ? null : "social-analysis-unavailable");
+    assert.equal(report.record.discourse.observations.find((entry) => entry.groupId === "valid")!.priority, true);
+    assert.ok(!JSON.stringify(report).includes("UNTRUSTED-ORIGINAL-CANDIDATE-TITLE"));
+    assert.ok(!JSON.stringify(report).includes("FAILED-MEMBER-RAW-CANARY"));
+    assert.ok(JSON.stringify(report).includes("QUALIFIED-GROUP-AUDIT"));
+    const gate = report.record.publicationGate;
+    const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
+    assert.equal(assessments.some((assessment) => ["social-sample", "discarded-candidate"].includes(assessment.storyId)), variant === "all-safe");
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+});

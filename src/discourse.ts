@@ -4,7 +4,7 @@ import { DiscourseReasonSchema, DiscourseSampleSchema, discourseRules, type Disc
 import { discoursePermission, type DiscourseAdapter } from "./mastodon-adapter.ts";
 import { policyDigest, type SourcePolicy } from "./collection.ts";
 import { inputDigest } from "./publication-gate.ts";
-import { selectInterests } from "./interest-selection.ts";
+import { interestCoverage, selectInterests } from "./interest-selection.ts";
 
 type Discourse = Extract<ReportRecord, { schemaVersion: 7 }>["discourse"];
 export interface DiscourseOptions { configuration: unknown; adapter?: DiscourseAdapter; }
@@ -108,16 +108,22 @@ export async function prepareDiscourse(input: { request: Extract<SixEditionReque
       return group && label?.scope === "sample-only" && label.individualProfiling === false && assessment.conclusion === "supported" && assessment.wording === "original" && assessment.domain?.assertion === "interpretation" &&
         label.content === (group.kind === "story-linked" ? "arguments-and-disagreements" : "emerging-topic") ? null : "social-unsafe-inference";
     },
-    project(record: Extract<ReportRecord, { schemaVersion: 6 }>, candidates: CandidateV2[]): Extract<ReportRecord, { schemaVersion: 7 }> {
+    project(record: Extract<ReportRecord, { schemaVersion: 6 }>, candidates: CandidateV2[], membership: ReadonlyArray<{ id: string; groupId: string; claimIds: readonly string[] }>): Extract<ReportRecord, { schemaVersion: 7 }> {
       const observations: Discourse["observations"] = [];
       const eligibleGroups = configuration.groups.flatMap((group) => {
         if (failed.has(group.id)) return [];
-        const stories = candidates.filter((story) => story.edition === "social-discourse" && story.eventClusterId === group.id);
+        const members = membership.filter((member) => member.groupId === group.id);
         const clusters = record.eventClusters.filter((cluster) => cluster.primary.edition !== "social-discourse" && group.linkedEvidenceIds.length > 0 && group.linkedEvidenceIds.every((id) => cluster.evidenceIds.includes(id)));
         if (group.kind === "story-linked" && clusters.length !== 1) { failed.set(group.id, "social-main-story-unavailable"); return []; }
-        if (stories.length !== 1) { failed.set(group.id, "social-analysis-unavailable"); return []; }
-        const story = stories[0]!;
-        if (!story.claims.length || story.claims.some((claim) => !record.publicationGate.decisions.some((decision) => decision.storyId === story.id && decision.claimId === claim.id && decision.outcome === "published"))) { failed.set(group.id, "social-analysis-unavailable"); return []; }
+        if (members.length !== 1) { failed.set(group.id, "social-analysis-unavailable"); return []; }
+        const member = members[0]!;
+        if (!member.claimIds.length || new Set(member.claimIds).size !== member.claimIds.length || member.claimIds.some((id) => {
+          const decisions = record.publicationGate.decisions.filter((decision) => decision.storyId === member.id && decision.claimId === id);
+          return decisions.length !== 1 || decisions[0]!.outcome !== "published";
+        })) { failed.set(group.id, "social-analysis-unavailable"); return []; }
+        const payloads = candidates.filter((story) => story.edition === "social-discourse" && story.eventClusterId === group.id && story.id === member.id);
+        const story = payloads[0];
+        if (payloads.length !== 1 || !story || story.claims.length !== member.claimIds.length || story.claims.some((claim) => !member.claimIds.includes(claim.id))) { failed.set(group.id, "social-analysis-unavailable"); return []; }
         return [{ group, story, cluster: group.kind === "story-linked" ? clusters[0]! : null }];
       });
       const selected = selectInterests(record.publicationGate, eligibleGroups.filter(({ group }) => group.kind === "platform-native").map(({ story }) => story), record.interestProfile, []);
@@ -136,13 +142,14 @@ export async function prepareDiscourse(input: { request: Extract<SixEditionReque
         !failedClaims.has(JSON.stringify([assessment.storyId, assessment.claimId])) && !assessment.evidence.some((evidence) => failedEvidenceIds.has(evidence.evidenceId))) } : null;
       const gate = record.publicationGate;
       const publicationGate = gate.schemaVersion === 1 ? { ...gate, verification: finalReceipt(gate.verification) } : { ...gate, batches: gate.batches.map((batch) => ({ ...batch, verification: finalReceipt(batch.verification) })) };
-      return { ...record, publicationGate, schemaVersion: 7, editorialContract: "observer-canonical-v5", interestSelections: [...record.interestSelections, ...selected.interestSelections], discourse: { schemaVersion: 1, rulesVersion: "observer-discourse-v1", frozenAtUtc: input.frozenAtUtc, configurationSha256,
+      const projected: Extract<ReportRecord, { schemaVersion: 7 }> = { ...record, publicationGate, schemaVersion: 7, editorialContract: "observer-canonical-v5", interestSelections: [...record.interestSelections, ...selected.interestSelections], discourse: { schemaVersion: 1, rulesVersion: "observer-discourse-v1", frozenAtUtc: input.frozenAtUtc, configurationSha256,
         groups: displayGroups.map((group) => ({ ...group, reason: failed.get(group.id) ?? null })), observations },
         coverageGaps: [...record.coverageGaps.filter((gap) => gap.edition !== "social-discourse" || gap.reason !== "below-interest-selection-target"),
           ...(observations.length < 7 ? [{ edition: "social-discourse" as const, reason: "social-below-target" }] : []),
           ...groups.filter((group) => failed.has(group.id)).map((group) => ({ edition: "social-discourse" as const, reason: failed.get(group.id)! })),
           ...(groups.length ? [] : [{ edition: "social-discourse" as const, reason: "social-no-eligible-source" }])],
       };
+      return { ...projected, coverage: interestCoverage(projected, projected.interestProfile) };
     },
   };
 }

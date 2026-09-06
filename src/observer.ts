@@ -261,6 +261,7 @@ export function createObserver(options: ObserverOptions) {
       };
       let record: ReportRecord;
       if (stories.every((story) => story.schemaVersion === 2)) {
+        const discourseMembers = discourse ? stories.filter((story) => story.edition === "social-discourse").map((story) => ({ id: story.id, groupId: story.eventClusterId, claimIds: story.claims.map((claim) => claim.id) })) : [];
         const quotationTotals = new Map<string, number>();
         for (const claim of stories.flatMap((story) => story.claims)) {
           if (claim.kind !== "quotation") continue;
@@ -369,7 +370,7 @@ export function createObserver(options: ObserverOptions) {
             });
             record = arrangeEvents({ ...record, stories: discourse ? record.stories.filter((story) => story.edition !== "social-discourse") : record.stories } as Parameters<typeof arrangeEvents>[0], research, history, legacyHistory, withheldHistory, interestProfile);
             if (request.schemaVersion >= 5 && record.schemaVersion === 5) record = { ...record, schemaVersion: 6, editorialContract: "observer-canonical-v4", domainRules: "observer-domain-evidence-v1" };
-            if (request.schemaVersion === 6 && record.schemaVersion === 6) record = discourse!.project(record, gated.stories);
+            if (request.schemaVersion === 6 && record.schemaVersion === 6) record = discourse!.project(record, gated.stories, discourseMembers);
           } else record = arrangeEditions(record as Parameters<typeof arrangeEditions>[0], research);
         }
       } else {
