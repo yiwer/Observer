@@ -23,10 +23,12 @@ export function createSourceReader(io: SourceNetworkIO = network) {
     const origin = new URL(request.source.feedUrl).origin;
     for (let hop = 0; ; hop++) {
       request.signal.throwIfAborted();
+      if (request.validateUrl && !request.validateUrl(new URL(url))) throw new SourceReadError("target-forbidden");
       if (url.protocol !== "https:" || (url.port && url.port !== "443") || url.username || url.password || isIP(url.hostname.replace(/^\[|\]$/g, "")) || !url.hostname.includes(".")) throw new SourceReadError("target-forbidden");
       if (url.origin !== origin) throw new SourceReadError("origin-forbidden");
       const addresses = await io.resolve(url.hostname);
       request.signal.throwIfAborted();
+      if (request.validateUrl && !request.validateUrl(new URL(url))) throw new SourceReadError("target-forbidden");
       if (!addresses.length || addresses.some((address) => !ipaddr.isValid(address) || ipaddr.process(address).range() !== "unicast")) throw new SourceReadError("target-forbidden");
       const address = addresses[0]!;
       const family = isIP(address);
@@ -40,7 +42,7 @@ export function createSourceReader(io: SourceNetworkIO = network) {
           headers: { "user-agent": "Observer/0.1 source-collection", accept: "application/atom+xml, application/rss+xml, application/xml, text/xml, text/html, text/plain", "accept-encoding": "identity", ...request.headers },
         }, (incoming) => {
           const headers: Record<string, string> = {};
-          for (const name of ["location", "retry-after", "etag", "last-modified", "content-type", "link", "x-ratelimit-reset"]) {
+          for (const name of ["location", "retry-after", "etag", "last-modified", "content-type", "link", "x-ratelimit-reset", "x-ratelimit-remaining", "x-ratelimit-limit", "x-ratelimit-resource"]) {
             const value = incoming.headers[name]; if (typeof value === "string") headers[name] = value;
           }
           const status = incoming.statusCode ?? 0;

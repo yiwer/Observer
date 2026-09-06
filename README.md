@@ -53,6 +53,10 @@ V1-04 的 `createCodexRunner` 实现共有 `AgentRunner`：单栏 Bundle 经固�
 
 运行参数、安全层、事件样本许可、已实现的授权接入代码与尚未验证的部署资格见 [V1-04 实现说明](docs/implementation/v1-04.md)。
 
+## GitHub 元数据观察
+
+V1-11 提供有限官方 Search/仓库 GET、小时 xx:25 观察、独立 SQLite、稳定 node 身份和真实双快照净变化。Request 7 的确定性 Watch Item 与其他五栏普通新闻共存，不接纳模型自报计数。来源/PAT 仍须 Owner 单独批准，当前没有启用真实采集或生产调度。装配接口、来源授权、保留边界和复跑方式见 [V1-11 实现说明](docs/implementation/v1-11.md)。
+
 ## 隔离 Claude 候选研究
 
 V1-05 的 `createClaudeRunner` 使用同一 `AgentRunner` 和 Gate：固定 Claude Code 2.1.252、模型标识 `claude-sonnet-4-6`，通过非交互 CLI 的 `StructuredOutput` 数据工具返回单栏候选。独立校验进程退出、最终结构与终态；复用整容器回收，并在宿主模型边界拒绝执行工具、远程 MCP 和过期 Evidence。真实 CLI 与无凭证 Messages 替身已可贯通 SQLite 报告；实际账户、地域、付费模型、质量和生产发布仍未验证或启用。详见 [实现及复跑说明](docs/implementation/v1-05.md)。
