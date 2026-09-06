@@ -15,7 +15,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- 当前实施票：#13 GitHub重大进展一次性重新入榜，base **ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3**，专属`Observer-worktrees/v1-13` / `ticket/v1-13`，fresh作者与官方资料research已启动。唯一原生依赖#12已实读closed且集成可达；先确认Release/GHSA/极端动量证据、事件与修订身份/最终成功出版消费、不可削弱的新颖性配额及共享契约，未批准产品实现。见[#13记录](acceptance/13-github-repromotion-events.md)。
+- 当前实施票：#13 GitHub重大进展一次性重新入榜，base **ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3**，专属`Observer-worktrees/v1-13` / `ticket/v1-13`。唯一原生依赖#12已实读closed且集成可达；官方research已完成，Root已全文审阅实施提案并批准必要共享契约与第一条Release纵向TDD。GHSA完整修订与动量精确参数/episode证明仍待冻结，不减少新颖性配额。见[#13记录](acceptance/13-github-repromotion-events.md)。
 - 已完成票：#1–#12，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。
 - 最新验收：#10，**合规社交样本到话语观察Edition**。实施 **853be14fa9275fb7d99be19524014963a6857ef4**，本地集成 **0210cf1a0faa2fbc857d25948ca1860119abad1e**。作者/Root detached/actual-master完整check各222/222、smoke各3/3；Standards0hard/1非阻断P3、Spec0；Root两种built各29份固定检查调用及新增Record7两份历史读取通过。首次master Docker标签查询失败整次保留，原标签恢复后新目录完整重跑，不拼接PASS。全部证据统一见[#10记录](acceptance/10-social-discourse-edition.md#实际-master-验收与关闭)。[GitHub验收回写](https://github.com/yiwer/Observer/issues/10#issuecomment-5555910060)已实际读回，#10 CLOSED（2026-09-06T00:53:44Z）。代码未push，真实社交源仍未批准。
 - 最新验收：#11 GitHub候选/稳定身份/真实快照增量。最终实施 **14f6889a207db393a96bb0fff7f4ba7867e6714d**，实际master集成 **867e500431886e1d876066c950f3a880b38f81f8**；作者/Root detached/实际master完整check各282/282、smoke各3/3，Root两种built各29次既有调用、Record7两份、独立13项与新Record8四份字节回放通过。Standards0hard/2非阻断P3、Spec0，首轮两P2原期待复现后已关闭；原拒收与Docker整次失败均保留。[最终GitHub回写](https://github.com/yiwer/Observer/issues/11#issuecomment-5556354464)已读回，#11 CLOSED（2026-09-06T02:28:54Z）。统一证据见[#11记录](acceptance/11-github-snapshot-observations.md#实际-master-验收与关闭)。代码未push、真实来源/生产未启用。
