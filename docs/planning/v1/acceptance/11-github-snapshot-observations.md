@@ -1,6 +1,6 @@
 # V1-11 执行与待验收记录
 
-状态：**in-progress；fresh作者已亲读契约，Root已协调新增版本/存储/权限与首片；官方协议细节复核中，尚无冻结或验收结论**。GitHub #11 OPEN / yiwer。
+状态：**in-progress；首片、身份/截稿独立回放及普通跨日历史已有局部通过；官方契约已移交，作者继续限流/并发/权限可靠性切片；尚无冻结或完整验收结论**。GitHub #11 OPEN / yiwer。
 
 ## 固定任务与依赖
 
@@ -77,3 +77,19 @@ Root固定capturer记录实际模块目录、脚本摘要、前后HEAD/status与
 Root补充公共观察/生产/重启的`cutoff-availability-probe.mjs`，SHA256 **50779ff78596726769c6403f9a770a8ba6c51f58db40e203e4a5262a0e66b096**：完整详情响应恰好cutoff可用→+5/+1 measured；晚1毫秒→没有measured、未来名称不在整个永久Report、GitHub正文明确current-missing，重启相同。**2/2、123.7327ms**，`wip-cutoff-availability-valid-token.log` SHA256 **7ba55f2d6fe0d3f4c43a8ff2940b4c4ea3c4256e636957bfe60a46403b59ed86**。首次Root自有fixture Owner token不足32字节，被正确拒绝；仅改该输入、保留`wip-cutoff-availability-first.log`，不计产品RED。
 
 新增未冻结Snapshot的有界identity summary已获Root协调：保存真实firstSeen/必要名称连续性及来源/配置/截止证据，完整小时历史留在观察库；新summary不能把未来首次发现或名称提前投影到旧cutoff，读旧刊不依赖可变重新选样。Root捕获工具后续增加相关模块前后摘要，仍不能把WIP结果冒充正式冻结。
+
+## 有界证据、跨日历史与元数据补充
+
+Root已亲读作者13/14-provenance：无关古老policy毒化本期双点的反例从3/4变为4/4（GREEN 426.3627ms），报告保留相关双点、最新覆盖/失败及有界身份摘要。15-news-history初始fixture每天改变同一事件的发生证据，触发现有正确的身份冲突，不计产品RED；修正fixture后16-news-history-valid-fixture-red才证明第三期错误跳过Record8第二期，0/1、314.8287ms。17-green修复后1/1、371.0436ms，18-typecheck通过，Root均已实际读原日志。
+
+19/20-pagination从4/5变为5/5（483.1002ms）：详情双点有效也必须披露Search缺失的分页延续。21-time-classification为既有实现正/零/负、冷启动与成熟缺样及各时点边界14/14（771.8595ms），不补造RED。22/23-rate为429后仍发出后续请求的真实RED→GREEN，最终15/15、821.3331ms；该批日志只证明进程内限流，跨重启冷却、总截止、同小时并发与当前版本权利仍待作者完成，非已验收。
+
+Root依research技能委托三字段独立增量调查，亲读36行完整补充后原样复制至作者`docs/research/github-ranking-metadata-addendum-2026-09-06.md`，SHA256 **e51da602ec92d965276b3f429a09976474f5a9c6e6615bfecda01a2aab51916c**；原241行报告不变。同固定schema中Search/Get的language必填可null、created_at必填非null date-time、topics可省略非null字符串数组。批准实际详情响应保存language/createdAtUtc/topics；未知与明确空值区分，旧快照不事后回填。仅为#12既定消费者保存输入，不做评分/cohort。
+
+原Root三探针及原日志保持原样；其旧最小协议fixture未包含新核验的必填元数据，因此另建`data/root-v1-11-review/*-metadata-v2-probe.mjs`，只增加自有响应的language:null、created_at及topics:[]。Root逐份no-index diff核对，原7项行为断言未改，不把输入升级计为产品修复：
+
+- redirect-authority-metadata-v2 SHA **d791b41d44d349d4da560d7c7007c016f150e11530612cb5f10b7b6d92a87afa**；3/3、9.5521ms，`wip-bounded-redirect-metadata-v2.log` SHA **a6c75f5dc8dd893760907f1eca174e2e960b0e23f688b460b8b58d8ecfdd1999**。
+- rename-history-metadata-v2 SHA **0523254d10ca5788bba4fc1666002720b892a490e9f62610a04ac62d35f0d0b2**；2/2、129.7539ms，`wip-bounded-rename-metadata-v2.log` SHA **f2ca26a527545892826fbfccde4ecad2bb9c0a8254c49ec2261a620d74d8126c**。
+- cutoff-availability-metadata-v2 SHA **6de2e34c0f25a1e9e0b4410a69c6d4fd4b2b0fc9b128a89dcadf78734c9b1379**；2/2、125.0819ms，`wip-bounded-cutoff-metadata-v2.log` SHA **d0f926faec68e0ca46994115c9d8cb9e60385ec9b1e14249042837bac73c3a8d**。
+
+本轮复跑时相关15个模块前后摘要相同，HEAD仍为base且工作树有未提交更改；仅是有界证据改动后的局部回归，尚非元数据功能通过或冻结验收。后续冻结使用这三份明确版本化的有效输入探针，同时保留历史反例和旧Report1–7字节oracle不变。
