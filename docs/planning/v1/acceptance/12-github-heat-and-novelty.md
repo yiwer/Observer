@@ -104,3 +104,9 @@ Root在模拟输出发现数学同分0.45产生二进制尾差，随后以真实
 作者13片原12/13→13/13（1040.9366ms）后，Root亲读固定整数排序键`Math.round(rawScore*1e12)`、资格仍用原`score>0`，不使用可能非传递的成对epsilon。Root原同分脚本与断言不变，`wip-tie-02` **1/1、97.1454ms、exit0**（2026-09-06T03:06:53.979Z–03:06:54.476Z），log SHA **1806af8aa360604e43a96488ed2b84f5bd930a2c079c5e7790f7f2e2b63cb657**。原7项history另跑`wip-history-04` **7/7、602.1967ms、exit0**，log SHA **1969c1acb8b20a181c24b59fbe4ed0f663412ec93000c012f2343f98667e65be**，7天+1ms仍有正资格；两次前后全部模块hash一致，ranking为 **d0892c807b4ec5fe826757754bf39e261ecbf199f4c1ab2a6d3240f951a9725b**。
 
 Root已协调允许精度规则：分区→整数sortKey倒序→opaque node原字符串序数；排序键0不意味着原正分不合格。后续模拟另成v3，保留v2，不覆写原输出。只有完整审计契约与产品回放对应后才冻结最终代码；异常历史/并发/最终全量与双轴审查仍待完成。
+
+### 新排名序数澄清与损坏历史处理
+
+上述“原字符串序数”在Root先前消息中曾混用“码点”与JS `<`，两者对补充平面字符并不等同。14片实际以BMP U+E000和U+10000身份反例13/14 RED→14/14 GREEN（1093.0744ms）后，Root明确接受新Heat tie-break为**Unicode码点升序**，不使用locale，也不改变旧#11 snapshot/旧刊及其他元数据数组的原排序。`14-unicode-green.log` SHA **79eb4e1179f951c7569c8973dff6b3f810c66d9032cdd81e6ad173929dcae038**，Root已实读测试、日志及`codePointAt`比较实现；v3/最终技术规格须使用此澄清，不沿用含混表述。
+
+15片以既有测试模式对专属临时SQLite做外部归档损坏注入（恢复触发器），只从公开produce/read/restart断言业务结果，没有SQL旁路断言；这不是生产存储被实际损坏的证据。Root实读原14/15 RED（1155.7079ms，`history-integrity-failed`）和15/15 GREEN（1123.9895ms）；`15-corrupt-history-green.log` SHA **01fbe4729b3beaa94bb794c907251b85acd31bbda1c19bdadfe4a3dc4900cb0f**。Request8不复用损坏记录的任何facts、fingerprints、policies或event links；GitHub记录history-unavailable，普通Edition沿既有legacy-history-unclassified披露，旧刊本身仍拒绝读取，旧Request<=7维持原fail-closed行为。无法验证的时间不能按自报90天外淘汰；这是损坏完整性与已验证旧源权限自然过期的不同边界。最终双轴需再核验，当前仍未冻结。
