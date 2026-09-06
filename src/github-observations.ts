@@ -18,6 +18,9 @@ export function githubPermission(source: SourcePolicy | undefined, configuration
 }
 function phase(atUtc: string) { const date = new Date(atUtc); date.setUTCMinutes(25, 0, 0); if (date.toISOString() > atUtc) date.setUTCHours(date.getUTCHours() - 1); return date.toISOString(); }
 const utc = z.iso.datetime({ precision: 3, offset: false });
+// A validated same-node detail can establish an address without qualifying its counts.
+// Failed reads and identity mismatches remain observations, never verified name changes.
+const hasVerifiedIdentity = (entry: GitHubObservation) => entry.reason === null || entry.reason === "github-ineligible" || entry.reason === "github-risk-unknown";
 
 export function selectGitHubItems(runs: GitHubRun[], cutoffUtc: string, identities: GitHubSnapshot["identities"] = []): GitHubSnapshot["watchItems"] {
   const observations = runs.flatMap((run) => run.observations).filter((entry) => entry.observedAtUtc <= cutoffUtc && entry.availableAtUtc <= cutoffUtc);
@@ -130,7 +133,7 @@ export function createGitHubObserver(options: { databasePath: string; configurat
             }
           } catch (error) { receipt.reason = githubFailure(error); }
         }
-        for (const previous of history().filter((run) => run.configuration.sourceId === config.sourceId).flatMap((run) => run.observations).reverse()) if (!candidates.has(previous.nodeId)) {
+        for (const previous of history().filter((run) => run.configuration.sourceId === config.sourceId).flatMap((run) => run.observations).filter(hasVerifiedIdentity).reverse()) if (!candidates.has(previous.nodeId)) {
           if (candidates.size < candidateLimit) candidates.set(previous.nodeId, previous.fullName); else run.reasons.push("github-candidate-limit");
         }
         for (const [nodeId, fullName] of candidates) {
@@ -170,7 +173,8 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       const currentNodes = new Set(compatible.at(-1)?.observations.map((entry) => entry.nodeId) ?? []);
       const identities: GitHubSnapshot["identities"] = [...currentNodes].sort().map((nodeId) => {
         const entries = all.flatMap((run) => run.observations).filter((entry) => entry.nodeId === nodeId);
-        const names = entries.filter((entry, index) => index === 0 || entries[index - 1]!.fullName !== entry.fullName).map(({ fullName, observedAtUtc }) => ({ fullName, observedAtUtc }));
+        const verified = entries.filter(hasVerifiedIdentity);
+        const names = verified.filter((entry, index) => index === 0 || verified[index - 1]!.fullName !== entry.fullName).map(({ fullName, observedAtUtc }) => ({ fullName, observedAtUtc }));
         return { nodeId, firstSeenAtUtc: entries[0]!.observedAtUtc, historySha256: githubDigest(names), names: names.slice(-8), truncated: names.length > 8 };
       });
       const snapshot: GitHubSnapshot = { schemaVersion: 1, rulesVersion: githubRules.version, cutoffUtc, configuration: config, configurationSha256: githubDigest(config),

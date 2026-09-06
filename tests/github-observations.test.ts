@@ -288,3 +288,37 @@ test("An Owner source switch does not carry a previous source's discovered repos
   assert.equal(report.record.github.exclusions.length, 0);
   assert.equal(report.record.github.watchItems.length, 0);
 });
+
+test("A mismatched detail identity cannot poison the verified address or name history used for recovery after restart", async (t) => {
+  const app = await githubFixture(t);
+  const verified = { ...metadata(), full_name: "example/verified" };
+  app.state.repositories = [verified]; await app.observations.observeDue();
+  app.state.now = "2026-09-04T22:25:00.000Z";
+  app.state.repositories = [{ ...verified, full_name: "example/unverified" }];
+  app.state.hook = async (url) => new URL(url).pathname === "/repos/example/unverified" ?
+    { status: 200, headers: {}, body: JSON.stringify({ ...metadata("other-node", 9000), full_name: "example/unverified" }) } : undefined;
+  await app.observations.observeDue(); app.restartStore();
+  app.state.now = "2026-09-04T23:25:00.000Z";
+  app.state.repositories = [{ ...verified, stargazers_count: 107 }];
+  const mismatchedDetail = app.state.hook;
+  app.state.hook = async (url, request) => new URL(url).pathname === "/search/repositories" ?
+    { status: 200, headers: {}, body: JSON.stringify({ total_count: 0, incomplete_results: false, items: [] }) } : mismatchedDetail(url, request);
+  await app.observations.observeDue();
+  const report = await app.publish();
+  assert.equal(report.record.github.watchItems[0]?.fullName, "example/verified");
+  assert.equal(report.record.github.watchItems[0]?.starsDelta, 7);
+  assert.deepEqual(report.record.github.watchItems[0]?.identityHistory.map((entry) => entry.fullName), ["example/verified"]);
+});
+
+test("A verified same-node rename remains usable for later discovery even while its current risk qualification is unknown", async (t) => {
+  const app = await githubFixture(t); await app.observations.observeDue();
+  app.state.now = "2026-09-04T22:25:00.000Z";
+  app.state.repositories = [{ ...metadata(), full_name: "example/renamed", is_template: undefined }]; await app.observations.observeDue();
+  app.restartStore(); app.state.now = "2026-09-04T23:25:00.000Z";
+  app.state.repositories = [{ ...metadata("R_fixture", 107), full_name: "example/renamed" }];
+  app.state.hook = async (url) => new URL(url).pathname === "/search/repositories" ?
+    { status: 200, headers: {}, body: JSON.stringify({ total_count: 0, incomplete_results: false, items: [] }) } : undefined;
+  await app.observations.observeDue(); const report = await app.publish();
+  assert.equal(report.record.github.watchItems[0]?.starsDelta, 7);
+  assert.deepEqual(report.record.github.watchItems[0]?.identityHistory.map((entry) => entry.fullName), ["example/R_fixture", "example/renamed"]);
+});

@@ -43,7 +43,8 @@ export type SourceProposal = z.infer<typeof ProposalSchema>;
 export interface CoverageGap { sourceId: string; edition: SourcePolicy["edition"]; reason: string }
 
 export interface SourceResponse { status: number; body: string; headers: Record<string, string>; finalUrl?: string }
-export interface SourceReadRequest { source: SourcePolicy; headers: Record<string, string>; signal: AbortSignal; validateUrl?: (url: URL) => boolean }
+export interface SourceReadRequest { source: SourcePolicy; headers: Record<string, string>; signal: AbortSignal; validateUrl?: (url: URL) => boolean;
+  readErrorBody?: (status: number, headers: Readonly<Record<string, string>>) => boolean }
 export interface CollectionOptions {
   databasePath: string; sources: unknown; clock?: () => string;
   read?: (url: string, request: SourceReadRequest) => Promise<SourceResponse>;

@@ -15,6 +15,7 @@ export interface GitHubAccess { source: SourcePolicy; credential: () => unknown;
 export function createGitHubAdapter(options: { read?: (url: string, request: SourceReadRequest) => Promise<SourceResponse> } = {}) {
   const read = options.read ?? createSourceReader();
   let cooldownUntil = 0;
+  const headerLimit = (status: number, headers: Readonly<Record<string, string>>) => status === 429 || status === 403 && (headers["x-ratelimit-remaining"] === "0" || !!headers["retry-after"]);
   async function get(url: URL, access: GitHubAccess) {
     const failure = access.authorize(); if (failure) throw new Error(failure);
     if (Date.parse(access.clock()) < cooldownUntil) throw new Error("github-rate-limited");
@@ -37,13 +38,22 @@ export function createGitHubAdapter(options: { read?: (url: string, request: Sou
     try {
       if (access.signal?.aborted) throw new Error("github-cancelled");
       const response = await Promise.race([read(url.href, { source: { ...access.source, limits: { ...access.source.limits, maxRedirects: search ? 0 : Math.min(access.source.limits.maxRedirects, githubRules.maxRedirects) } },
-        headers: { accept: "application/vnd.github+json", authorization: `Bearer ${secret.data.token}`, "x-github-api-version": githubRules.apiVersion }, signal: controller.signal, validateUrl }),
+        headers: { accept: "application/vnd.github+json", authorization: `Bearer ${secret.data.token}`, "x-github-api-version": githubRules.apiVersion }, signal: controller.signal, validateUrl,
+        readErrorBody: (status, headers) => status === 403 && !headerLimit(status, headers) }),
       new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("github-timeout")); }, timeoutMs); })]);
       if (access.signal?.aborted) throw new Error("github-cancelled");
       if (access.authorize()) throw new Error(access.authorize()!);
       if (secret.data.expiresAtUtc <= access.clock()) throw new Error("github-credential-expired");
       if (response.finalUrl && !validateUrl(new URL(response.finalUrl))) throw new Error("github-unsafe-route");
-      if (response.status === 429 || response.status === 403 && (response.headers["x-ratelimit-remaining"] === "0" || !!response.headers["retry-after"])) {
+      let secondaryLimit = false;
+      if (response.status === 403 && !headerLimit(response.status, response.headers)) {
+        if (Buffer.byteLength(response.body) > access.source.limits.maxResponseBytes) throw new Error("github-response-too-large");
+        try {
+          const error = z.object({ message: z.string().max(2000) }).parse(JSON.parse(response.body));
+          secondaryLimit = /\bexceeded (?:a |the )?secondary rate limit\b/i.test(error.message);
+        } catch { /* An unrecognized error body grants nothing and stays access-unavailable. */ }
+      }
+      if (headerLimit(response.status, response.headers) || secondaryLimit) {
         const retry = response.headers["retry-after"];
         const retryAt = retry && /^\d+$/.test(retry) ? Date.parse(access.clock()) + Number(retry) * 1000 : Date.parse(retry ?? "");
         const resetAt = Number(response.headers["x-ratelimit-reset"]) * 1000;

@@ -46,7 +46,8 @@ export function createSourceReader(io: SourceNetworkIO = network) {
             const value = incoming.headers[name]; if (typeof value === "string") headers[name] = value;
           }
           const status = incoming.statusCode ?? 0;
-          if (status !== 200) { incoming.destroy(); resolve({ status, body: "", headers }); return; }
+          const readErrorBody = status >= 400 && status <= 599 && request.readErrorBody?.(status, headers) === true;
+          if (status !== 200 && !readErrorBody) { incoming.destroy(); resolve({ status, body: "", headers }); return; }
           const encoding = incoming.headers["content-encoding"];
           if (encoding && encoding !== "identity") { incoming.destroy(); reject(new SourceReadError("encoding-forbidden")); return; }
           if (Number(incoming.headers["content-length"]) > request.source.limits.maxResponseBytes) { incoming.destroy(); reject(new SourceReadError("response-too-large")); return; }
