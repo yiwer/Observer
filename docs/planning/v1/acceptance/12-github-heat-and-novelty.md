@@ -110,3 +110,7 @@ Root已协调允许精度规则：分区→整数sortKey倒序→opaque node原�
 上述“原字符串序数”在Root先前消息中曾混用“码点”与JS `<`，两者对补充平面字符并不等同。14片实际以BMP U+E000和U+10000身份反例13/14 RED→14/14 GREEN（1093.0744ms）后，Root明确接受新Heat tie-break为**Unicode码点升序**，不使用locale，也不改变旧#11 snapshot/旧刊及其他元数据数组的原排序。`14-unicode-green.log` SHA **79eb4e1179f951c7569c8973dff6b3f810c66d9032cdd81e6ad173929dcae038**，Root已实读测试、日志及`codePointAt`比较实现；v3/最终技术规格须使用此澄清，不沿用含混表述。
 
 15片以既有测试模式对专属临时SQLite做外部归档损坏注入（恢复触发器），只从公开produce/read/restart断言业务结果，没有SQL旁路断言；这不是生产存储被实际损坏的证据。Root实读原14/15 RED（1155.7079ms，`history-integrity-failed`）和15/15 GREEN（1123.9895ms）；`15-corrupt-history-green.log` SHA **01fbe4729b3beaa94bb794c907251b85acd31bbda1c19bdadfe4a3dc4900cb0f**。Request8不复用损坏记录的任何facts、fingerprints、policies或event links；GitHub记录history-unavailable，普通Edition沿既有legacy-history-unclassified披露，旧刊本身仍拒绝读取，旧Request<=7维持原fail-closed行为。无法验证的时间不能按自报90天外淘汰；这是损坏完整性与已验证旧源权限自然过期的不同边界。最终双轴需再核验，当前仍未冻结。
+
+16片新增固定规则/系数/说明性公式（不执行字符串）、全体候选分量与配额选择路径、未参与排名的隔离/缺样审计；403最新失败仍不复活旧好样本。Root实读测试和完整GREEN原日志16/16、1169.305ms，以及当前rules/重算/Markdown实现；未把该片视为固定候选验收。
+
+17片两个真实SQLite连接从公开produce并发开始：较早因果刊成功INSERT后，后刊已固定的历史发生变化，最终事务拒绝后刊且鉴权读not-found；重新生成只见已成功一刊，重复Request8仍拒绝、重启读取一致。Root实读测试和`17-concurrent-characterization.log` **17/17、1270.9041ms**；这项第一次即GREEN，记录为characterization而不是补造RED→GREEN。作者继续v3参数精度对齐及技术规格，再准备最终clean提交/完整check；Root未启动最终双轴，也未推进#13。
