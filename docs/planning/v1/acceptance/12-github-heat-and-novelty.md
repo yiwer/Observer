@@ -80,3 +80,27 @@ Root也实读作者后续原RED/GREEN输出：05恢复半程4/5→5/5（573.3547
 新增`data/root-v1-12-review/history-boundaries-probe.mjs` SHA **4923da9a0d66eb2bb54a54db6e3d38e595150d9a41ac78f698eff16605ba9ce4**，独立夹具`publication-fixture.mjs` SHA **167dd2d2c961c43f7eb9d9f46dd40fc922cab10bc9b477182969ad0ef12c189f**。夹具提取自Root已验证的独立实际出版设置，未修改原7项脚本。9项分别用真实旧Record8验证30/37/90天的−1ms、恰好、+1ms；第10项实际生成五份成功旧刊，验证同一稳定node计数为5、恢复相同时比单次报道分数更低，未固定尚未批准的频率系数。所有检查再走纯归档输入重算和Report库重启鉴权读取；没有私有SQL/内部模块替身。
 
 命令：`node data/root-v1-12-review/capture-boundaries.mjs O:/GenesisCode/Observer-worktrees/v1-12 O:/GenesisCode/Observer-worktrees/v1-12/src ts wip-boundaries-01`。**10/10、945.6851ms、exit0**，2026-09-06T03:01:47.240Z–03:01:48.607Z；原log SHA **b5f96edb028af3cdc82659ce5b81d5f4e770a30fad3e5b7672dea00446f01f60**已实际核对。前后HEAD48d4767、dirty及所有src hash一致；ranking SHA **2b9c5ec90358a0d45b109ccd287bd39187f8a40835fa03c99cfff9963d991569**，observer SHA **a5bed0db503bc404c737e0ce0a7dfb68ecc2721802d762c47667e86e7cc3d8fd**。这是新增WIP诊断，非最终freeze；后续固定候选和实际master均须保持原期待回放。
+
+## 参数回放评审与数值排序契约（工程选择已协调，代码尚未冻结）
+
+Root亲读作者`data/parameter-proposal/compare-v2.mjs`全部脚本（SHA **cbbad9eb3ff270263b701548c7ccd5b5e45cbc44ec90c5ac0a3d61f4eca04ab0**）并独立执行，结果与原`comparison-v2.json`（622519字节，SHA **54eef194f57605501a98068bf470f0e7ec16857f6425a6269ca40aecc22683e5**）解析深等；前后两文件hash不变。Root捕获`data/root-v1-12-review/parameter-v2-replay-result.json` SHA **87359f18b731b10f8aeae48c95a88a469a54260a11405528937464d5563e1595**，2026-09-06T03:04:15.449Z–03:04:15.561Z、exit0。
+
+25组完整数值场景×7单参数变体是设计偏好模拟，不是175项产品测试、独立公式实现、真实满意度或最佳性证明。保留原expectations SHA不变；参数对比结果如下。
+
+| 方案 | 相对预先声明偏好的差异数 | 具体含义 |
+|---|---:|---|
+| .60/.40，topic .15，frequency .25，cold10或2，实际间隔标准化 | 0 | 获准作为首版工程默认，不是唯一最优 |
+| stars .75 | 1 | 两信号案例过度偏向单一stars峰值 |
+| stars .50 | 2 | 原及扩容案例的中等双信号排序不满足设计取舍 |
+| topic .30 | 0 | 本组输入无法区分；选更小干预.15 |
+| frequency .50 | 0 | 同样满足方向约束；选更小干预.25 |
+| cold5或1 | 1 | 预先定义的弱存量也获普通位置 |
+| 不标准化实际间隔 | 1 | 同净变化的23h/25h平均速率未区分 |
+
+Root核对同动量四次/一次报道分数比在k=.25为.625、k=.50为.5，均满足原≤70%偏好；更强参数并未被证据否定。cohort最少4、按语言+年龄→年龄→同分区回退是工程分辨率选择，未作统计校准；零动量背景增多会改变分位绝对值，小cohort不承诺每语言上榜。Root同意上述首版参数及实际区间标准化，但要求规则/输入保存、产品语义对齐与最终冻结验收。
+
+Root在模拟输出发现数学同分0.45产生二进制尾差，随后以真实双快照→produce8→readReport独立复现：`ranking-tie-probe.mjs` SHA **2da400323b638eec44d39461953fdb24540e4e3081c814b2433086a961600c3e**，原`wip-tie-01` **0/1、85.1123ms、exit1**，log SHA **8b1cf5abe29161d801ade83ef919596815e877d6b669cde558a4d4b0779a9743**。数学同值的`a-star-spike`错误排在`z-balanced`后；该次模块前后hash一致，但仍dirty WIP，非正式Spec评级。
+
+作者13片原12/13→13/13（1040.9366ms）后，Root亲读固定整数排序键`Math.round(rawScore*1e12)`、资格仍用原`score>0`，不使用可能非传递的成对epsilon。Root原同分脚本与断言不变，`wip-tie-02` **1/1、97.1454ms、exit0**（2026-09-06T03:06:53.979Z–03:06:54.476Z），log SHA **1806af8aa360604e43a96488ed2b84f5bd930a2c079c5e7790f7f2e2b63cb657**。原7项history另跑`wip-history-04` **7/7、602.1967ms、exit0**，log SHA **1969c1acb8b20a181c24b59fbe4ed0f663412ec93000c012f2343f98667e65be**，7天+1ms仍有正资格；两次前后全部模块hash一致，ranking为 **d0892c807b4ec5fe826757754bf39e261ecbf199f4c1ab2a6d3240f951a9725b**。
+
+Root已协调允许精度规则：分区→整数sortKey倒序→opaque node原字符串序数；排序键0不意味着原正分不合格。后续模拟另成v3，保留v2，不覆写原输出。只有完整审计契约与产品回放对应后才冻结最终代码；异常历史/并发/最终全量与双轴审查仍待完成。
