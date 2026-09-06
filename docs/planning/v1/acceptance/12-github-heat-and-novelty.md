@@ -1,6 +1,6 @@
 # V1-12 执行与待验收记录
 
-状态：**in-progress；fresh作者已完成指定材料/依赖核实，局部Interface与首条业务tracer已获Root协调确认，正在逐片实施；参数仍待回放评审冻结，尚无验收结论**。GitHub #12 OPEN / yiwer。
+状态：**in-progress；参数已获Root工程默认评审确认，v3完整产品对应回放已独立复跑，作者正在收束技术规格与最终提交；尚无固定SHA完整验收结论**。GitHub #12 OPEN / yiwer。
 
 ## 固定任务与依赖
 
@@ -114,3 +114,17 @@ Root已协调允许精度规则：分区→整数sortKey倒序→opaque node原�
 16片新增固定规则/系数/说明性公式（不执行字符串）、全体候选分量与配额选择路径、未参与排名的隔离/缺样审计；403最新失败仍不复活旧好样本。Root实读测试和完整GREEN原日志16/16、1169.305ms，以及当前rules/重算/Markdown实现；未把该片视为固定候选验收。
 
 17片两个真实SQLite连接从公开produce并发开始：较早因果刊成功INSERT后，后刊已固定的历史发生变化，最终事务拒绝后刊且鉴权读not-found；重新生成只见已成功一刊，重复Request8仍拒绝、重启读取一致。Root实读测试和`17-concurrent-characterization.log` **17/17、1270.9041ms**；这项第一次即GREEN，记录为characterization而不是补造RED→GREEN。作者继续v3参数精度对齐及技术规格，再准备最终clean提交/完整check；Root未启动最终双轴，也未推进#13。
+
+### 独立导入、历史依赖及v3产品对应回放
+
+Root实读18片原日志：`18-standalone-red.log` **17/18、1590.3943ms**，独立进程仅导入`rankGitHub`时因循环依赖触发`GitHubRankingSchema`初始化前访问；将纯Schema/规则拆到`github-ranking-contracts.ts`后，`18-standalone-green.log` **18/18、1546.0268ms**，SHA **fbbb599ab1d7d6db902825b47200a5a4e2d24b67dfe6f3f943852d39aa933f4d**。测试用实际出版保存的输入执行独立进程重算。Root另有不预加载Observer/publication的独立入口探针，首次执行时作者已修复，故`wip-standalone-01`只记录 **1/1、135.0534ms、exit0**（2026-09-06T03:20:48.222Z–03:20:48.632Z），不冒称Root复现RED；log SHA **4e5d47f707fc9f4615547bc2c33288bd508c1b0d4d8941a112c7298bf5eb3cd3**，全部src前后hash稳定，HEAD48d4767/dirty。
+
+19片对专属临时SQLite注入归档历史policy列表缺失，保持自洽记录hash，只由重启后公开鉴权读取断言拒绝。Root实读 **18/19 RED、1681.7236ms**（缺少预期异常）→**19/19 GREEN、1672.2819ms**；GREEN SHA **ad3bb31eef52c8eca9c0cd5926812dc11ba345ff7e5ca55a68dcf9092a7b538f**。读取端将历史条目的businessDate/nodeIds/完整policies与实际旧刊逐项核对，不以自报空权限列表绕过依赖检查。这是Owned故障注入，不声称任意恶意数据库改写均可防御。`19-typecheck.log`首轮类型收窄错误与`19-typecheck-2.log`后续无诊断均保留。
+
+作者v3脚本及完整固定输入位于`docs/implementation/v1-12-parameters/compare-v3.mjs` / `fixed-input.mjs`，本次SHA分别 **9838a84bc52cf9ae56383a16cfbedb5adef645229da19dd143ad4c9b4054bbd7** / **3c6f527386ea2c193aedc5a9696d4da7e79f40e0e6f4da246438afe0dace2b07**。原`comparison-v3.json`是循环依赖异常输出（不是成功JSON），`comparison-v3-2.json`保留不可实现负历史计数失败；成功完整输出另存`comparison-v3-3.json`，SHA **9c503adae5c93e5a96a9eeb7deccf6e4acfc15fb89a2d159e49d9781441b2135**。v2只是抽象数值模拟，其中两组不能直接映射真实计数；不得声称原175组合都是实际观测。
+
+Root新增`data/root-v1-12-review/verify-parameter-v3.mjs`（SHA **b1676053fea3a102ed5c2bc76641ec0e3d24b61392618acf22f04b64b2bcb863**），执行`node data/root-v1-12-review/verify-parameter-v3.mjs O:/GenesisCode/Observer-worktrees/v1-12 wip-v3-01`：2026-09-06T03:27:41.029Z–03:27:41.671Z，exit0、stderr为空，stdout完整解析与作者成功产物deepEqual；25默认场景全部产品score/sortKey/base/recovery/frequency/count90/novel、排序和入选无差异，七组参数偏好差异仍为0/1/2/0/0/1/1。
+
+Root还逐行核对v2→v3输入：仅`uneven-languages`的Python-1..11及`uneven-ages`的mature-1..11，共22行measured stars由100改为1200..200，使历史计数非负；signed delta、forks、cold、历史年龄及预定偏好均未改变。完整before/after、调整列表、stdout/stderr与hash保存在`wip-v3-01-parameter-v3-result.json`（SHA **814b7133b27150576f4c93d7e5a30bd2a5c9cb8e86503448a321986308e2adef**）。全src及两脚本前后hash一致，HEAD48d4767/dirty，仍是WIP而非最终freeze。
+
+这些参数回放使用Owned合成收据和虚构历史作为公开纯函数输入，只证明设计模拟与实现对应；不是实际出版历史、外部GitHub数据、独立公式实现、真实满意度校准或生产资格。真实成功出版历史已由上述独立SQLite业务探针另行覆盖；最终SHA及实际master仍需原期待重跑。#12未关闭、#13未启动、未push、未发送邮件或启用生产。
