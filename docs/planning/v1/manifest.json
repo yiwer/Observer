@@ -508,7 +508,7 @@
       "number": 13,
       "title": "GitHub 重大进展一次性重新入榜",
       "file": "tickets/13-github-repromotion-events.md",
-      "status": "ready-for-agent",
+      "status": "in-progress",
       "kind": "implementation",
       "blockedBy": [
         "V1-12"
