@@ -1,6 +1,6 @@
 # V1-12 执行与待验收记录
 
-状态：**in-progress；参数已获Root工程默认评审确认，v3完整产品对应回放已独立复跑，作者正在收束技术规格与最终提交；尚无固定SHA完整验收结论**。GitHub #12 OPEN / yiwer。
+状态：**in-progress；首个候选e461739拒收：Standards无hard/2非阻断P3，Spec有1项P2且Root独立复现；作者与Root完整check虽各302/302，不能替代缺口契约。已批准原作者窄修，未合入/关票**。GitHub #12 OPEN / yiwer。
 
 ## 固定任务与依赖
 
@@ -128,3 +128,56 @@ Root新增`data/root-v1-12-review/verify-parameter-v3.mjs`（SHA **b1676053fea3a
 Root还逐行核对v2→v3输入：仅`uneven-languages`的Python-1..11及`uneven-ages`的mature-1..11，共22行measured stars由100改为1200..200，使历史计数非负；signed delta、forks、cold、历史年龄及预定偏好均未改变。完整before/after、调整列表、stdout/stderr与hash保存在`wip-v3-01-parameter-v3-result.json`（SHA **814b7133b27150576f4c93d7e5a30bd2a5c9cb8e86503448a321986308e2adef**）。全src及两脚本前后hash一致，HEAD48d4767/dirty，仍是WIP而非最终freeze。
 
 这些参数回放使用Owned合成收据和虚构历史作为公开纯函数输入，只证明设计模拟与实现对应；不是实际出版历史、外部GitHub数据、独立公式实现、真实满意度校准或生产资格。真实成功出版历史已由上述独立SQLite业务探针另行覆盖；最终SHA及实际master仍需原期待重跑。#12未关闭、#13未启动、未push、未发送邮件或启用生产。
+
+## 首个固定候选与独立验收进程
+
+最终20片区分因novelty quota挤出的重复项目与本来就在普通前7之外的低排名：19/20 RED（1706.8505ms）→20/20 GREEN（1734.6755ms），GREEN SHA **df8a6456b31c56e7636f85afe2f3aa65fc7c6e71da7e1dc20b846c2c704a11e9**。作者八文件局部回归143/143、4224.9348ms，原log SHA **9fbb5e85d6b299562664f7b49598099b0410df08cf83bfdce48cbf9ab739c785**。Root已亲读实际断言和原始摘要；局部不替代全量。
+
+作者clean提交 **e4617399c4308a97466a3a1ed94e1b6eabbea34a**，`ticket/v1-12`，base48d4767；单一commit `feat: add reproducible GitHub Heat and publication novelty (#12)`，19文件、+1209/-80。Root实际核对解析base、非空`git diff 48d4767561459db66575125d18c8a89dce185068...e4617399c4308a97466a3a1ed94e1b6eabbea34a`、diffcheck、HEAD和clean后，派发两个fresh且不互通报告的reviewer。精确规格及参数输入见[实现说明](../../../implementation/v1-12.md)和[参数比较](../../../implementation/v1-12-parameters/README.md)。
+
+作者最终参数回放`data/author-v1-12-e461739-parameters-01/comparison.json`，2026-09-06T03:31:33.219Z–03:31:33.518Z、exit0，1330629bytes，SHA **8d24f4eca94141a5094c332cb87d11c0a3b7208c30e15659c99bd7faad708541**；metadata含实际进程UTC、前后clean/SHA/模块hash。它与Root此前WIP stdout字节一致，仍重新绑定当前clean SHA，不用WIP替代冻结证明。
+
+作者首次完整check `data/author-v1-12-e461739-check-01` 已终态：**301/302、125413.6612ms、exit1**，2026-09-06T03:31:13.542Z–03:33:24.325Z，native SHA **843ba1063d16877f48c1086d5c6bf874e5133d11a58b532141b99e84286c19f7**。唯一失败为Claude测试fixture执行短标签`docker image inspect observer-v1-05-claude:2.1.252`返回NoSuchImage；Root实读原始终态和异常。不据此认定根因或产品通过。作者报告随后只读核查原标签仍指固定镜像、运行容器为空，未改代码/标签/镜像；同SHA在check-02新目录整次重跑，首轮完整失败保留，不拼接PASS。
+
+### Root冻结业务与历史回放
+
+Root确认新路径不存在后创建detached `O:/GenesisCode/Observer-worktrees/accept-v1-12-r1`，clean HEAD为e461739；锁定依赖离线`npm ci --ignore-scripts --offline --no-audit --no-fund`与build通过，无锁文件变化。新调度脚本`data/root-v1-12-review/run-frozen-independent.mjs` SHA **d07f510cf13552df13b48430010f20e5ce39a07471230e7468442e4de9064251**只复用原oracle/期待，并校验其既有hash；所有TEMP均在指定data下，没有修改旧档或重freeze。
+
+命令：`node O:/GenesisCode/Observer/data/root-v1-12-review/run-frozen-independent.mjs O:/GenesisCode/Observer-worktrees/accept-v1-12-r1 e4617399c4308a97466a3a1ed94e1b6eabbea34a frozen-e461739`。2026-09-06T03:34:26.134Z–03:34:45.379Z，**13/13命令组exit0**，不是13项测试。结果位于该detached树`data/frozen-e461739/independent-result.json`，SHA **ac77961c849c587a6fbd18059cdc8eef2538e69c5fb02687de809daaa1711cd9**，前后clean/SHA及全部built模块hash逐项一致。Root实际解析组日志与子结果：
+
+- 新19专项：历史7/7（754.8241ms）、时间/频率10/10（1161.8898ms）、量化tie1/1（121.5239ms）、独立导入1/1（105.5541ms）。原日志及完整源/built身份在Root data的新`frozen-e461739-*`记录，原WIP期待不变。
+- 旧GitHub13专项：redirect3/3、rename2/2、cutoff2/2、latest4/4、原Spec反例2/2，全部exit0。没有把当前版本覆盖旧13项脚本或期望。
+- 29次既有业务/旧Record1–6调用全部exit0；`data/root-v1-10-review/frozen-e461739-inherited-independent-result.json`前后clean/e461739。29是调用数，不虚报成29项测试。
+- 旧Record7两刊、Record8四刊reader输出均确认完整Report与MD不变；本次组log SHA分别 **42b152574cbb57d4ae006473d122058c015a123b852a64793d7c694ab62c4231** / **d32fd4453993be136fa9c725ddd8cca65210170a9b1606a43b0e7508fc33d275**。
+- 参数脚本在detached源码独立执行，25默认产品对应/7候选偏好及完整JSON deepEqual通过；这是pure源入口检查，其余业务探针使用本次dist绝对路径。各组原流按stdout/stderr连接保存，不冒称到达顺序。
+
+### Standards
+
+固定轴reviewer `/root/review_v1_12_standards`：未发现文档规范硬违反；两条P3启发式维护建议（judgement call，非阻断）：
+
+1. possible Repeated Switches：`src/observer.ts:155/186/193/455`重复枚举请求schema能力，后续版本可能漏接冻结、来源政策或投影；建议集中为可类型收窄的能力判断并保留旧行为。
+2. possible Duplicated Code：`src/observer.ts:133/529`两处重复实际报道node投影及run policy去重，共同定义历史身份/来源依赖；建议共享纯投影，两处各自保留授权校验。
+
+reviewer核对PRD T1的公开业务结果边界，SQL只做外部故障注入，无私有调用次数/结构断言；HANDOFF契约/替身与真实资格区分无hard违反。审查前后指定SHA/clean一致，只读、未跑测试，未读取Spec轴。Root不为这两条非阻断维护建议修改当前冻结候选。
+
+### Spec
+
+独立`/root/review_v1_12_spec`最终：**1项P2，未发现范围扩展**。
+
+P2：排序缩为空栏时未记录Coverage Gap。PRD `docs/PRD.md:270` AC-01要求“不足明确缺口且不凑数”。`src/observer.ts:467`删除既有GitHub缺口，`:474`只恢复历史不可用缺口；`github-ranking.ts:113–117`继续沿用观察snapshot.reasons。健康50候选中只有7个已报道项目有正动量、eligibleNovel=0时，正确选出0项，但本栏`coverageGaps=[]`，总览只显示“暂无可用Watch Item”。完整候选表里的落选理由不能替代结构化栏级缺口与总览说明；须保持0入选，不为修缺口改变配额。
+
+reviewer独立`data/root-v1-12-spec-review/independent-probe.mjs`（SHA **8f28657959dcf0caf59e1292ef84f8057b93f592a15baaa8249173eb4eb526a8**）实际4项业务检查通过：50候选两页协议→真实SQLite→produce/read→双库重启/纯重放、零novel零入选、落选不计历史；`gap-contract-check.mjs`从实际公开读取保存的第二刊检查AC-01时exit1。最终`run-auOim0`结果SHA **932ef4e20fa34557ed6c2232f65c6331bc97d7f66b535dfb7ce5bc0f10736165**，三份实际reports SHA **96e313f77db31a9771d9c4b95402eca55c91d6bd0545a3bafb3f3dcf62716f73**。完整报告`spec-review.md` SHA **611daac815edc1816e25c403d64b3358f734a425b7f48c5a691d0f17a32558f4**，Root已实读。
+
+reviewer保留两次harness失败（错误reviewedBy枚举、最后场景漏提供历史观察）及一次含无关协议失败的中间成功；最终只服务完整健康50详情以隔离Gap问题，没有改产品/原期望、补造旧日志或删原SQLite。Spec前后指定SHA/clean一致，未读取Standards报告。
+
+两轴汇总：Standards **0硬违反/2条非阻断P3**；Spec **1条P2**。两轴不合并或互相抵消；e461739不接受、不集成。
+
+### 完整check终态与Root原期待复现
+
+作者check-02：**302/302、120508.3524ms、exit0**，2026-09-06T03:33:51.510Z–03:35:57.325Z，log SHA **7daef40463a2ab1978549d4b54290f6bbba1484c856dcfd4b22cc93c8b6167c6**。smoke-01：**3/3、1307.2958ms、exit0**，03:36:04.341Z–03:36:08.461Z，SHA **db24ac4a0755a6af66de125bcd584eb2019a9f78b75c1a9d5b46811b083087c1**。Root实际解析metadata/原log，hash匹配，前后clean/e461739和全部src hash一致；第一次301/302整次失败未覆盖。
+
+作者释放Docker后Root运行`run-frozen-capture.mjs check`，detached `accept-v1-12-r1` / e461739 / 空branch，证据目录`data/root-e461739-full-01`。**302/302、123545.6822ms、exit0**，2026-09-06T03:37:10.837Z–03:39:20.235Z，log SHA **259aad15a5fc2c3037bca69b3fc08362b7a06ddff57db06c12b2b532dc041d3a**；前后clean冻结身份一致，原到达顺序流完整保存。该完整检查通过仍未覆盖Spec缺口，不能用于关票；Root未继续为已拒收候选跑smoke或master集成。
+
+Root另写不导入作者helper的公开seam原期待`data/root-v1-12-review/selection-gap-probe.mjs`（SHA **baac7952f60649301b64cecb7bd339ba39317a963caccd370d51a51d1490b47f**），用自身Owned协议fixture实际出版7项目，22天后全部恢复正分、novel0、selected0，要求结构化GitHub Gap/总览与栏首说明/重启可读。`capture-selection-gap.mjs`对冻结dist执行，**0/1、138.5214ms、exit1**，2026-09-06T03:40:38.508Z–03:40:38.995Z；`frozen-e461739-selection-gap.log` SHA **a250583005e034c8bddc890d2b4dba38ae4b0f0701b691044c4744e3b5307c7e**，结果SHA **5dbac4128fb1fd6d0b92367a713ceed94c9976f1bd3ae163b36c1e49c3bd0870**。前后clean/e461739/全部built hash一致，首个结构化缺口断言失败，原数值与选择断言已通过。
+
+Root已交原作者窄修并批准语义：仅新Record9当actual<7追加一次`github-selection-insufficient`，不改观察snapshot.reasons、不冒充来源请求失败；总览与GitHub栏首显示同一真实actual/7、正分eligible、新颖eligible计数，明确候选筛选不足/新颖配额限制；保留实际source/history缺口。归档一致性检查校验此Gap与actual<target严格对应。零novel先RED→GREEN，再稀疏非零/真实来源缺口并存/满7不增加选择Gap逐片。评分、排序、配额、算法版本、旧刊路径和P3维护建议均不改。新SHA后重新完整验收；原冻结/失败全部保留，#13仍未启动。
