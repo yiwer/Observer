@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**前四轮候选被独立评审拒绝；R4 f363de8 完整检查通过，但最终裁剪与覆盖统计、原候选成员资格的两个衔接反例已独立复现，作者正在窄修，尚未合并**。GitHub #10 OPEN / assignee yiwer。
+状态：**前四轮候选被独立评审拒绝；R5 2a30b0b 已提交并通过Root全部固定独立反例/旧字节检查，正在完整测试及fresh双轴复审，尚未合并**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -213,3 +213,11 @@ fresh `/root/review_v1_10_r4_spec`：**1项P1，最终资格使用已裁剪候�
 Root亲读原探针 `root-v1-10-r4-spec-review/group-eligibility.mjs`，SHA256 `df11f5f6c2354d0e6b0795caee62ce6b65d6d425bcff58faf7360bdf918ce280`，独立R4 built原样复现3中1PASS/2FAIL、105.9212ms；两个失败场景rawRetained=true，鉴权重启一致，日志 `r4-group-root-built-red.log`。全部自有材料，无真实模型或来源。
 
 Root拒绝R4：原候选/Claim成员身份用于组资格，完整最终Gate用于可刊判断，显示payload仍沿sanitized gated结果；最终回执裁剪后重算相应覆盖投影，不修改实际dispatch计数、降低一致性门或回填未核验正文。已准备但**未执行**的 `accept-v1-10-r4/data/root-v1-11-compat-f363de8/freeze-baseline.mjs` 不构成新Record7兼容oracle，目录已标NOT-FROZEN且没有baseline.json；只在未来正式接受的冻结候选上另建基准。当前#10仍OPEN，不启动#11。
+
+## 第五轮 R5：重新验收中
+
+新clean `2a30b0b1891c71d5f74671da8576ba8ddf375aaa` 仅4文件101+/9-，Root核对完整固定base三点差异19文件1803+/48-及五个提交，亲读新代码/测试/规格。短期成员快照在Gate前仅存id/groupId/claimIds，资格查完整最终Gate、显示仍沿gated；最终回执后用interestCoverage重算，不改dispatch记录。作者35/35和相关八文件155/155以及三个原probe各3/3仍仅局部开发证据。
+
+Root新detached `accept-v1-10-r5` 锁依赖/build并独立运行全部28份固定reader/probe：旧14份及9份Report/MD字节均保持，本票所有前四轮反例通过。R4 coverage3/3、156.4231ms，原成员3/3、131.7996ms，旧#9 Spec3/3、117.063ms；固定输入/断言与hash未改。原始输出、摘要、前后clean身份在 `Observer/data/root-v1-10-review/frozen-2a30b0b-independent-result.json`。完整check/smoke及两轴结论未由这28次结果代替。
+
+Root已派fresh `/root/review_v1_10_r5_standards` / `/root/review_v1_10_r5_spec`。Docker短标签再次复现相同现象，Root00:23:33–00:23:40Z只读同daemon/显式host/固定ID/限定名称对照后原短名恢复；Codex限定名称5秒超时仍明确为失败，根因未证实、未写环境，日志 `docker-r5-differential.log`。作者原Node三镜像检查就绪后已启动同SHA完整check，新目录 `v1-10/data/v1-10-final-check-e5S8cZ`，本段记录时尚未取得终态。新Record7兼容baseline仍未冻结，不启动#11。
