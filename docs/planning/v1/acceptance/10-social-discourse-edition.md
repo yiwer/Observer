@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**前两轮候选被独立评审拒绝；第三轮修订 af2b9b4 已提交，正在重新冻结评审与验收，尚未合并**。GitHub #10 OPEN / assignee yiwer。
+状态：**前三轮候选被独立评审拒绝；第三轮 af2b9b4 的完整检查通过，但最终失效社交组的语义回执残留已独立复现，作者正在窄修，尚未合并**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -155,8 +155,31 @@ Root亲读并原样复跑 `root-v1-10-r2-spec-review/current-source-and-ttl.mjs`
 
 Root拒绝R2并要求窄修：最后采样await后，同一份当前政策Authority完成来源分类与grant/digest检查，补等待期间才登记社交源的同根因动态变体；公共revalidate最后返回前保留取消/实际deadline优先再查TTL，失效receipt不可回拨复活。无需监听每个socket、不扩旧Request、不为P3重构历史版本。
 
-## 第三轮 R3：验收进行中
+## 第三轮固定候选 R3：拒绝合并
 
 作者将两项修复及回归/规格提交clean `af2b9b4599c40a324213ee6339fe393eaf3d345e`，R2至R3仅4文件93+/5-。作者局部单文件32/32、2218.6185ms，八相关文件152/152、4266.8765ms，固定portable反例4/4、58.7692ms；它们不是完整或Root冻结结果。Root验证完整base三点差异19文件1654+/48-、三个提交可达，创建独立detached `accept-v1-10-r3` 并安装锁依赖/build；已派fresh Standards/Spec两轴重新审查。当前不启动#11。
 
 Docker环境仍间歇出现原短标签NoSuchImage、固定ID却正常。R2在23:47、R3在2026-09-06T00:02:31Z以同一个daemon ID/29.6.1、固定CLI和显式host复现；只读限定名称对照中Codex请求5秒超时，Claude成功后短名恢复。两次相关性相同，**根因仍未证明，限定名超时不算PASS**。原日志分别 `docker-r2-differential.log`、`docker-r3-differential.log`；没有升级/重建/retag/重启/prune。R3完整suite须在原三镜像检查就绪后再启动，保留任何整次失败，不拼接结果。
+
+原三镜像实际恢复后，作者及Root独立detached均在同clean af2b9b4完成全检，无失败/取消/跳过：
+
+| 执行者 | 完整check | smoke（子集） | 证据目录 |
+|---|---|---|---|
+| 作者 | 218/218，exit0，124327.1784ms | 3/3，exit0，1346.9641ms | `v1-10/data/v1-10-final-check-n5kwD2` / `v1-10-final-smoke-h0Iatf` |
+| Root detached | 218/218，exit0，122488.019ms | 3/3，exit0，1345.6992ms | `accept-v1-10-r3/data/root-frozen-af2b9b4-full` |
+
+作者stdout摘要check `a9c897ae22ad4518b7abd6be45d3584383d99f59234e76802edfcd145950357c`、smoke `b9918e5906cb4a6678dfbaa61d1d64806f13b68e47502eb742235fc489eddd25`；Root combined摘要check `0a6c34beb3ec0e95bd485bf4a3ec91c46e7273ea31013a5fe82ea4c203630a26`、smoke `195966bbb847ddc29d2fa0fc0efab46d16f2858c083b86a22078e0749ad1a9f8`。Root全检00:06:24.444–00:08:32.074Z，smoke00:08:53.443–00:08:57.645Z；前后SHA/branch/status一致。
+
+Root独立全部14份旧reader/专项再次通过，9份历史Report/MD字节不变；旧#9 Spec原字节复制到此树实际导入dist，3/3、86.5033ms。本票8个既有探针全部通过；R2 current-source/TTL原期待4/4、66.9235ms，final-rights的仅路径参数化副本2/2、101.0983ms。副本SHA256 `366bf80840e22c10c0bfc9be2ea04bc134b2c0ab69ccbace8ae39f96954071f6`，原稿保留。新MD社交栏/Overview读取确认边界与不可用否定表述。整轮25次调用及原始输出/摘要/前后身份保存在 `Observer/data/root-v1-10-review/frozen-af2b9b4-independent-result.json`。执行器首次缺新worktree的data父目录，尚未运行测试即ENOENT；创建父目录后原脚本完成，不计产品RED。
+
+### Standards
+
+fresh `/root/review_v1_10_r3_standards`：**0硬性违规，1项P3判断性 possible Repeated Switches**。完整19文件及新delta审查前后clean；未发现违反PRD D5/D6/T1、ADR0001/4/5或批准合同的确定问题。当前政策Authority及公共Adapter取消→deadline→TTL顺序符合合同。版本能力判断分布在observer.ts:380和six-edition.ts:134等处，保留非阻断维护建议，不扩旧版本重构。
+
+评审独立公共Adapter三个场景：稳定、末响应到期、取消同时到期及失败后时钟回拨不可复活，均exit0。`root-v1-10-r3-standards-review/probe.mjs` SHA256 `69a3e6654dd1fb10d865fb7a4dffa6111e3cf6e3e80a025de264f2d41f824ec1`，Root亲读，不能算作Root另一次执行。
+
+### Spec
+
+fresh `/root/review_v1_10_r3_spec`：**1项P2：最终失败组仍永久保留含原句的语义回执**。技术合同v1-10.md:42要求删除「最终失效组的全部语义回执」，:86明确包含upstreamOriginId等字段复制的原句。observer.ts:323–328先裁回执，discourse.ts:117之后才判无主故事、无合格分析等组失败，未再清除回执。missing-main和unsafe-scope均0观察及明确Gap，canary却仍在verification.assessments[].evidence[].upstreamOriginId，经鉴权读取/SQLite重启可取得。影响为永久Record残留，**没有观察到Markdown泄露**。未发现其他独立缺失或范围扩张，R3前两项修复与合同相符。
+
+Root亲读固定探针 `Observer/data/root-v1-10-r3-spec-review/final-group-receipt.mjs`，SHA256 `973e5838d2a7f3055e5a84eb0a5a8ad2a2b2215e242b6a0112e5ab397f7dd7d0`，在独立detached built原样复现：3项中native对照1PASS、两负例FAIL，137.5661ms，日志 `root-v1-10-review/r3-final-group-receipt-root-red.log`。自有材料，无真实服务、秘密或SQL旁读。Root拒绝R3，作者在全部最终资格/兴趣/容量判断后统一裁失效组回执，保留普通/合格社交审计与旧字节；保持原期待，不靠单字段黑名单。新clean SHA须再次冻结复审与独立验收，当前不启动#11。
