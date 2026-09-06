@@ -762,3 +762,46 @@ test("Public sample revalidation cannot return unchanged after its last read cro
     }
   }
 });
+
+test("Final group eligibility and interest failures remove the whole social receipt while preserving qualified and ordinary audit after restart", async (t) => {
+  for (const variant of ["qualified", "missing-main", "unsafe-scope", "excluded"] as const) {
+    const app = await sampleFixture(t, 12, variant === "missing-main" ? "story-linked" : "platform-native");
+    const marker = "FINAL-GROUP-RAW-RECEIPT-CANARY";
+    for (const status of app.statuses) status.content = status.content.replace("新观点", marker);
+    if (variant === "missing-main") app.options.discourse.configuration.groups[0]!.linkedEvidenceIds = [];
+    app.task.discourseSamples = [await app.adapter.capture({ sourcePolicy: app.source, configuration: app.options.discourse.configuration, groupId: "linked",
+      businessDate: app.task.businessDate, windowStartUtc: app.task.evidenceBundle.windowStartUtc, cutoffUtc: app.task.evidenceBundle.cutoffUtc })];
+    if (variant === "excluded") {
+      const profileFile = join(app.directory, "excluded-profile.json");
+      await writeFile(profileFile, JSON.stringify({ schemaVersion: 1, version: 2, topics: [], entities: [], regions: [], exclusions: { topics: ["observation-methods"], entities: [], regions: [] }, coverageLanguages: ["zh"] }));
+      app.observer.importInterestProfile(profileFile);
+    }
+    const original = app.options.verifier.verify;
+    app.options.verifier.verify = async (input) => {
+      const result = await original(input);
+      for (const assessment of result.assessments) {
+        assessment.evidence[0]!.upstreamOriginId = assessment.discourse ? marker : "ORDINARY-AUDIT-KEPT";
+        if (assessment.discourse && variant === "unsafe-scope") Object.assign(assessment.discourse, { scope: "population" });
+        if (assessment.discourse && variant === "excluded") Object.assign(assessment, { selection: {
+          topics: ["observation-methods"], entities: [], regions: [], evidenceLanguages: [], impact: "ordinary", impactClaimIds: [],
+        } });
+      }
+      return result;
+    };
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+    assert.equal(report.record.schemaVersion, 7);
+    if (report.record.schemaVersion !== 7) return;
+    assert.equal(report.record.discourse.observations.length, variant === "qualified" ? 1 : 0);
+    assert.equal(report.record.discourse.groups[0]!.reason, variant === "qualified" ? null : variant === "missing-main" ? "social-main-story-unavailable" : variant === "unsafe-scope" ? "social-analysis-unavailable" : "social-interest-excluded");
+    assert.deepEqual(report.record.stories.map((story) => story.id), ["news"]);
+    const gate = report.record.publicationGate;
+    const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
+    assert.ok(assessments.some((assessment) => assessment.storyId === "news"));
+    assert.ok(JSON.stringify(report).includes("ORDINARY-AUDIT-KEPT"));
+    assert.equal(assessments.some((assessment) => assessment.storyId === "social-sample"), variant === "qualified", variant);
+    if (variant !== "qualified") assert.ok(!JSON.stringify(report).includes(marker), variant);
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+});

@@ -130,7 +130,13 @@ export async function prepareDiscourse(input: { request: Extract<SixEditionReque
       }
       observations.sort((a, b) => a.kind !== b.kind ? a.kind === "story-linked" ? -1 : 1 : a.kind === "platform-native" ? selectedNativeIds.indexOf(a.story.id) - selectedNativeIds.indexOf(b.story.id) : 0);
       const displayGroups = [...observations.map((observation) => groups.find((group) => group.id === observation.groupId)!), ...groups.filter((group) => !observations.some((observation) => observation.groupId === group.id))];
-      return { ...record, schemaVersion: 7, editorialContract: "observer-canonical-v5", interestSelections: [...record.interestSelections, ...selected.interestSelections], discourse: { schemaVersion: 1, rulesVersion: "observer-discourse-v1", frozenAtUtc: input.frozenAtUtc, configurationSha256,
+      const failedEvidenceIds = new Set(configuration.groups.filter((group) => failed.has(group.id)).map((group) => `discourse-${group.id}`));
+      const failedClaims = new Set(record.publicationGate.decisions.filter((decision) => decision.evidenceIds.some((id) => failedEvidenceIds.has(id))).map((decision) => JSON.stringify([decision.storyId, decision.claimId])));
+      const finalReceipt = (verification: Verification | null) => verification ? { ...verification, assessments: verification.assessments.filter((assessment) =>
+        !failedClaims.has(JSON.stringify([assessment.storyId, assessment.claimId])) && !assessment.evidence.some((evidence) => failedEvidenceIds.has(evidence.evidenceId))) } : null;
+      const gate = record.publicationGate;
+      const publicationGate = gate.schemaVersion === 1 ? { ...gate, verification: finalReceipt(gate.verification) } : { ...gate, batches: gate.batches.map((batch) => ({ ...batch, verification: finalReceipt(batch.verification) })) };
+      return { ...record, publicationGate, schemaVersion: 7, editorialContract: "observer-canonical-v5", interestSelections: [...record.interestSelections, ...selected.interestSelections], discourse: { schemaVersion: 1, rulesVersion: "observer-discourse-v1", frozenAtUtc: input.frozenAtUtc, configurationSha256,
         groups: displayGroups.map((group) => ({ ...group, reason: failed.get(group.id) ?? null })), observations },
         coverageGaps: [...record.coverageGaps.filter((gap) => gap.edition !== "social-discourse" || gap.reason !== "below-interest-selection-target"),
           ...(observations.length < 7 ? [{ edition: "social-discourse" as const, reason: "social-below-target" }] : []),
