@@ -57,3 +57,17 @@ Root另要求作者明确typed WatchItems与已有GitHub一般故事共存时的
 作者报告第一条`node --test tests/github-observations.test.ts`为1项失败，原因是尚不存在公开`github-observations.ts`模块；这是结构RED，不称已独立证明数字计算失败。Root已亲读首片测试与技术方案，尚未读到原始终端日志或GREEN，要求后续提供真实保留日志，不补造历史捕获。
 
 作者的Request7数字观察模式须明确对普通GitHub候选的局部拒绝/Gap与安全投影，不能拖垮其他五栏或放宽旧版本领域门。原始响应TTL与许可允许的持久快照/身份/已刊双点计算证据须区分；Root实际核对[#22](../tickets/22-retention-and-rights-removal.md)明确拥有90天后小时→每日压缩和已刊输入保留，本票不提前实现该清理闭环，也不宣称已有压缩功能。
+
+## 首片 GREEN 与独立协议/身份反例（变化中工作树）
+
+Root亲读作者`data/v1-11-slices/02-typecheck.log`、03/04/05-tracer日志：02为类型错误，03为无WatchItem（0/1，292.8491ms），04为`canonical-github-record-invalid`（0/1，289.1559ms），05最终**1/1通过、300.6743ms**（单项77.442ms）。首次missing-module RED仅保留在作者工具终端，未重建为历史日志；fixture Owner review时间也调整到早于最早观测，不把该输入修正冒充产品缺陷。作者修正空成功返回值被误当失败及schema规范化后的摘要一致性；Root亲读`data/author-tmp/observer-github-83shiX/report.md`确认同node改名、两点真实时间、+5 stars/−2 forks与有限候选说明。以上均非冻结或完整套件验收。
+
+Root沿已批准少量来源协议seam，以实际`createGitHubAdapter`+`createSourceReader`及自有合成HTTPS I/O建立`data/root-v1-11-review/redirect-authority-probe.mjs`，无真实网络，SHA256 **90b1507188b85053c683e475bf5c7b3fabaeb391bdc7717379179cb7c1311e25**。允许重定向控制PASS；Owner maxRedirects=0及首跳后撤权两例均仍发第二次带虚构凭证的HTTP请求，3项1PASS/2FAIL、12.5108ms；原log `wip-redirect-authority-first.log` SHA256 **ecd8cc2c4c69708b52c0bfa9720bc6039cb4a4556ae0c3da08c6496dadec7ab6**。
+
+作者对应协议切片`06-redirect-red.log`为0/1、197.6208ms，07-green为1/1、203.6364ms；Root已亲读日志和窄改：最多min(Owner上限,2)，每跳DNS前和DNS结束后再次核验当前权限/到期/允许路由。Root**原探针原期待**复跑3/3、10.1368ms；`wip-redirect-authority-fixed.log` SHA256 **2680769550d41b97533cb8441527c52e9ac6080a8eee812e26159d88afa2102a**。这是局部关闭，最终冻结仍须重验。
+
+Root另建公开观察→SQLite重启→produce7/鉴权Report的`rename-history-probe.mjs`，SHA256 **52cf4917cf079c5e44f5b62e32c8595ff2f64ebab834f034c9d54bb16d4a1868**。已知旧地址→次日同node已确认新地址→第三日Search未命中但新地址仍有效，旧地址被其他node复用：当前fallback取最早历史地址，导致本可继续观测的项目消失。当天Search再次命中控制PASS、应使用已存新地址例FAIL；2项1PASS/1FAIL、140.0053ms，`wip-known-rename-first.log` SHA256 **c3089d388e908e22802e9b4d960ed8ec59b496adf6f32a2229981e5dcd2292e8**。已交作者下一身份切片修复，不要求全球重发现或GraphQL扩张。
+
+Root固定capturer记录实际模块目录、脚本摘要、前后HEAD/status与原始日志；上述均明确为变化中工作树，不以未变HEAD冒充代码已冻结。测试只写自身ignored证据目录，不旁读产品SQL、不改作者代码或旧oracle。
+
+后续已交作者的重点：选资格后再分配7个位置；日报只携带有界相关双快照/查询证据，不反复复制所有历史小时run或让无关古老policy毒化本期；Record8连续两日普通事件/历史来源门保持；项目正文补human-facing原始仓库链接。采用无条件GET且非预期304明确Gap，不为研究建议额外实现缓存，也不宣称支持304。
