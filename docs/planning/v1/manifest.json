@@ -467,7 +467,7 @@
       "number": 12,
       "title": "Observer GitHub Heat 与历史报道降权",
       "file": "tickets/12-github-heat-and-novelty.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-08",
@@ -493,8 +493,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/12",
       "issueDatabaseId": 5355740299,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "41020f40a424d00b868085822796cdee32b6599d",
+        "integrationCommit": "2d93d40a463af7fd64485383dca32ff92a64ebb0",
+        "acceptanceFile": "acceptance/12-github-heat-and-novelty.md",
+        "qualification": "local-owned-github-heat-and-sqlite-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-13",

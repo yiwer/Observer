@@ -1,6 +1,6 @@
 # V1-12 执行与待验收记录
 
-状态：**in-progress；最终候选41020f4冻结验收通过：Standards无hard/原2非阻断P3，Spec0且原P2闭合；作者/Root完整check各306/306、smoke各3/3，独立回放通过。允许本地集成，仍待实际master复验/关票**。GitHub #12 OPEN / yiwer。
+状态：**accepted；最终候选41020f4与实际master 2d93d40均验收通过；Standards无hard/原2非阻断P3，Spec0且原P2闭合，作者/Root detached/实际master完整check各306/306、smoke各3/3。GitHub #12已实际读回CLOSED，代码未push，真实来源/生产未启用。**
 
 ## 固定任务与依赖
 
@@ -219,3 +219,15 @@ Root另以Spec原probe副本`portable-r2-master-probe.mjs`（SHA **eca7f3f427c54
 baseline SHA **e69381dd7517c8d6fd524842f904d82b5f2be3a9bfad27b3782063378e154f88**；reader `Observer/data/root-v1-12-review/verify-record9.mjs` SHA **2e624b6be9343864f598d2c697d6f18e16f272cb3acfdb6e96f368dfbe24ab14**，初次同built读取5/5完整Report/MD不变及错误Owner拒绝。5刊入选数为7/0/1/2/0，覆盖满额、零novel、稀疏、双因与来源/历史Gap并存。读取时使用每刊synthetic policy/clock，不把最后已切换的source错用到旧刊；这些虚构授权不授予真实来源权限。后续禁止重freeze/改期待，实际master及#13+应以新built绝对路径读取。
 
 以上允许进入本地master集成；实际master全量/原期待重验和GitHub回写关闭尚待完成，未push、未启用生产。
+
+## 实际master验收与关闭
+
+本地master集成 **2d93d40a463af7fd64485383dca32ff92a64ebb0**，Root核对src/tests/package/锁/scripts与已评审41020f4无差异；原`.idea/`仅保留，未读取/暂存。`data/root-v1-12-master-2d93d40-01`：完整check **306/306、125442.3763ms、exit0**，2026-09-06T03:57:21.170Z–03:59:32.446Z，原log SHA **3ffe7fcd27da54d1afb89b413bc6b874243fed2fb6f32fe4beafd8f845f29597**；smoke **3/3、1364.4633ms、exit0**，03:59:51.140Z–03:59:55.632Z，SHA **f227a2a1f6c1b367b5cb98fbcc0ec16eb9028b42755aeed3554df773ae2a60b9**。前后实际master SHA/status严格一致，Root重算log hash并核对metadata，未在检查中改源或补造PASS。
+
+原`run-frozen-independent.mjs`在实际Root workspace/dist执行新label `master-2d93d40`，2026-09-06T03:57:31.409Z–03:57:52.465Z，13/13命令组exit0：19新专项、13旧GitHub专项、29既有调用、Record7两刊/Record8四刊及v3完整产品对应；`data/master-2d93d40/independent-result.json` SHA **4c9c1452c126806b4c00396576c04df67d796af3623fc5f9fd60190d9ddaa9b2**。前后master SHA/原`.idea/`状态/全built hash一致。
+
+原Root选择Gap额外专项 **1/1、202.9032ms、exit0**（03:57:51.414Z–03:57:52.068Z），log SHA **b4b11fcb0a4851746876d9a961ad933e58c5760e5677d346fcbc0f27fcf33c6c**。Spec原9组业务期待以已说明的Root状态白名单副本对真实master/dist复跑9/9，`data/root-v1-12-spec-review/r2-2d93d40-fz50lf/result.json` SHA **da771d574939231996ddf2f137b655fdb084a28c293483d74b75e191b65da637**，metadata明确仅原无关`.idea/`，不声称完全clean。Record9固定reader同时对master built读取5/5完整Report/MD字节不变，未重freeze；以上额外命令实际工具chunk381d09 exit0。新Root专项总计20，smoke只是全量子集。
+
+[最终GitHub验收回写](https://github.com/yiwer/Observer/issues/12#issuecomment-5556767744)已单次发布，Root通过独立API实际读回完整正文、ID及URL后关闭；Issue实际读回 **CLOSED，2026-09-06T04:00:51Z**。#13原生唯一依赖#12已重新读取为closed，允许下一fresh票启动；未提前实施重大事件绕过。
+
+验收范围为Owned协议替身、真实本地SQLite、固定CLI/无真实模型协议验证与确定性参数回放；不是实际GitHub来源/PAT、真实模型质量、仓库安全、生产调度或人工资格。代码未push；QQ既有收件确认保留且未重发，Claude live仍延期。早期拒收、WIP、harness失败、完整Docker失败及原归档均保留，未清理。
