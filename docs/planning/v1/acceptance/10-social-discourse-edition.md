@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**R5 2a30b0b 仍被拒绝；作者完整221/221与Root旧字节/28份固定检查通过，但最终失败社交组的正文经待确认区进入永久Report/MD已独立复现，作者窄修中，尚未合并**。GitHub #10 OPEN / assignee yiwer。
+状态：**R6 853be14 已通过作者与 Root 独立冻结完整验收、双轴评审和29份固定检查；接受进入本地集成，尚待实际 master 验收**。GitHub #10 OPEN / assignee yiwer。以下 R1–R5 拒绝记录是历史，不代表当前候选。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -238,3 +238,32 @@ fresh `/root/review_v1_10_r5_standards`：**1项P1硬性违规、1项P3既有判
 fresh `/root/review_v1_10_r5_spec`：**0 finding**，缺失/部分实现、范围扩张、错误实现均0，本轴无最严重项；完整19文件差异及R5 delta、票/依赖/规范均亲读，前后clean。原成员快照逐项匹配最终Gate、清洗payload展示及coverage重算符合已批准契约。评审独立单文件35/35、2523.5337ms，typecheck exit0，临时目录固定在 `root-v1-10-r5-spec-review`；未改代码或旧oracle，未跑Docker全套。此轴结论不覆盖另轴已证实的P1。
 
 Root拒绝R5并交作者窄修：最终failed集合须覆盖所有可读投影，包含unconfirmedItems；普通合法待确认必须继续保留完整支持/相反关系，另一合格社会组/新闻和实际dispatch身份保持。不得把被拒正文换区显示、保留禁用回执补关系或放宽一致性校验。新clean SHA须重新冻结/复审/完整验收；没有新Record7 accepted baseline，#10未关闭、#11未启动。
+
+## 最终固定候选 R6：接受进入集成
+
+最终作者提交 **853be14fa9275fb7d99be19524014963a6857ef4**，Root 核对 clean `ticket/v1-10`，固定 base 的非空三点 diff 为19文件、1866+/48-。R5→R6仅3文件、65+/2-，Root亲读全部增量。最终失败组的同一 Claim/Evidence 集合同时过滤 Assessment 与 unconfirmedItems，再按剩余回执重算 coverage；普通合法相反证据的关系及实际 dispatch 身份保留。失败历史及固定反例均未改成宽松期待。
+
+### Standards
+
+fresh `/root/review_v1_10_r6_standards`：**0 hard，1项既有非阻断 P3，最严重P3**。R5 P1已关闭，无新增。P3仍为重复Schema版本判断的可能Repeated Switches，不要求本票历史重构。完整19文件和R6 delta均亲读、前后clean；独立复跑现有4项最终资格/coverage/原成员/待确认回归4/4、530.136ms，不冒充4个新独立探针。完整报告 `data/root-v1-10-r6-standards-review/review.md`。
+
+### Spec
+
+fresh `/root/review_v1_10_r6_spec`：**0 finding**，缺失/部分、范围扩张、错误实现均0，最严重项无。已亲读GitHub正文/评论、原生#7 CLOSED、完整19文件及R6增量；前后同SHA clean。独立现有社交单文件36/36、2870.8211ms，产物 `data/root-v1-10-r6-spec-review`。两轴均未改产品或旧oracle，未做真实平台/Provider资格测试。
+
+### 同 SHA 完整检查与 Root 独立回归
+
+| 执行者 | check | smoke（完整套件子集） | 证据目录 |
+|---|---|---|---|
+| 作者 `v1-10` | 222/222，126148.2905ms | 3/3，1325.7387ms | `data/v1-10-final-check-QQvN4r` / `data/v1-10-final-smoke-Gf8C2S` |
+| Root detached `accept-v1-10-r6` | 222/222，122622.893ms | 3/3，1329.9801ms | `data/root-frozen-853be14-full` |
+
+全部exit0、无失败/取消/跳过、前后clean同853be14。作者check stdout SHA256 `1969d56d76d326214647c0fa3f7267646b3523440485fd1b338acc6779a37b5b`，smoke stdout `9ff02988665a420513b90256abf87c032eb113262150c085a8f74c1d08aaf426`。Root check UTC 2026-09-06T00:37:59.314Z–00:40:07.078Z、combined SHA256 `2a68632f00a82e18faa3cb7f0b1d4201ae7d3ecb3dbd578105665e9d214b8de6`；smoke 00:45:13.923Z–00:45:18.216Z、combined `279295b40910fd939e65e860ab14b728b1ba42de042014fd1370ddb0ac21b09c`。
+
+Root固定runner `data/root-v1-10-review/run-independent.mjs` 在该独立built执行**29份检查调用均exit0**；它们不是29个测试，不把重跑次数累加覆盖。含旧5 readers/9份Record1–6整Report与MD字节、公司/兴趣/事件、原社交8探针、R2当前权限/TTL与最终权利、R3最终回执、R4最终coverage及原成员、R5待确认过滤和旧#9 Spec3项。结果 `data/root-v1-10-review/frozen-853be14-independent-result.json` 绑定输入摘要、执行路径和前后clean SHA。R5固定待确认正反对照2/2、132.1283ms；其他已拒反例全部转绿。
+
+R6准备时再次遇到既有Docker短标签读取异常，按固定ID可读；只读差分后原标签恢复。`docker-r6-differential.log` 中全限定Codex查询5秒timeout不是PASS，根因未证明；没有升级、重建、retag、重启或prune。随后作者与Root完整终态才是有效全检。仍只使用固定三镜像与离线协议/自有来源替身，不代表真实社交、模型、PDF/邮件或生产资格。
+
+### Record7 后续兼容基线
+
+在R6冻结验收通过后一次性捕获此前Root独立探针已生成的native与unavailable-gap两份报告，不重生成业务数据。目录 `O:/GenesisCode/Observer-worktrees/accept-v1-10-r6/data/root-v1-11-compat-853be14`；`baseline.json` SHA256 **00b47b35ab43e47edc58e92aa4932163741c4930a4228e981f0e68297ece87af**，producer固定853be14。新reader必须以待验收built绝对路径读取，检查整Report/MD、Record7/Version6、错误鉴权及production拒绝fixture。禁止重跑freeze或覆盖基线。旧R4准备脚本未执行且明确NOT-FROZEN，不得用作oracle。
