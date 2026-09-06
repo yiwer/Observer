@@ -45,3 +45,15 @@ Docker保持既有desktop-linux29.6.1及固定Codex0.153.4/Claude2.1.252/协议P
 - 共享网络reader仅批准新增安全限额响应头remaining/limit/resource白名单，不输出auth信息。稳定身份查找到底采用已文档化REST路径、受控同源重定向还是有限Search重发现，仍待官方证据收敛；不默用未文档化路径或扩大GraphQL传输。
 
 Root另要求作者明确typed WatchItems与已有GitHub一般故事共存时的席位/重复规则，避免追加数据绕过原领域门或无意翻倍约7条目标；正式综合分数与历史降权仍不在本票。官方schema/PAT/缓存建议须由研究成文后Root亲读移交，不将全部研究建议自动当作实现常量。
+
+## 研究移交与第一条结构 RED
+
+官方增量研究已完成，Root亲读全文、补充固定schema核验及最终修改后，原样复制到作者工作树[研究文件](../../../research/github-api-contract-2026-09-06.md)；SHA256 **dd2400936f28d6ab8c353d09cafa7dbb2630507dc7db111f3a9afca4e08922cf**，241行。原ignored研究材料保留；该相对链接在作者纳入提交并集成前尚不在Root树中，实际文件位于 `O:/GenesisCode/Observer-worktrees/v1-11/docs/research/github-api-contract-2026-09-06.md`。
+
+研究者固定官方`github/rest-api-description` revision **3cef12e8a02d612ad032473d4fb87266f2befeae** 的2026-03-10 JSON，目标10字段与Search envelope逐项核验。Root据此采用固定2026-03-10请求版本；`visibility/is_template`的合法省略与资格未知分开，不能补false/public。固定规范没有`/repositories/{repository_id}`；不使用该猜测路由、不新增GraphQL。采用最多两跳同API HTTPS、允许路径逐跳检查、返回node身份一致才更新地址的REST处理；路径复用且有限Search未找到旧node时明确Gap，不承诺全球重发现。Root批准现有reader增加仅由可信装配提供的可选URL guard，须在每跳DNS/发出请求前执行，旧调用不变。
+
+304要绑定实际条件复核与原表示时间，不延长政策TTL；新官方star history能力不改变本票两个快照净差定义，不纳入新接口。来源许可、PAT实际权限与期限、真实小时容量均未由文档调查获准或通过。
+
+作者报告第一条`node --test tests/github-observations.test.ts`为1项失败，原因是尚不存在公开`github-observations.ts`模块；这是结构RED，不称已独立证明数字计算失败。Root已亲读首片测试与技术方案，尚未读到原始终端日志或GREEN，要求后续提供真实保留日志，不补造历史捕获。
+
+作者的Request7数字观察模式须明确对普通GitHub候选的局部拒绝/Gap与安全投影，不能拖垮其他五栏或放宽旧版本领域门。原始响应TTL与许可允许的持久快照/身份/已刊双点计算证据须区分；Root实际核对[#22](../tickets/22-retention-and-rights-removal.md)明确拥有90天后小时→每日压缩和已刊输入保留，本票不提前实现该清理闭环，也不宣称已有压缩功能。
