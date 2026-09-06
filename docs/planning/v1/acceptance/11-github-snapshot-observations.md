@@ -1,6 +1,6 @@
 # V1-11 执行与待验收记录
 
-状态：**in-progress；第二轮固定候选 14f6889 的原两项 Spec P2 已由原期待独立回放关闭，最终 Standards 0 hard / 2 非阻断 P3、Spec 0；Root 旧刊及13项回放通过，仍待本轮完整冻结/实际master验收，未合入/关闭**。GitHub #11 OPEN / yiwer。
+状态：**accepted；最终实施 14f6889、集成 867e500，作者/Root冻结/实际master完整check各282/282、smoke各3/3；Standards 0 hard / 2 非阻断 P3、Spec 0。GitHub #11 已实际读回 CLOSED / yiwer，代码未push，生产未启用**。
 
 ## 固定任务与依赖
 
@@ -218,3 +218,26 @@ Root额外固定Record8四份已独立断言的永久Report/MD：成功+6、截�
 | 观察到归档及后续复用 | 实际SQLite→produce7/鉴权/重启，全量282、13专项、旧刊1–7与新Record8四份 |
 
 **固定候选满足本票自动化开发验收，允许本地集成；实际master重验尚未完成，因此尚不关闭#11。** 真实PAT权限/有效期、来源许可、GitHub实际容量、模型/地区/正式生产/人工质量仍未验证；无生产资格替代或#12实施。
+
+## 实际 master 验收与关闭
+
+Root先提交冻结证据 **fdf352f**，再no-ff合入已评审候选，实际集成 **867e500431886e1d876066c950f3a880b38f81f8**。产品src/tests/package/lock/tsconfig相对14f6889无额外diff；跟踪文件干净，唯一无关`?? .idea/`前后原样保留。Root没有清理旧证据或重用作者TEMP。
+
+- 完整 `npm run check`：**282/282**（122557.1989ms），UTC2026-09-06T02:24:47.451Z–02:26:55.459Z，log SHA **40eb3dd25a38e664d1cf89680974cce87d08b182181d826514061ef5ed9c62ff**。
+- `npm run smoke`：**3/3子集**（1340.5199ms），UTC02:27:57.727Z–02:28:01.995Z，log SHA **9f5054c800622de04e35db989a0bc68ffd275c7579470691deb0ed1702bd5fa8**。
+- 原生capturer结果/原stdout/stderr与合并log在 `data/root-v1-11-master-867e500-1/`，Root已亲读终态和验证hash；两命令前后master/867e500/status完全相同，退出0。
+- 既有固定29次调用全部退出0，结果 `data/root-v1-10-review/master-v1-11-867e500-independent-result.json`；Record1–6九份旧Report/MD、Record7额外两份原reader、Record8新四份原reader全部原字节。所有baseline/reader未更改；后票必须保留这些兼容oracle。
+
+实际master独立13项原期待全部通过，前后15个built模块摘要一致，结果位于 `data/root-v1-11-review/`：
+
+| 日志前缀 | 结果 | log SHA256 |
+| --- | --- | --- |
+| `master-867e500-redirect` | 3/3，13.0899ms | 39b5b8595405e5414d475367b6f2ddb696e950e0a4314a1c01c78918251c1ca8 |
+| `master-867e500-rename` | 2/2，211.9008ms | d0a6dc4519791d56013e08b41d5f25bdb19aac7864aa97f318461822ff016a37 |
+| `master-867e500-cutoff` | 2/2，187.1025ms | b457138204e230550d7fa0b6f46a079b9231f86c8aaf2830b2c00aba74cb1287 |
+| `master-867e500-latest-causality` | 4/4，334.3526ms | 300e3ec5ee8c7c560b29a88ced7e821f453cb84336e4603f90b477c864409465 |
+| `master-867e500-spec-r1` | 2/2，193.588ms | df5aef2c8212bc458b2f0e51a28be66c159710806c97f4f103bfeb7eca35c663 |
+
+Root单次发布[最终验收回写](https://github.com/yiwer/Observer/issues/11#issuecomment-5556354464)，独立API实际读回完整正文、ID、URL后关闭；`gh issue view`读回 **CLOSED，2026-09-06T02:28:54Z，yiwer**。随后实际读取#12正文/空评论及原生依赖：仅#8/#11且均CLOSED，两票集成8079271/867e500都在当前master可达。
+
+**#11开发验收完成。** 原拒收及失败证据保留；资格仅本地自有来源协议/SQLite/无凭证模型替身，未批准真实来源/PAT/生产或push。下一步为全新实施上下文的#12，在实现前协调完整候选输入、稳定身份报道历史、精确评分/配额与新正文版本；不复用本票作者为下一票fresh作者。

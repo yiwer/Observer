@@ -426,7 +426,7 @@
       "number": 11,
       "title": "GitHub 候选、稳定身份与真实快照增量",
       "file": "tickets/11-github-snapshot-observations.md",
-      "status": "in-progress",
+      "status": "accepted",
       "kind": "implementation",
       "blockedBy": [
         "V1-06"
@@ -452,8 +452,15 @@
       "externalPrerequisites": [],
       "issueUrl": "https://github.com/yiwer/Observer/issues/11",
       "issueDatabaseId": 5355739790,
-      "githubState": "open",
-      "dependenciesVerified": true
+      "githubState": "closed",
+      "dependenciesVerified": true,
+      "execution": {
+        "implementationCommit": "14f6889a207db393a96bb0fff7f4ba7867e6714d",
+        "integrationCommit": "867e500431886e1d876066c950f3a880b38f81f8",
+        "acceptanceFile": "acceptance/11-github-snapshot-observations.md",
+        "qualification": "local-owned-github-protocol-and-sqlite-only",
+        "pushed": false
+      }
     },
     {
       "id": "V1-12",
