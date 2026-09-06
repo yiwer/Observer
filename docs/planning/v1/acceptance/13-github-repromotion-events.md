@@ -62,6 +62,24 @@ Root以现态运行`npm run typecheck`，exit1；唯一TS2345在`src/observer.ts
 
 另准备未执行的Root `event-history-integrity-probe.mjs`，SHA **9F9934352ACBA2D008D6E717815F6295DE325C0557C026CA7AA4B6FFC19894D4**：仅在新建Owned测试库做可恢复故障注入，去掉真实旧刊的已消费发展，再用公开重算/正文函数构造内部自洽的错误新刊；公开read必须因与真实旧刊历史不符而拒绝。其SQL仅用于注入并finally恢复，不用SQL断言产品结论。目前只通过语法检查，不计PASS。
 
+## 首GREEN后的独立诊断（非冻结验收）
+
+接续作者修复失败fallback的联合类型及Development严格投影字段顺序与哈希的一致性后，首tracer在`04-first-green`实际1/1，402.8931ms，UTC2026-09-06T19:30:20.760Z→19:30:21.239Z，exit0，log SHA **11b6ad275a94861a81f1e1d049770e1f2eb1974b7e9868fdd14eb3ae0a1c145c**；`05-first-green-typecheck`在19:30:22.011Z→19:30:23.914Z exit0，空log SHA **e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855**。
+
+先前`03-first-green-attempt`原失败保留：0/1、385.5833ms、19:24:50.311Z→19:24:50.775Z，exit1，`github-repromotion-input-invalid`；log SHA **742b8835059b5e2f902bbeef172c720d0394b948b1d1d1d46840274f4fb7deed**。`02-resume-typecheck`修复后已exit0；它不覆盖Root恢复时的TS2345诊断。Root亲读作者capture、原失败/成功log，并独立解析02–05的metadata、重算全部日志hash及比对完整before/after identity。所有src/tests前后同，均为WIP不是clean代码提交。
+
+作者随后短暂冻结产品及文件清单，Root用原未修改脚本/fixture首次执行3组公开诊断。各自metadata包含完整模块/Root脚本前后hash，均不变；使用真实UTC、单原始fd、native exit，各自新目录：
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果 | UTC（2026-09-06） | 原始log SHA |
+| --- | --- | --- | --- |
+| `wip-first-green-release-01` | 1/1，187.154ms，exit0 | 19:31:08.470Z→19:31:08.872Z | `dc11bfb26460f439610376dc4de52d68fad86fcc3d352c5af41249c0e9b465b6` |
+| `wip-first-green-long-01` | 1/1，212.157ms，exit0 | 19:31:09.518Z→19:31:09.958Z | `0bcef98e8fd4ac946bcf07d77fdc03e171e3d8358ff39d8fc30f379e7c3aaa0a` |
+| `wip-first-green-history-01` | 0/1，167.4744ms，exit1 | 19:31:10.611Z→19:31:10.993Z | `cc68478667f28e600c32fcb3da10433785b941076ece9d526a38f45bf78ada13` |
+
+第三组是产品缺口而非harness失败：真实第2期已消费Release；在新建Owned库将第3期eventHistory中对应旧刊entry.developments置空，保留真实versionId/Record SHA，并通过公开ranking/Markdown函数重生成自洽的第3期。仓库因此错误获得新事件资格，`readReport`未抛拒绝。表明只重算当前排名而未将声明历史回核真实旧刊。故障注入在finally恢复原Owned payload，未动用户库/原oracle。Root已解除冻结，将该反例交作者按下一片公开RED→修复→GREEN处理；完整旧刊SHA/node/development/policy/date/time及新增事件权限需同步核对。原Root期待保持，修复后重新运行。
+
+此阶段只证明上述两个正向诊断通过，并明确一个未修复缺口；未进行本票完整check/smoke、最终双轴、固定SHA或实际master验收，GHSA/动量仍待继续实现。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
