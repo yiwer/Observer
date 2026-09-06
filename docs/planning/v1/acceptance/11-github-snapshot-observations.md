@@ -1,6 +1,6 @@
 # V1-11 执行与待验收记录
 
-状态：**in-progress；fresh implementation 已派发，正在亲读契约并准备首片方案，尚无产品变更或验收结论**。GitHub #11 OPEN / yiwer。
+状态：**in-progress；fresh作者已亲读契约，Root已协调新增版本/存储/权限与首片；官方协议细节复核中，尚无冻结或验收结论**。GitHub #11 OPEN / yiwer。
 
 ## 固定任务与依赖
 
@@ -31,3 +31,17 @@ Root持有Record1–6九份不可变Report/MD oracle；已有29份固定调用�
 Docker保持既有desktop-linux29.6.1及固定Codex0.153.4/Claude2.1.252/协议Python三个镜像，精确摘要见[#10记录](10-social-discourse-edition.md)。禁止升级、重建、retag、重启或prune；短标签偶发查询失败保留整次失败，只读核查后同SHA新目录完整重跑，不拼接PASS。完整Docker套件作者/Root串行，各自TEMP/TMP定点新data目录。
 
 保留[执行入口中的历史拒绝清理边界](../EXECUTION.md#保留的测试证据与禁止重试清理边界)及旧exited容器fb6640585ce1/c9e72c9c5c5f，不换工具绕过。作者完成后提交clean SHA，再完整check/smoke、fresh Standards/Spec、Root冻结及实际master验收；未满足前不关闭#11，不启动#12实施。
+
+## 局部Interface与首片确认
+
+作者已报告亲读指定技能及项目材料、实际gh正文/依赖，未发现AGENTS/CLAUDE；锁定`npm ci`完成。Root确认以下是实施方向，不是测试完成证据：
+
+- Request7→Record8/Version7/`observer-canonical-v6`，新增typed GitHub receipt；旧请求和正文保持字节。单独GitHub observation SQLite使用独立application_id/v1，错误数据库/未知新版本拒绝，不修改Report SQLite1。
+- `createGitHubObserver`隐藏有限采集、持久观测与身份历史，公开`observeDue`、截止快照读取和close；Observer生产端使用Owner可信reader/store引用，不接受候选/模型自报计数授予资格。Report保存实际选中两点的全部计算证据，旧刊重启不重新依赖当前选样。
+- 数字是来源许可下的typed元数据及确定性相减，不虚构LLM核验；没有模型发送的路径不假称使用模型权限。来源可选`github`用途grant覆盖受审query、API处理、快照/身份历史、衍生发布与不可撤回导出、raw-only删除义务；缺失不自动授权，旧policy摘要不变。依阶段检查现有权限，不把凭证声明或GET成功当作实际权限/期限证明。
+- 小时相位采用业务Asia/Shanghai的xx:25，持久UTC。完整接收及验证后实际可用时间约束截稿，不能回填计划时刻；07:30相等可入选，当前前15分钟/历史目标±60分钟，closest后同距更早的确定性选择，展示实际间隔。首次历史不足与已知旧仓库缺样分离。
+- 首片从自有官方格式Search/详情响应取得同node改名的两个实际观测，重启观察库后produce/readReport再重启，预期+5 stars/−2 forks及原名、两点时间和有限采样披露。该一个端到端tracer批准按RED→GREEN开始；真实协议字段须经当前schema复核，不能凭fixture自证。
+- 同步现有Profile开始冻结；每次外部I/O、观测提交、出版与读回检查对应当前许可。较晚失败/不合格记录不能被旧成功缓存覆盖。原API正文、秘密、README和非许可字段不进入永久receipt。
+- 共享网络reader仅批准新增安全限额响应头remaining/limit/resource白名单，不输出auth信息。稳定身份查找到底采用已文档化REST路径、受控同源重定向还是有限Search重发现，仍待官方证据收敛；不默用未文档化路径或扩大GraphQL传输。
+
+Root另要求作者明确typed WatchItems与已有GitHub一般故事共存时的席位/重复规则，避免追加数据绕过原领域门或无意翻倍约7条目标；正式综合分数与历史降权仍不在本票。官方schema/PAT/缓存建议须由研究成文后Root亲读移交，不将全部研究建议自动当作实现常量。
