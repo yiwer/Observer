@@ -141,7 +141,8 @@ export async function prepareDiscourse(input: { request: Extract<SixEditionReque
       const finalReceipt = (verification: Verification | null) => verification ? { ...verification, assessments: verification.assessments.filter((assessment) =>
         !failedClaims.has(JSON.stringify([assessment.storyId, assessment.claimId])) && !assessment.evidence.some((evidence) => failedEvidenceIds.has(evidence.evidenceId))) } : null;
       const gate = record.publicationGate;
-      const publicationGate = gate.schemaVersion === 1 ? { ...gate, verification: finalReceipt(gate.verification) } : { ...gate, batches: gate.batches.map((batch) => ({ ...batch, verification: finalReceipt(batch.verification) })) };
+      const unconfirmedItems = gate.unconfirmedItems.filter((item) => !failedClaims.has(JSON.stringify([item.storyId, item.claimId])) && !item.evidenceIds.some((id) => failedEvidenceIds.has(id)));
+      const publicationGate = gate.schemaVersion === 1 ? { ...gate, unconfirmedItems, verification: finalReceipt(gate.verification) } : { ...gate, unconfirmedItems, batches: gate.batches.map((batch) => ({ ...batch, verification: finalReceipt(batch.verification) })) };
       const projected: Extract<ReportRecord, { schemaVersion: 7 }> = { ...record, publicationGate, schemaVersion: 7, editorialContract: "observer-canonical-v5", interestSelections: [...record.interestSelections, ...selected.interestSelections], discourse: { schemaVersion: 1, rulesVersion: "observer-discourse-v1", frozenAtUtc: input.frozenAtUtc, configurationSha256,
         groups: displayGroups.map((group) => ({ ...group, reason: failed.get(group.id) ?? null })), observations },
         coverageGaps: [...record.coverageGaps.filter((gap) => gap.edition !== "social-discourse" || gap.reason !== "below-interest-selection-target"),

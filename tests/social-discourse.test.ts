@@ -880,3 +880,57 @@ test("Original candidate and Claim membership governs whole-group eligibility wi
     assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
   }
 });
+
+test("A final failed social group cannot reappear as unconfirmed text while ordinary contrary evidence keeps its complete relation", async (t) => {
+  for (const relation of ["supports", "contradicts"] as const) {
+    const app = await sampleFixture(t);
+    const configuration = { ...app.options.discourse.configuration, groups: [app.options.discourse.configuration.groups[0]!, { ...app.options.discourse.configuration.groups[0]!, id: "valid" }] };
+    app.options.discourse.configuration = configuration;
+    app.task.discourseSamples = [];
+    for (const group of configuration.groups) app.task.discourseSamples.push(await app.adapter.capture({ sourcePolicy: app.source, configuration, groupId: group.id,
+      businessDate: app.task.businessDate, windowStartUtc: app.task.evidenceBundle.windowStartUtc, cutoffUtc: app.task.evidenceBundle.cutoffUtc }));
+    const marker = "FAILED-SOCIAL-UNCONFIRMED-CANARY";
+    const target = app.socialStories[0]!;
+    app.socialStories.push({ ...structuredClone(target), id: "z-valid", eventClusterId: "valid", claims: target.claims.map((claim) => ({ ...claim, evidenceIds: ["discourse-valid"] })) });
+    target.claims[0]!.text = marker;
+    const originalRun = app.options.editionRunner.run;
+    app.options.editionRunner.run = async (input) => {
+      const output = await originalRun(input);
+      for (const entry of output.editions) if (entry.edition === "world-affairs" && entry.status === "completed" && entry.result?.status === "succeeded") {
+        entry.result.stories[0]!.claims.push({ id: "ordinary-uncertain", kind: "fact", text: "ORDINARY-UNCONFIRMED-CANARY", evidenceIds: ["evidence-1"] });
+      }
+      return output;
+    };
+    const originalVerify = app.options.verifier.verify;
+    app.options.verifier.verify = async (input) => {
+      const result = await originalVerify(input);
+      for (const assessment of result.assessments) {
+        if (assessment.storyId === "social-sample") { assessment.evidence[0]!.relation = relation; assessment.evidence[0]!.upstreamOriginId = marker; }
+        if (assessment.claimId === "ordinary-uncertain") assessment.evidence[0]!.relation = "contradicts";
+        if (assessment.discourse) Object.assign(assessment, { selection: { topics: [], entities: [], regions: [], impact: "ordinary", impactClaimIds: [],
+          evidenceLanguages: [{ evidenceId: assessment.evidence[0]!.evidenceId, language: "zh" }] } });
+      }
+      return result;
+    };
+    app.restart();
+    const report = app.observer.readReport((await app.observer.produce(app.task)).id, ownerToken);
+    assert.equal(report.record.schemaVersion, 7);
+    if (report.record.schemaVersion !== 7) return;
+    assert.deepEqual(report.record.stories.map((story) => story.id), ["news"]);
+    assert.equal(report.record.discourse.observations.length, relation === "supports" ? 2 : 1);
+    assert.equal(report.canonicalMarkdown.includes(marker), relation === "supports");
+    assert.equal(JSON.stringify(report).includes(marker), relation === "supports");
+    assert.ok(report.canonicalMarkdown.includes("ORDINARY-UNCONFIRMED-CANARY"));
+    assert.match(report.canonicalMarkdown, /提供相反材料/);
+    const gate = report.record.publicationGate;
+    assert.deepEqual(gate.unconfirmedItems.map((item) => [item.storyId, item.claimId]), [["news", "ordinary-uncertain"]]);
+    const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
+    assert.equal(assessments.find((assessment) => assessment.storyId === "news" && assessment.claimId === "ordinary-uncertain")!.evidence[0]!.relation, "contradicts");
+    assert.equal(assessments.some((assessment) => assessment.storyId === "social-sample"), relation === "supports");
+    assert.equal(report.record.coverage.inputEvidenceCount, 3);
+    assert.deepEqual(gate.input.dispatchedEvidenceIds, ["evidence-1", "discourse-linked", "discourse-valid"]);
+    assert.deepEqual(report.record.coverage.languages.find((entry) => entry.key === "zh")!.evidenceIds, relation === "supports" ? ["discourse-linked", "discourse-valid"] : ["discourse-valid"]);
+    app.restart();
+    assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+  }
+});
