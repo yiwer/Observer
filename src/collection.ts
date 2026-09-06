@@ -22,6 +22,10 @@ export const SourcePolicySchema = z.strictObject({
   distribution: z.strictObject({ enabled: z.boolean(), fields, allowDerivedText: z.boolean(), allowPermanentArchive: z.boolean() }),
   citation: z.strictObject({ enabled: z.boolean(), attribution: text, maxCharacters: z.number().int().nonnegative().max(10000) }),
   deletion: z.strictObject({ mode: z.enum(["owner-request", "unsupported"]), instructions: text }),
+  social: z.strictObject({ platform: z.literal("mastodon"), allowedTags: z.array(z.string().regex(/^[\p{L}\p{N}_]{1,64}$/u)).min(1).max(10),
+    allowApiResponseProcessing: z.boolean(), allowStatusKeys: z.boolean(), allowAnonymousText: z.boolean(), irrevocableExportAllowed: z.boolean(),
+    deletionScope: z.enum(["raw-only", "derived-and-exports", "unknown"]),
+  }).optional(),
   limits: z.strictObject({
     pollIntervalSeconds: z.number().int().min(1).max(86400), timeoutMs: z.number().int().min(20).max(30000),
     maxResponseBytes: z.number().int().min(64).max(1048576), maxItems: z.number().int().min(1).max(1000), maxRedirects: z.number().int().min(0).max(5),

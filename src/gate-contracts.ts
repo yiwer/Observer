@@ -3,6 +3,7 @@ import type { CollectedEvidence, EvidenceBundle } from "./contracts.ts";
 import { EventAssessmentSchema, EventProjectionSchema } from "./event-contracts.ts";
 import { SelectionAssessmentSchema, SelectionProjectionSchema } from "./interest-contracts.ts";
 import { DomainAssessmentSchema, DomainProjectionSchema } from "./domain-contracts.ts";
+import { DiscourseAssessmentSchema } from "./discourse-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
@@ -39,6 +40,7 @@ export const AssessmentSchema = z.strictObject({
   selectionProjection: SelectionProjectionSchema.optional(),
   domain: DomainAssessmentSchema.optional().catch(undefined),
   domainProjection: DomainProjectionSchema.optional(),
+  discourse: DiscourseAssessmentSchema.optional().catch(undefined),
 });
 export const VerificationSchema = z.strictObject({
   schemaVersion: z.literal(1), inputSha256: sha256,

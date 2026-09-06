@@ -62,7 +62,7 @@ export function domainFailure(claim: Claim, assessment: Assessment, evidence: re
   return null;
 }
 
-export function domainLabels(record: Extract<ReportRecord, { schemaVersion: 6 }>, storyId: string, claimId: string): string {
+export function domainLabels(record: Extract<ReportRecord, { schemaVersion: 6 | 7 }>, storyId: string, claimId: string): string {
   const gate = record.publicationGate;
   const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
   const projection = assessments.find((entry) => entry.storyId === storyId && entry.claimId === claimId)?.domainProjection;

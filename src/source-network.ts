@@ -40,7 +40,7 @@ export function createSourceReader(io: SourceNetworkIO = network) {
           headers: { "user-agent": "Observer/0.1 source-collection", accept: "application/atom+xml, application/rss+xml, application/xml, text/xml, text/html, text/plain", "accept-encoding": "identity", ...request.headers },
         }, (incoming) => {
           const headers: Record<string, string> = {};
-          for (const name of ["location", "retry-after", "etag", "last-modified", "content-type"]) {
+          for (const name of ["location", "retry-after", "etag", "last-modified", "content-type", "link", "x-ratelimit-reset"]) {
             const value = incoming.headers[name]; if (typeof value === "string") headers[name] = value;
           }
           const status = incoming.statusCode ?? 0;

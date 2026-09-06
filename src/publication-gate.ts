@@ -13,6 +13,10 @@ export interface EvaluationOptions {
   verifier: SemanticVerifier | undefined;
   recordVerifierDispatch?: boolean;
   domainRules?: boolean;
+  beforeVerification?: () => Promise<void>;
+  afterVerification?: () => Promise<void>;
+  claimEligibility?: (story: CandidateV2, claim: Claim) => string | null;
+  semanticEligibility?: (story: CandidateV2, claim: Claim, assessment: import("./gate-contracts.ts").Verification["assessments"][number]) => string | null;
   clock: () => string;
   modelPolicyCheck: (evidenceIds: string[], atUtc: string) => string | null;
   publicationPolicyCheck: (evidenceIds: string[], claim: Claim, atUtc: string) => string | null;
@@ -20,10 +24,11 @@ export interface EvaluationOptions {
 
 export async function evaluatePublication(options: EvaluationOptions) {
   const { request, stories, verifier } = options;
-  const structuralReason = (story: CandidateV2, claim: Claim) =>
+  const structuralReason = (story: CandidateV2, claim: Claim) => options.claimEligibility?.(story, claim) ?? (
     claim.evidenceIds.some((id) => !request.evidenceBundle.evidence.some((evidence) => evidence.id === id)) ? "unknown-evidence-reference" :
     new Set(claim.evidenceIds).size !== claim.evidenceIds.length || story.claims.filter((item) => item.id === claim.id).length !== 1 ||
-    (options.structuralStories ?? stories).filter((item) => item.id === story.id).length !== 1 ? "ambiguous-claim-identity" : null;
+    (options.structuralStories ?? stories).filter((item) => item.id === story.id).length !== 1 ? "ambiguous-claim-identity" : null);
+  await options.beforeVerification?.();
   const beforeVerifierUtc = options.clock();
   const modelFailures = new Map(request.evidenceBundle.evidence.map((item) => [item.id, options.modelPolicyCheck([item.id], beforeVerifierUtc)]));
   const permitted = new Set([...modelFailures].filter(([, reason]) => reason === null).map(([id]) => id));
@@ -39,6 +44,7 @@ export async function evaluatePublication(options: EvaluationOptions) {
       output = await verifier.verify(dispatched);
     }
   } catch { /* External error text is never retained. */ }
+  await options.afterVerification?.();
   const completedAtUtc = options.clock();
   const parsed = VerificationSchema.safeParse(output);
   const expected = reviewStories.flatMap((story) => story.claims.map((claim) => ({ storyId: story.id, claim })));
@@ -80,6 +86,8 @@ export async function evaluatePublication(options: EvaluationOptions) {
         decide("quarantined", "invalid-verifier-receipt");
         return false;
       }
+      const specialFailure = options.semanticEligibility?.(story, claim, assessment!);
+      if (specialFailure) { decide("quarantined", specialFailure); return false; }
       const domainRejected = options.domainRules && assessment ? domainFailure(claim, assessment, request.evidenceBundle.evidence, request.evidenceBundle.cutoffUtc) : null;
       if (domainRejected) {
         decide(domainRejected.outcome, domainRejected.reason, { semantic: { status: assessment!.conclusion, reason: assessment!.reason } });

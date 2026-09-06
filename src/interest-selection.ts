@@ -3,17 +3,24 @@ import type { InterestSnapshot } from "./interest-contracts.ts";
 import type { ReportRecord } from "./contracts.ts";
 import { interestHash, interestKeyHash } from "./interest-profile.ts";
 
-export function projectSelectionReceipt(verification: Verification | null, stories: CandidateV2[], enabled: boolean, modelEvidence: ReadonlyArray<{ id: string; title?: string | undefined; content?: string | undefined }>): Verification | null {
+export function projectSelectionReceipt(verification: Verification | null, stories: CandidateV2[], enabled: boolean, modelEvidence: ReadonlyArray<{ id: string; title?: string | undefined; content?: string | undefined }>, nativeSocialStoryIds: ReadonlySet<string> = new Set()): Verification | null {
   if (!verification) return null;
   return { ...verification, assessments: verification.assessments.map((assessment) => {
     const { selection, selectionProjection: _untrusted, ...original } = assessment;
     const story = stories.find((story) => story.id === assessment.storyId);
-    const claim = story?.claims.find((claim) => claim.id === assessment.claimId && (claim.kind === "fact" || claim.kind === "statement"));
+    const native = !!story && nativeSocialStoryIds.has(story.id);
+    const claim = story?.claims.find((claim) => claim.id === assessment.claimId && (claim.kind === "fact" || claim.kind === "statement" || native && claim.kind === "analysis"));
     const readable = (id: string) => modelEvidence.some((evidence) => evidence.id === id && !!(evidence.title?.trim() || evidence.content?.trim()));
     if (!enabled || !selection || !claim || assessment.conclusion !== "supported" || assessment.wording !== "original" ||
       !assessment.evidence.some((evidence) => evidence.relation === "supports" && evidence.reliability === "reliable" && readable(evidence.evidenceId)) ||
       selection.evidenceLanguages.some((item) => !claim.evidenceIds.includes(item.evidenceId) || !assessment.evidence.some((evidence) => evidence.evidenceId === item.evidenceId && evidence.relation === "supports" && evidence.reliability === "reliable"))) return original;
     const { topics, entities, ...metadata } = selection;
+    if (native) {
+      const { impactBasis: _impactBasis, ...restricted } = metadata;
+      return { ...original, selectionProjection: { ...restricted, regions: [], impact: "ordinary" as const, impactClaimIds: [],
+        evidenceLanguages: metadata.evidenceLanguages.filter((item) => readable(item.evidenceId)), provenance: "observer-final-selection-projection-v1" as const,
+        annotationSha256: interestHash(selection), topicSha256s: [...new Set(topics.map(interestKeyHash))], entitySha256s: [...new Set(entities.map(interestKeyHash))] } };
+    }
     const validImpact = original.eventProjection?.materiality === "material" && selection.impactClaimIds.length > 0 && selection.impactClaimIds.every((id) => story!.claims.some((claim) => claim.id === id && claim.kind === "analysis")) &&
       (claim.kind === "statement" ? selection.impactBasis === "statement-act" : selection.impactBasis === "observed-event");
     return { ...original, selectionProjection: { ...metadata, evidenceLanguages: metadata.evidenceLanguages.filter((item) => readable(item.evidenceId)), impact: validImpact ? metadata.impact : "ordinary", impactClaimIds: validImpact ? metadata.impactClaimIds : [], provenance: "observer-final-selection-projection-v1" as const,
@@ -51,7 +58,7 @@ export function selectInterests(gate: GatedRecord["publicationGate"] | EventReco
   return { interestSelections, stories: stories.filter((story) => decision(story.id).outcome === "eligible").sort((a, b) => Number(decision(b.id).baseline) - Number(decision(a.id).baseline) || decision(b.id).score - decision(a.id).score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) };
 }
 
-export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 4 | 5 | 6 }>, snapshot: InterestSnapshot): Extract<ReportRecord, { schemaVersion: 5 }>["coverage"] {
+export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 4 | 5 | 6 | 7 }>, snapshot: InterestSnapshot): Extract<ReportRecord, { schemaVersion: 5 }>["coverage"] {
   const gate = record.publicationGate;
   const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
   const permitted = new Set(record.evidenceBundle.evidence.map((evidence) => evidence.id));
@@ -91,7 +98,7 @@ export function interestCoverage(record: Extract<ReportRecord, { schemaVersion: 
 }
 
 // Recheck the published projection without reopening source material or the mutable profile.
-export function consistentInterests(record: Extract<ReportRecord, { schemaVersion: 5 | 6 }>): boolean {
+export function consistentInterests(record: Extract<ReportRecord, { schemaVersion: 5 | 6 | 7 }>): boolean {
   if (interestHash(record.interestProfile.profile) !== record.interestProfile.sha256 || new Set(record.interestSelections.map((entry) => entry.storyId)).size !== record.interestSelections.length) return false;
   const gate = record.publicationGate;
   const receipts = gate.schemaVersion === 1 ? [gate] : gate.batches;

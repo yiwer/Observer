@@ -2,6 +2,7 @@ import { z } from "zod";
 import { BatchedPublicationGateSchema, CandidateV2Schema, ClaimSchema, PublicationGateSchema } from "./gate-contracts.ts";
 import { EventClusterSchema, EventSelectionSchema } from "./event-contracts.ts";
 import { InterestSnapshotSchema, InterestSelectionSchema, InterestCoverageSchema } from "./interest-contracts.ts";
+import { DiscourseSnapshotSchema } from "./discourse-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const utc = z.iso.datetime({ precision: 3, offset: false });
@@ -143,7 +144,8 @@ export const SixEditionRequestSchema = ProduceRequestSchema.extend({
 export const EventEditionRequestSchema = SixEditionRequestSchema.extend({ schemaVersion: z.literal(3) });
 export const InterestEditionRequestSchema = SixEditionRequestSchema.extend({ schemaVersion: z.literal(4) });
 export const DomainEditionRequestSchema = SixEditionRequestSchema.extend({ schemaVersion: z.literal(5) });
-export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema> | z.infer<typeof EventEditionRequestSchema> | z.infer<typeof InterestEditionRequestSchema> | z.infer<typeof DomainEditionRequestSchema>;
+export const DiscourseEditionRequestSchema = SixEditionRequestSchema.extend({ schemaVersion: z.literal(6), discourseSamples: z.array(z.unknown()).max(10).optional() });
+export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema> | z.infer<typeof EventEditionRequestSchema> | z.infer<typeof InterestEditionRequestSchema> | z.infer<typeof DomainEditionRequestSchema> | z.infer<typeof DiscourseEditionRequestSchema>;
 // Six-Edition research appends a known Edition suffix to the unchanged 200-character input ID.
 // This bounded envelope extension does not alter the legacy AgentRunner/CLI contract.
 const editionTaskId = z.string().min(1).max(200 + 1 + Math.max(...Object.keys(editionNames).map((name) => name.length)));
@@ -226,7 +228,12 @@ const InterestRecordSchema = EventRecordSchema.extend({
   interestProfile: InterestSnapshotSchema, interestSelections: z.array(InterestSelectionSchema).max(300), coverage: InterestCoverageSchema,
 });
 const DomainRecordSchema = InterestRecordSchema.extend({ schemaVersion: z.literal(6), editorialContract: z.literal("observer-canonical-v4"), domainRules: z.literal("observer-domain-evidence-v1") });
-export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema]);
+const DiscourseRecordSchema = DomainRecordSchema.extend({ schemaVersion: z.literal(7), editorialContract: z.literal("observer-canonical-v5"),
+  discourse: DiscourseSnapshotSchema.extend({ observations: z.array(z.strictObject({ groupId: id, kind: z.enum(["story-linked", "platform-native"]),
+    story: CandidateV2Schema, priority: z.boolean(), linkedClusterId: id.nullable(), primaryStoryId: id.nullable(), primaryVersionId: id.nullable(),
+  })).max(10) }),
+});
+export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
 const LegacyReportVersionSchema = z.strictObject({
@@ -246,6 +253,8 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
   schemaVersion: z.literal(4), editorialContract: z.literal("observer-canonical-v3"), reportRecordSha256: sha256,
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(5), editorialContract: z.literal("observer-canonical-v4"), reportRecordSha256: sha256,
+}), LegacyReportVersionSchema.extend({
+  schemaVersion: z.literal(6), editorialContract: z.literal("observer-canonical-v5"), reportRecordSha256: sha256,
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({
