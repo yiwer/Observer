@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**前三轮候选被独立评审拒绝；第三轮 af2b9b4 的完整检查通过，但最终失效社交组的语义回执残留已独立复现，作者正在窄修，尚未合并**。GitHub #10 OPEN / assignee yiwer。
+状态：**前四轮候选被独立评审拒绝；R4 f363de8 完整检查通过，但最终裁剪与覆盖统计、原候选成员资格的两个衔接反例已独立复现，作者正在窄修，尚未合并**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -183,3 +183,33 @@ fresh `/root/review_v1_10_r3_standards`：**0硬性违规，1项P3判断性 poss
 fresh `/root/review_v1_10_r3_spec`：**1项P2：最终失败组仍永久保留含原句的语义回执**。技术合同v1-10.md:42要求删除「最终失效组的全部语义回执」，:86明确包含upstreamOriginId等字段复制的原句。observer.ts:323–328先裁回执，discourse.ts:117之后才判无主故事、无合格分析等组失败，未再清除回执。missing-main和unsafe-scope均0观察及明确Gap，canary却仍在verification.assessments[].evidence[].upstreamOriginId，经鉴权读取/SQLite重启可取得。影响为永久Record残留，**没有观察到Markdown泄露**。未发现其他独立缺失或范围扩张，R3前两项修复与合同相符。
 
 Root亲读固定探针 `Observer/data/root-v1-10-r3-spec-review/final-group-receipt.mjs`，SHA256 `973e5838d2a7f3055e5a84eb0a5a8ad2a2b2215e242b6a0112e5ab397f7dd7d0`，在独立detached built原样复现：3项中native对照1PASS、两负例FAIL，137.5661ms，日志 `root-v1-10-review/r3-final-group-receipt-root-red.log`。自有材料，无真实服务、秘密或SQL旁读。Root拒绝R3，作者在全部最终资格/兴趣/容量判断后统一裁失效组回执，保留普通/合格社交审计与旧字节；保持原期待，不靠单字段黑名单。新clean SHA须再次冻结复审与独立验收，当前不启动#11。
+
+## 第四轮固定候选 R4：拒绝合并
+
+R4 `f363de8facf1b387c9eabc29d99e32d49b1fe8a6` 相比R3仅3文件59+/2-；在discourse最终failed集合形成后，按Gate的story/claim身份及Evidence关联裁掉整条Assessment。Root核对clean、完整base三点差异有效非空（19文件1711+/48-），亲读delta/规格。作者单文件33/33、相关八文件153/153及原R3探针3/3只是开发证据；中间误命名green的失败已如实说明为新增fixture不合法可选字段，不改业务期待。
+
+| 执行者 | 完整check | smoke（子集） | 证据目录 |
+|---|---|---|---|
+| 作者 | 219/219，exit0，122703.6332ms | 3/3，exit0，1339.2403ms | `v1-10/data/v1-10-final-check-eFikTK` / `v1-10-final-smoke-pv6NHX` |
+| Root detached | 219/219，exit0，121120.8073ms | 3/3，exit0，1318.4076ms | `accept-v1-10-r4/data/root-frozen-f363de8-full` |
+
+同SHA前后clean、无失败/取消/跳过。作者stdout摘要check `e75855e32b2fc536877c7ce4dacf9c2150738fc22bc05bf3667e045d7ae15102`、smoke `f138a9ec85689a64aafeba67abb0082ceb364aedcfd7b96d52b6b4f85712c425`；Root combined摘要check `8e0eee5f9d46c5dfd1bad3b0f38e181442eed98ef179dbd8e389307b61470603`、smoke `a9c79b9afa2b75fca60d2155032a40a57c50938fa7f7f67e788b559512b7673c`。Root全检00:14:53.866–00:17:00.099Z，smoke00:19:01.493–00:19:05.624Z。
+
+Root新detached锁依赖/build后，全部14份继承reader/专项通过，9份历史Report/MD字节不变；本票既有8探针、R2当前来源/TTL4项、final-rights2项、R3final-group-receipt3项全部通过，后者139.5042ms。旧#9 Spec原字节复制到本树dist路径后3/3、106.2837ms。26次独立调用原始输出/摘要/前后SHA保存在 `Observer/data/root-v1-10-review/frozen-f363de8-independent-result.json`。下列两项是随后新增的真实反例，不能被上述结果覆盖。
+
+### Standards
+
+fresh `/root/review_v1_10_r4_standards`：**1项P1硬性违规、1项P3判断性 possible Repeated Switches**。
+
+- **P1：最终删回执但未同步重算coverage，正常新闻整期无法归档。** discourse.ts:139保留arrangeEvents先计算的coverage；合法native Assessment携带evidenceLanguages=zh且随后被兴趣排除，最终裁掉Assessment后，interest-selection.ts:117重算不一致，produce抛canonical-record-invalid。违反技术规格v1-10.md:42保留普通新闻审计和:86最终一致性要求。合格且有语言、排除但无语言两个对照均重启可读。
+- **P3：版本能力多点判断**，six-edition.ts:59/134/173等重复扩展schemaVersion集合；仍是非阻断历史维护建议，不要求本票重构。
+
+原 `root-v1-10-r4-standards-review/final-coverage-probe.mjs` SHA256 `9feb8f651879e9e663832f5b5221b55059b2c7b66b4d8fc32d2ef0f0cca8eab7`，评审3项中2PASS/1FAIL、360.108ms；Root亲读原脚本及其Owner自有政策helper，原样复跑同clean作者源码3中1FAIL、372.1976ms。再只参数化built导入/输出路径、机械冻结政策helper输入到 `root-v1-10-review/r4-coverage-portable`，在Root独立R4 built保持期待3中1FAIL、105.9887ms，日志 `r4-coverage-root-built-red.log`。副本摘要 `f6b5c619b249877c6ec81fd0a9e586919f79ddcccba0874e6b575936d58201e6`、不改值的helper摘要 `a14108e634c4b5e4da220e867126199c79aa187a485c02f4f3909ca18ffafead`，原稿保留。
+
+### Spec
+
+fresh `/root/review_v1_10_r4_spec`：**1项P1，最终资格使用已裁剪候选，遗漏部分失败组**。技术规格:84要求「恰好一个候选且所有Claim可刊」，:42要求最终失败组整条Assessment删除。observer.ts:372传入gated.stories时已删失败Claim/空候选，discourse.ts:115–120只能看到幸存部分；一个safe加一个population Claim，或同组一个safe候选加一个population候选，均错误保留1组观察、groupReason=null，未进入failed集合，原句回执仍永久保留。未发现范围扩张。
+
+Root亲读原探针 `root-v1-10-r4-spec-review/group-eligibility.mjs`，SHA256 `df11f5f6c2354d0e6b0795caee62ce6b65d6d425bcff58faf7360bdf918ce280`，独立R4 built原样复现3中1PASS/2FAIL、105.9212ms；两个失败场景rawRetained=true，鉴权重启一致，日志 `r4-group-root-built-red.log`。全部自有材料，无真实模型或来源。
+
+Root拒绝R4：原候选/Claim成员身份用于组资格，完整最终Gate用于可刊判断，显示payload仍沿sanitized gated结果；最终回执裁剪后重算相应覆盖投影，不修改实际dispatch计数、降低一致性门或回填未核验正文。已准备但**未执行**的 `accept-v1-10-r4/data/root-v1-11-compat-f363de8/freeze-baseline.mjs` 不构成新Record7兼容oracle，目录已标NOT-FROZEN且没有baseline.json；只在未来正式接受的冻结候选上另建基准。当前#10仍OPEN，不启动#11。
