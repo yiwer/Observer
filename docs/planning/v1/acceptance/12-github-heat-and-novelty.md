@@ -74,3 +74,9 @@ Root要求保留原提案，扩展另成版本；将描述性场景落实成完�
 Root也实读作者后续原RED/GREEN输出：05恢复半程4/5→5/5（573.3547ms）；06质量不足配额5/6→6/6（682.3533ms）；07cold/负增6/7→最终7/7（697.0922ms），中间`07-cold-green.log`保留未匹配转义下划线标题的实现失败，不覆盖；08恰90天旧源权限7/8→8/8（808.8981ms）；09近90天未知历史Gap8/9→9/9（848.8474ms）。后五个最终GREEN日志SHA依次为 **25eac4d8dca962b35d51c6957103fda636496becc2f6bf886f1a26a5c5a58614**、**f6c454c985ba99e6dda1c7f75cfefecbf8145dc532e8207e7a9cd9258bb9a5af**、**0025ab96f19175c2e608394c4e09988b3e9be50d89e4fe14c5c05e54b40bae5d**、**9ef2db2de11473b6263518d13aa12c552569eb528e535f9b881818c9b20d6ae4**、**d0fec7e7e8b4bedc214c2365b4507aac153041c1200e1508f5adde5d45f87ac6**。
 
 剩余仍包括兴趣权重/排除、精确边界完整覆盖、完整性异常局部退化/并发失败、规则审计与完整参数回放评审，然后才最终提交和双轴/全量/历史回归。Root再次实际读取GitHub #12为OPEN/yiwer，未关闭、未push、未启用生产；#13未启动。
+
+### Root完整时间窗口与频率独立回放
+
+新增`data/root-v1-12-review/history-boundaries-probe.mjs` SHA **4923da9a0d66eb2bb54a54db6e3d38e595150d9a41ac78f698eff16605ba9ce4**，独立夹具`publication-fixture.mjs` SHA **167dd2d2c961c43f7eb9d9f46dd40fc922cab10bc9b477182969ad0ef12c189f**。夹具提取自Root已验证的独立实际出版设置，未修改原7项脚本。9项分别用真实旧Record8验证30/37/90天的−1ms、恰好、+1ms；第10项实际生成五份成功旧刊，验证同一稳定node计数为5、恢复相同时比单次报道分数更低，未固定尚未批准的频率系数。所有检查再走纯归档输入重算和Report库重启鉴权读取；没有私有SQL/内部模块替身。
+
+命令：`node data/root-v1-12-review/capture-boundaries.mjs O:/GenesisCode/Observer-worktrees/v1-12 O:/GenesisCode/Observer-worktrees/v1-12/src ts wip-boundaries-01`。**10/10、945.6851ms、exit0**，2026-09-06T03:01:47.240Z–03:01:48.607Z；原log SHA **b5f96edb028af3cdc82659ce5b81d5f4e770a30fad3e5b7672dea00446f01f60**已实际核对。前后HEAD48d4767、dirty及所有src hash一致；ranking SHA **2b9c5ec90358a0d45b109ccd287bd39187f8a40835fa03c99cfff9963d991569**，observer SHA **a5bed0db503bc404c737e0ce0a7dfb68ecc2721802d762c47667e86e7cc3d8fd**。这是新增WIP诊断，非最终freeze；后续固定候选和实际master均须保持原期待回放。

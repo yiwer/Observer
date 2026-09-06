@@ -36,7 +36,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 - #4 首轮 Spec 用量丢失 P2 已修复并复审关闭。最终 Standards 1 项 P3 非阻断重复解帧建议、硬违反 0；Spec 0。Root 独立冻结和集成均 check **74/74**、smoke **3/3**（旧子集），额外公开 seam 专项 **3/3**；详见 [V1-04 记录](acceptance/04-codex-runner.md)。CLI + 模型协议替身不代表真实模型或生产资格。
 - 并行只读预检 `/root/research_v1_05_preflight` 已完成 [Claude 增量研究](../../research/claude-cli-preflight-2026-09-05.md)；Root 独立复跑帮助/版本确认本机仍为 2.1.252。`permission-prompts` 版本差异及 `subtype=success` 仍可能 `is_error=true` 已记录；预检时未实施/触发模型/升级，现已交给 #5 fresh 实施 agent，仍须实测目标 Linux CLI 和完整隔离契约。
 - #3 最终实施提交：67401aca6bcc0cd943f0b3fb9257ac7e7288f214；worktree：`O:/GenesisCode/Observer-worktrees/v1-03`；分支：`ticket/v1-03`；[验收回写](https://github.com/yiwer/Observer/issues/3#issuecomment-5550293271)。
-- 最新已验收集成提交：8079271c3cc2911257f5a54153b3ec16969c6b67。
+- 最新已验收产品集成提交：**867e500431886e1d876066c950f3a880b38f81f8**（#11）；#12仍在独立worktree逐片实施，局部Interface已协调，参数回放及最终冻结审查尚未完成。开发期独立7项历史及10项时间/频率检查通过，均非固定提交验收，详见[#12记录](acceptance/12-github-heat-and-novelty.md)。以上早期过程中的“最新/当前”是当时状态，不覆盖本条与顶部frontier。
 - 2026-09-05 17:59:25 +08:00 后读到 `origin/master` 与 `git ls-remote` 均为 `e475bc18620d1d052f6effcb648fbc4ec66150d2`；已确认 #1–#4 实施和集成提交都可从该远端提交到达。该 push 不是本次 orchestrator 执行；#5 候选仍未集成、未推送（远端无 ticket/v1-05）。远端代码存在不代表生产部署或模型资格通过。Root 新出现未跟踪 `.idea/`，保留不纳入任务提交。
 - #3 首轮测试虽通过，但两轴及 Root 额外发现阻断；最终重新冻结、复审关闭全部发现，再集成验收。Root 在最终工作区及 master 均复跑 check 52/52、smoke 3/3；smoke 属于总测试子集。详见 [V1-03 验收记录](acceptance/03-evidence-publication-gate.md)。
 
