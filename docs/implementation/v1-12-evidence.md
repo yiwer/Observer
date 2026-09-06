@@ -65,3 +65,18 @@
 | 20-omission-green.log | 2026-09-06T03:24:25.399Z | ℹ tests 20; ℹ pass 20; ℹ fail 0; ℹ duration_ms 1734.6755 | `df8a6456b31c56e7636f85afe2f3aa65fc7c6e71da7e1dc20b846c2c704a11e9` |
 | 20-omission-red.log | 2026-09-06T03:24:23.184Z | ℹ tests 20; ℹ pass 19; ℹ fail 1; ℹ duration_ms 1706.8505 | `bad9fe254dd459f41f7b034375efff3224db2bab5365a5e954fe6cd8d97d602b` |
 | 20-typecheck.log | 2026-09-06T03:24:25.730Z | typecheck 原命令输出，无测试计数 | `95f5ed32e27f7d7006236e8548b4e3f3fc22de6a069d6843b45a3e8f358477ad` |
+
+
+## 独立 Spec P2 的窄修（21–24）
+
+原 e461739 候选因栏目级选择 Gap 遗漏未获接受；此前 clean 全量/参数/smoke 原件保留，不替代新候选验收。本段注册 UTC 2026-09-06T03:45:08.142Z，mtime 是后登记文件系统观察，非原生实时执行时刻。命令均 `node --test tests/github-ranking.test.ts`，typecheck 文件为 `npm run typecheck`；21 真实 RED→GREEN，22–24 分别在既有修复上首次 GREEN，不伪造 RED。
+
+| 原日志 | 文件 mtime UTC | 原生摘要 | SHA-256 |
+| --- | --- | --- | --- |
+| 21-selection-gap-green.log | 2026-09-06T03:42:48.268Z | ℹ tests 21; ℹ pass 21; ℹ fail 0; ℹ duration_ms 1805.5718 | `a695cd585a757f77fa8f84d2e0521e27f1b65633fd231aca1fddd1397023c68b` |
+| 21-selection-gap-red.log | 2026-09-06T03:42:14.098Z | ℹ tests 21; ℹ pass 20; ℹ fail 1; ℹ duration_ms 1808.9823 | `b31c3b9f6a140f69ae365e0b8a9d9887de5b885fb5cb06d5ea7d6df6a5022d92` |
+| 21-typecheck.log | 2026-09-06T03:42:48.564Z | typecheck，无测试计数 | `95f5ed32e27f7d7006236e8548b4e3f3fc22de6a069d6843b45a3e8f358477ad` |
+| 22-sparse-gap-characterization.log | 2026-09-06T03:43:24.424Z | ℹ tests 22; ℹ pass 22; ℹ fail 0; ℹ duration_ms 1836.4264 | `5cd08d5abeb318958c457de73d907b321ac6aaf354c90f6a100bfd9ca78b7e96` |
+| 23-source-gap-characterization.log | 2026-09-06T03:43:50.764Z | ℹ tests 23; ℹ pass 23; ℹ fail 0; ℹ duration_ms 1950.7594 | `39a9a650768145d97a7f0c4ceccb4fcaa816dd1577cc6d0797011b8dbbd40080` |
+| 24-full-selection-characterization.log | 2026-09-06T03:44:17.223Z | ℹ tests 24; ℹ pass 24; ℹ fail 0; ℹ duration_ms 1982.5993 | `d6e3effa2ac4f4250dc252f7da5252febd23ddd6eb7f7da6b3f4cd7c671732b5` |
+| 24-typecheck.log | 2026-09-06T03:44:17.536Z | typecheck，无测试计数 | `95f5ed32e27f7d7006236e8548b4e3f3fc22de6a069d6843b45a3e8f358477ad` |

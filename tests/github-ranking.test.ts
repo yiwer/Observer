@@ -441,3 +441,97 @@ test("Omission audit distinguishes a quota-displaced repeat from a weakly ranked
   assert.equal(report.record.githubRanking.candidates.find((item) => item.nodeId === "old4")?.reason, "novelty-quota");
   assert.equal(report.record.githubRanking.candidates.find((item) => item.nodeId === "old7")?.reason, "capacity");
 });
+
+test("Zero novel candidates preserve the correct empty selection and expose one selection-shortage gap in the archive, overview and edition after restart", async (t) => {
+  const app = await githubFixture(t);
+  const ids = ["old1", "old2", "old3", "old4", "old5", "old6", "old7"];
+  app.state.repositories = ids.map((id) => repository(id));
+  await app.observations.observeDue();
+  app.state.now = "2026-09-04T23:25:00.000Z";
+  app.state.repositories = ids.map((id) => repository(id, 105));
+  await app.observations.observeDue();
+  await app.publish();
+  app.state.now = "2026-09-25T23:35:00.000Z";
+  await app.observations.observeDue();
+  app.state.now = "2026-09-26T23:35:00.000Z";
+  app.state.repositories = ids.map((id) => repository(id, 205));
+  await app.observations.observeDue();
+  app.state.now = "2026-09-26T23:50:00.000Z";
+  const report = app.observer.readReport((await app.observer.produce({ ...app.request("2026-09-26T23:40:00.000Z", "2026-09-27"), schemaVersion: 8 })).id, ownerToken);
+  if (report.record.schemaVersion !== 9) throw new Error("Record9 required");
+  assert.equal(report.record.githubRanking.candidates.filter((item) => item.score > 0).length, 7);
+  assert.deepEqual(report.record.githubRanking.selectedNodeIds, []);
+  assert.deepEqual(report.record.github.reasons, []);
+  assert.deepEqual(report.record.coverageGaps.filter((gap) => gap.edition === "github-projects"), [{ edition: "github-projects", reason: "github-selection-insufficient" }]);
+  const overview = report.canonicalMarkdown.split("\n").find((line) => line.startsWith("- [GitHub"))!;
+  const edition = report.canonicalMarkdown.split("## GitHub 热门项目")[1]!;
+  for (const text of [overview, edition]) {
+    assert.match(text, /Coverage Gap.*github-selection-insufficient/);
+    assert.match(text, /实际 0\/7.*正分合格 7.*未报道的合格项目 0/);
+    assert.match(text, /新颖性配额约束/);
+    assert.match(text, /不代表来源请求失败/);
+  }
+  app.restartStore();
+  assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+});
+
+test("A sparse nonempty Heat edition discloses the actual eligible and novel counts without adding zero-growth filler", async (t) => {
+  const app = await githubFixture(t);
+  app.state.repositories = [repository("growing"), repository("static")];
+  await app.observations.observeDue();
+  app.state.now = "2026-09-04T23:25:00.000Z";
+  app.state.repositories = [repository("growing", 105), repository("static")];
+  await app.observations.observeDue();
+  app.state.now = "2026-09-04T23:40:00.000Z";
+  const report = app.observer.readReport((await app.observer.produce({ ...app.request(), schemaVersion: 8 })).id, ownerToken);
+  if (report.record.schemaVersion !== 9) throw new Error("Record9 required");
+  assert.deepEqual(report.record.githubRanking.selectedNodeIds, ["growing"]);
+  assert.deepEqual(report.record.coverageGaps.filter((gap) => gap.edition === "github-projects"), [{ edition: "github-projects", reason: "github-selection-insufficient" }]);
+  const overview = report.canonicalMarkdown.split("\n").find((line) => line.startsWith("- [GitHub"))!;
+  assert.match(overview, /实际 1\/7.*正分合格 1.*未报道的合格项目 1.*筛选后合格候选不足/);
+  assert.doesNotMatch(overview, /新颖性配额约束/);
+  app.restartStore();
+  assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+});
+
+test("Selection-shortage reporting preserves a distinct real observation access gap in both the overview and GitHub edition", async (t) => {
+  const app = await githubFixture(t);
+  app.state.repositories = [repository("good"), repository("denied")];
+  await app.observations.observeDue();
+  app.state.now = "2026-09-04T23:25:00.000Z";
+  app.state.repositories = [repository("good", 105), repository("denied", 105)];
+  app.state.hook = async (url) => new URL(url).pathname === "/repos/example/denied" ? { status: 403, headers: {}, body: "" } : undefined;
+  await app.observations.observeDue();
+  app.state.now = "2026-09-04T23:40:00.000Z";
+  const report = app.observer.readReport((await app.observer.produce({ ...app.request(), schemaVersion: 8 })).id, ownerToken);
+  if (report.record.schemaVersion !== 9) throw new Error("Record9 required");
+  assert.deepEqual(report.record.githubRanking.selectedNodeIds, ["good"]);
+  assert.deepEqual(report.record.coverageGaps.filter((gap) => gap.edition === "github-projects"), [
+    { edition: "github-projects", reason: "github-access-unavailable" }, { edition: "github-projects", reason: "github-selection-insufficient" },
+  ]);
+  assert.deepEqual(report.record.github.reasons, ["github-access-unavailable"]);
+  for (const text of [report.canonicalMarkdown.split("\n").find((line) => line.startsWith("- [GitHub"))!, report.canonicalMarkdown.split("## GitHub 热门项目")[1]!]) {
+    assert.match(text, /Coverage Gap.*github-access-unavailable/);
+    assert.match(text, /Coverage Gap.*github-selection-insufficient/);
+  }
+  app.restartStore();
+  assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+});
+
+test("A full seven-item Heat selection has no spurious selection-shortage gap", async (t) => {
+  const app = await githubFixture(t);
+  const ids = ["a", "b", "c", "d", "e", "f", "g"];
+  app.state.repositories = ids.map((id) => repository(id));
+  await app.observations.observeDue();
+  app.state.now = "2026-09-04T23:25:00.000Z";
+  app.state.repositories = ids.map((id) => repository(id, 105));
+  await app.observations.observeDue();
+  app.state.now = "2026-09-04T23:40:00.000Z";
+  const report = app.observer.readReport((await app.observer.produce({ ...app.request(), schemaVersion: 8 })).id, ownerToken);
+  if (report.record.schemaVersion !== 9) throw new Error("Record9 required");
+  assert.deepEqual(report.record.githubRanking.selectedNodeIds, ids);
+  assert.deepEqual(report.record.coverageGaps.filter((gap) => gap.edition === "github-projects"), []);
+  assert.doesNotMatch(report.canonicalMarkdown, /github-selection-insufficient/);
+  app.restartStore();
+  assert.deepEqual(app.observer.readReport(report.version.id, ownerToken), report);
+});

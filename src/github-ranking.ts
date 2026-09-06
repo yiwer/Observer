@@ -105,6 +105,7 @@ export function consistentGitHubRanking(record: RankedRecord): boolean {
   const projected = projectedRecord(record);
   if (!consistentGitHubRecord(projected)) return false;
   if (record.githubRanking.history.unavailableVersionIds.length && !record.coverageGaps.some((gap) => gap.edition === "github-projects" && gap.reason === "github-history-unavailable")) return false;
+  if (record.coverageGaps.filter((gap) => gap.edition === "github-projects" && gap.reason === "github-selection-insufficient").length !== Number(record.githubRanking.quota.actual < record.githubRanking.quota.target)) return false;
   try { return githubDigest(rankGitHub({ snapshot: record.github, interestProfile: record.interestProfile, history: record.githubRanking.history, algorithmVersion: record.githubRanking.algorithmVersion })) === githubDigest(record.githubRanking); }
   catch { return false; }
 }
@@ -115,6 +116,14 @@ export function githubRankingMarkdown(record: RankedRecord): string {
     .replaceAll("observer-canonical-v6", "observer-canonical-v7")
     .replace("有限候选按稳定 node ID 排列，未计算综合热度排名。", `Observer GitHub Heat；算法 ${record.githubRanking.algorithmVersion}；保存全部 ${record.githubRanking.candidates.length} 个候选的排序依据。实测分数按实际双点间隔折算24小时平均速率；原始正、零、负净变化与实际时刻不变，不声称精确事件流水。\n\n新颖性配额：实际 ${record.githubRanking.quota.actual} 个位置，过去30天未报道 ${record.githubRanking.quota.selectedNovel} 个；至少 ${record.githubRanking.quota.requiredNovel} 个。`);
   if (record.githubRanking.history.unavailableVersionIds.length) rendered = rendered.replace("## GitHub 热门项目\n", "## GitHub 热门项目\n\nCoverage Gap：github-history-unavailable；近90天出版历史无法取得完整可证身份或当前使用权限，本栏暂停普通排序，不能将未知历史视为未报道。\n");
+  const { actual, target, eligibleNovel } = record.githubRanking.quota;
+  if (actual < target) {
+    const eligible = record.githubRanking.candidates.filter((item) => item.score > 0).length;
+    const causes = [...(eligible < target ? ["筛选后合格候选不足"] : []), ...(actual < Math.min(target, eligible) ? ["新颖性配额约束"] : [])];
+    const gap = `github-selection-insufficient；普通选择不足：实际 ${actual}/${target}；正分合格 ${eligible} 个，其中过去30天未报道的合格项目 ${eligibleNovel} 个；${causes.join("、")}；不以低关注候选凑数（选择缺口，不代表来源请求失败；来源及历史缺口另列）。`;
+    rendered = rendered.replace(/^(- \[GitHub 热门项目\].*)$/m, `$1；Coverage Gap（${gap}）`)
+      .replace("## GitHub 热门项目\n", `## GitHub 热门项目\n\nCoverage Gap：${gap}\n`);
+  }
   rendered += "\n### 完整候选排序与理由\n\n" +
     `权重 stars ${heatRules.starsWeight} / forks ${heatRules.forksWeight}；正信号使用 cohort 中位秩分位；topic 增益最高 ${heatRules.topicGain}；7天冷却后30天线性恢复；90天频率系数 ${heatRules.frequencyPenalty}。\n\n` +
     "热度仅是有限观测内的注意力信号，不代表项目质量、安全或安装建议。工程参数未经真实用户满意度校准；小 cohort 回退降低比较精度，不保证语言覆盖。\n\n" +

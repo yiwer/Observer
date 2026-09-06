@@ -469,9 +469,11 @@ export function createObserver(options: ObserverOptions) {
             ...(unsupportedGitHubInput ? [{ edition: "github-projects" as const, reason: "github-ordinary-candidate-unsupported" }] : [])] };
         if (request.schemaVersion === 8) {
           const complete = GitHubRankingSnapshotSchema.parse(snapshot);
+          const githubRanking = rankGitHub({ snapshot: complete, interestProfile: interestProfile!, history: rankingHistory!, algorithmVersion: "observer-github-heat-v1" });
           record = { ...base, schemaVersion: 9, editorialContract: "observer-canonical-v7", github: complete,
-            githubRanking: rankGitHub({ snapshot: complete, interestProfile: interestProfile!, history: rankingHistory!, algorithmVersion: "observer-github-heat-v1" }),
-            coverageGaps: [...base.coverageGaps, ...(rankingHistory!.unavailableVersionIds.length ? [{ edition: "github-projects" as const, reason: "github-history-unavailable" }] : [])] };
+            githubRanking,
+            coverageGaps: [...base.coverageGaps, ...(rankingHistory!.unavailableVersionIds.length ? [{ edition: "github-projects" as const, reason: "github-history-unavailable" }] : []),
+              ...(githubRanking.quota.actual < githubRanking.quota.target ? [{ edition: "github-projects" as const, reason: "github-selection-insufficient" }] : [])] };
           if (!consistentGitHubRanking(record)) throw new ObserverError("canonical-github-record-invalid");
         } else {
           record = { ...base, schemaVersion: 8, editorialContract: "observer-canonical-v6", github: GitHubSnapshotSchema.parse(snapshot) };
