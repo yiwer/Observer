@@ -1,6 +1,6 @@
 # V1-10 执行与待验收记录
 
-状态：**前四轮候选被独立评审拒绝；R5 2a30b0b 已提交并通过Root全部固定独立反例/旧字节检查，正在完整测试及fresh双轴复审，尚未合并**。GitHub #10 OPEN / assignee yiwer。
+状态：**R5 2a30b0b 仍被拒绝；作者完整221/221与Root旧字节/28份固定检查通过，但最终失败社交组的正文经待确认区进入永久Report/MD已独立复现，作者窄修中，尚未合并**。GitHub #10 OPEN / assignee yiwer。
 
 - [本地票](../tickets/10-social-discourse-edition.md) / [GitHub #10](https://github.com/yiwer/Observer/issues/10)全文、空评论及原生依赖已实际读取；唯一#7 CLOSED，#7已验收集成8e02377在新基线可达。顺序前票#9已实际关闭并完成冻结/master验收，见[#9记录](09-domain-evidence-rules.md)。
 - 固定base **f36aae2122d081e638bfd520f93ded88fc95ef3b**，专属 `O:/GenesisCode/Observer-worktrees/v1-10` / `ticket/v1-10` 已由Root创建并核对clean。fresh `/root/implement_v1_10` 已实际启动，不复用旧作者/评审上下文。
@@ -214,10 +214,27 @@ Root亲读原探针 `root-v1-10-r4-spec-review/group-eligibility.mjs`，SHA256 `
 
 Root拒绝R4：原候选/Claim成员身份用于组资格，完整最终Gate用于可刊判断，显示payload仍沿sanitized gated结果；最终回执裁剪后重算相应覆盖投影，不修改实际dispatch计数、降低一致性门或回填未核验正文。已准备但**未执行**的 `accept-v1-10-r4/data/root-v1-11-compat-f363de8/freeze-baseline.mjs` 不构成新Record7兼容oracle，目录已标NOT-FROZEN且没有baseline.json；只在未来正式接受的冻结候选上另建基准。当前#10仍OPEN，不启动#11。
 
-## 第五轮 R5：重新验收中
+## 第五轮固定候选 R5：拒绝合并
 
 新clean `2a30b0b1891c71d5f74671da8576ba8ddf375aaa` 仅4文件101+/9-，Root核对完整固定base三点差异19文件1803+/48-及五个提交，亲读新代码/测试/规格。短期成员快照在Gate前仅存id/groupId/claimIds，资格查完整最终Gate、显示仍沿gated；最终回执后用interestCoverage重算，不改dispatch记录。作者35/35和相关八文件155/155以及三个原probe各3/3仍仅局部开发证据。
 
 Root新detached `accept-v1-10-r5` 锁依赖/build并独立运行全部28份固定reader/probe：旧14份及9份Report/MD字节均保持，本票所有前四轮反例通过。R4 coverage3/3、156.4231ms，原成员3/3、131.7996ms，旧#9 Spec3/3、117.063ms；固定输入/断言与hash未改。原始输出、摘要、前后clean身份在 `Observer/data/root-v1-10-review/frozen-2a30b0b-independent-result.json`。完整check/smoke及两轴结论未由这28次结果代替。
 
 Root已派fresh `/root/review_v1_10_r5_standards` / `/root/review_v1_10_r5_spec`。Docker短标签再次复现相同现象，Root00:23:33–00:23:40Z只读同daemon/显式host/固定ID/限定名称对照后原短名恢复；Codex限定名称5秒超时仍明确为失败，根因未证实、未写环境，日志 `docker-r5-differential.log`。作者原Node三镜像检查就绪后已启动同SHA完整check，新目录 `v1-10/data/v1-10-final-check-e5S8cZ`，本段记录时尚未取得终态。新Record7兼容baseline仍未冻结，不启动#11。
+
+作者最终同clean SHA完整check为221/221、exit0、124375.3972ms（00:24:06.088–00:26:15.216Z），smoke子集3/3、exit0、1342.2902ms（00:26:24.676–00:26:28.502Z），无取消/跳过。Root亲读两个result.json及stdout摘要：check `e346acad5441e23793c12e0e605764871e662da4c2ad0b5261630194996bf065`，smoke `21c0183c044cf4a649e646e204d4e77127a90d925ae62af3c916770adbbf2994`，后者目录 `v1-10-final-smoke-7dGV0c`。**Root没有启动R5独立完整check/smoke**：在其启动前，下述新阻断已经确认；不能把作者结果或此前Root版本结果改称R5独立全检。
+
+### Standards
+
+fresh `/root/review_v1_10_r5_standards`：**1项P1硬性违规、1项P3既有判断项**。
+
+- **P1：最终failed组的unconfirmedItems未裁，正文进入永久MD。** discourse.ts:144只裁Assessment，保留Gate.unconfirmedItems。自有合法sample-only/original/supported回执的Evidence relation为contradicts时，domain规则给出unconfirmed，组被判social-analysis-unavailable且无观察，但失败社会正文仍显示在MD「待确认」区；被裁掉相反关系后还显示成「关系未确认」。违反v1-10.md:85整组全原Claim须published及v1-03.md:29待确认关系完整要求。普通新闻、另一合格组及SQLite重启可读保持。
+- **P3：possible Repeated Switches**，observer.ts:381、six-edition.ts:124等多点版本集合，仍不阻断且不要求本票历史重构。
+
+原 `root-v1-10-r5-standards-review/unconfirmed-probe.mjs` SHA256 `78f9c4115f2fd0973a8c8fa08f543f524d76a9ea9a3bb6aeaeca63e740b26f56`，评审2项中1PASS/1FAIL、332.5556ms。Root完整亲读脚本及两份自有fixture依赖，原样复跑同clean作者源码2中1FAIL、94.4946ms；实际MD第141行有失败canary。Root另只参数化built/输出路径、机械冻结fixture，并将普通Evidence expiry从超出24h的23:00收回准确24h后的22:06，其余业务期待不变，独立R5 built仍2中1FAIL、97.2749ms，日志 `root-v1-10-review/r5-unconfirmed-root-built-red.log`。副本 `r5-unconfirmed-portable/unconfirmed-probe.mjs` 摘要 `cc67bc2e48ef3783952272c837b88645315e2b308ced7de58f22c3d6a6923992`，fixtures.ts摘要 `02a67938e174089cd59e7d11a0c5e15345176e9579e83661f1be8cd6b1ef2af4`，source-fixtures.ts仍 `a14108e634c4b5e4da220e867126199c79aa187a485c02f4f3909ca18ffafead`。原稿和失败均保留，后续固定副本期待。
+
+### Spec
+
+fresh `/root/review_v1_10_r5_spec`：**0 finding**，缺失/部分实现、范围扩张、错误实现均0，本轴无最严重项；完整19文件差异及R5 delta、票/依赖/规范均亲读，前后clean。原成员快照逐项匹配最终Gate、清洗payload展示及coverage重算符合已批准契约。评审独立单文件35/35、2523.5337ms，typecheck exit0，临时目录固定在 `root-v1-10-r5-spec-review`；未改代码或旧oracle，未跑Docker全套。此轴结论不覆盖另轴已证实的P1。
+
+Root拒绝R5并交作者窄修：最终failed集合须覆盖所有可读投影，包含unconfirmedItems；普通合法待确认必须继续保留完整支持/相反关系，另一合格社会组/新闻和实际dispatch身份保持。不得把被拒正文换区显示、保留禁用回执补关系或放宽一致性校验。新clean SHA须重新冻结/复审/完整验收；没有新Record7 accepted baseline，#10未关闭、#11未启动。
