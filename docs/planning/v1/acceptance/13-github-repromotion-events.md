@@ -39,6 +39,19 @@ Root随后全文读取作者`docs/implementation/v1-13.md`，批准首条Release
 4. 本次未冻结GHSA完整实质修订规则和动量p/min/绝对下限/重新武装时长。2,160小时证明上限是待定提案，需先给精确可重放状态、容量与截断行为；不可把自报previousEpisode当权威。先独立固定输入与方向期待回放，再批准。
 5. 首片逐条验证实际Record10成稿可见development与消费集合一致、双库重启、旧Request8继承历史；未覆盖类别保持pending，不能将第一片GREEN当作整票完成。
 
+## 首条真实RED与Root回放准备
+
+作者已先运行`node --test tests/github-repromotion.test.ts`：0/1、native exit1、255.7967ms；旧`SourcePolicySchema`严格拒绝新增`github.events`，这是尚无新能力的真实RED，不更改预期。原日志`Observer-worktrees/v1-13/data/v1-13-slices/01-red/output.log`由Root实际读取并重算SHA **D5562A956A1C62952B12B9481C0E4CB4ABFBBE7B009B6A60EA2FD9D823F5C880**。作者报告原工具执行UTC为2026-09-06T04:23:58.9646351Z→04:23:59.3099308Z；该目录当时没有metadata文件，Root未将后补登记冒充当时自动capture。最小GREEN尚未报告。
+
+Root不读取作者测试helper，仅依公开新契约独立准备`Observer/data/root-v1-13-review/`下三期改名重放与长期事件反例。均仅通过`node --check`，尚未执行业务，不能计入PASS：
+
+- `publication-fixture.mjs` SHA **5F74C55853944F98161418C96E02EBBB7F7917F3C4016355B6952360080A91A8**，Owned HTTP与外部语义替身、真实双SQLite、无真实网络；计数按绝对观察日期递增，确保重复候选仍有正实测动量。
+- `release-replay-probe.mjs` SHA **4CA63FF501FED204BC9664DFEF3FC58C2F049A9650E4D5C11104C61D61585738**：先旧Request8实际报道、再新Release成功升权/成稿、双库重启与改名后重放被抑制。
+- `long-lived-release-probe.mjs` SHA **4DE35DC105B9DED5AA5C009CE7851A33A193434DA6B9CDFED4F42F13973C1838**：事件发表逾90天后先由Request8正常再报道，再次冷却内重放原事件仍不可升权；不能把普通入选与新事件绕过混为一谈。
+- `capture-probe.mjs` SHA **9EA303E255544E6F5E404279EF37E5A90FE5BB0A635B5B7754C443139B214B5A**：单原始fd、fsync、进程实际UTC/exit、全部入口模块与Root脚本前后指纹；不传expected SHA时明确是WIP诊断。此时只做语法检查，capture自身尚未运行。
+
+Root等待首片GREEN/类型通过后的短暂源码冻结再执行独立诊断，避免测试半接线或并发漂移代码。所有原失败/归档/旧oracle继续保留。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
