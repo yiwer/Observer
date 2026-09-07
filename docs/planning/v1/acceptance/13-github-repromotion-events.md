@@ -924,6 +924,24 @@ Root随后在同一稳定窗口运行以下原冻结探针；每份capture完整
 
 后续仍需完成并验证repromotionSnapshot自身同scope原件核验、typed权限先于payload、完整风险/依赖闭包、metadata上限与其余原批准negative/cap/legacy/reset条件，以及固定SHA全套review/验收。作者已确认归档read与snapshot当前核验路径不等价，下一片优先公开snapshot原端点故障/恢复测试；此静态发现尚未计作已执行RED。#13仍OPEN，未推进#14。
 
+### 191–195：快照自身原件核验与同源码回归
+
+191-momentum-snapshot-member-red使用实际72小时观察取得公开snapshot，精确保留/恢复原GitHub历史端点与guard，删除其被引用node并同步raw bytes/hash后，公开snapshot仍给出1个动量development（应0），原expectation失败。UTC2026-09-07 **18:31:55.629Z→18:31:59.114Z**，exit1，log SHA `307cbc46af96173de4e880a07bf5bfb6953c02166902f0ebd6917d2aceca0763`。192同一公开测试1/1 GREEN，18:32:54.376Z→18:32:58.432Z，log SHA `0b08dfe33b990c7fa457910154d0c59f8e76bc8faf814612e1e5cdc4ccea8a23`：原件缺失时明确momentum unavailable，保留20个ordinary watchItems及原development runs，恢复/重启后原snapshot完整相等。快照采集改在同一实际只读事务/context scope核对所需原件；这不替代剩余typed权限顺序/完整风险闭包验收。
+
+193-typecheck曾因callback赋值的TS narrowing出现4处TS2339/exit2，原log SHA `1f6f9d48c8f9a7296e113c3373b94ba242ae6dba64cb42d55952ca082432d175`保留；改由callback返回捕获结构后194-typecheck exit0（18:33:24.043Z→18:33:25.903Z，空log SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`）。195-momentum-regression整单文件5/5、35466.1ms、exit0，18:33:32.173Z→18:34:07.695Z，log SHA `a8a02377d258bb8eadd2abe02dfd9d13702e9c4af4f1c225af27ca9c1e117fc0`。Root已逐份核191–195完整before/after稳定及实际log SHA，不合并或隐藏中间类型失败。
+
+Root同195稳定源码窗原冻结probe回归全部native exit0：
+
+| capture | 实际范围 | UTC（2026-09-07） | native.log SHA256 |
+|---|---|---|---|
+| wip-snapshot195-budget-01 | 1/1 超额拒绝＋同进程/重启恢复 | 18:34:55.686Z–18:35:02.317Z | 64c2c5d1d80b3fe40fb5f2aa06a367819af975bd85ff1eb4f1225c91325a977c |
+| wip-snapshot195-startup-v2-01 | 1/1 真实49小时持续高/消费/旧刊 | 18:35:02.633Z–18:35:24.758Z | 1e28d38f6fbb987e40fc20e36520db82dc71f81786b7fb443bdbc2b6c62ba420 |
+| wip-snapshot195-lawful-release-01 | 原8组9个Release公开测试 | 18:35:25.077Z–18:35:29.534Z | 2adc506d54d2672f850b58463c0f5c21f1a5aaf4ce3f7dedc177769ea55452e6 |
+
+Root独立确认3份完整before/after相等、54模块与195.after逐项一致、原生日志hash一致；完成即释放源码，不沿用到后续编辑。49小时探针实际21842.8521ms，仍在原30秒子进程界限内，未改timeout或宣称性能验收。
+
+只读fresh-context验收盘点确认应复用已有startup/reset正向、频率/新颖配额、持续高、预算恢复和Release组合测试；不得因无独立测试名重复称它们“未测”。剩余原批准重点为完整canonical依赖与typed权限/observed安全witness、momentum安装见证/六表/guards/pending、metadata及各新增资源边界、reset中断/peer变化/legacy恢复、动量混合竞争与zero-novel/数学反证，再最终全套固定SHA/Standards-Spec/detached/master验证。下一片优先完整依赖/权限原件闭包；不增加威胁模型、性能承诺或新产品功能。#13继续OPEN/in-progress。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
