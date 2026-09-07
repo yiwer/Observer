@@ -1274,6 +1274,14 @@ Root核全部公开测试正文、完整before/after与实际日志SHA：
 
 原档`tmp/root-momentum-bank-Gy7xg6`的103项manifest实际bytes/SHA全部相等；journal completed、failureClass null、意外HTTP/model均0。该结果是已审WIP的独立bank与Report控制，不是全部50capsule、所有权限/安装/context边界、heap/performance或最终固定SHA/生产通过。有限剩余P0与最终统一门继续，#13仍OPEN。
 
+### 269–271：实际撤权与38项动量回归
+
+269从已真实出版/消费的momentum Report出发，升版实际Owned Source Policy并将allowMomentumEvidence设false；即时认证读拒绝、公开momentum unavailable，重启后旧刊仍拒绝。仅恢复精确原source authority（不改episode/Report数据）后，原snapshot完整相等，重启旧整刊恢复。该片核真实策略撤销/恢复的公共生命周期；因策略版本/摘要也变化，不将其说成单独隔离某一权限比较分支。
+
+269-momentum-capability-withdrawal-public首次1/1、3767.5518ms总时长、exit0，UTC2026-09-07 20:36:55.837Z–20:36:59.665Z，日志SHA `d376d452ecd9c7598d724f13c3954141ee09a866a4023fde7042634aa58adb43`。270-momentum-capability-typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。271-momentum-public-gates-regression原生38/38、0skip、141724.2585ms总时长、exit0，UTC2026-09-07 20:37:12.974Z–20:39:34.767Z，日志SHA `dc668a6b17759bb0696e5526f099b1b07b66e203a68fc77feff1f43a04153d3b`。Root核测试正文、三项完整before/after相等、原生日志实际SHA与结果。没有新source修改或新Root冻结复跑，不把38项单文件等同最终fullsuite。
+
+Root再次gh只读核#13仍OPEN，原三类进展、可重算衰减/绕过/配额、成功出版才消费、安全隔离及scope未变。下一继续新空库startup>28与一次实际context中断/完整reset恢复，mixed priority、dirty不可洗白与整段momentum遗漏仍待验；不提前关闭或推进#14。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
