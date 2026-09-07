@@ -201,3 +201,11 @@ Root亲读公开配额/取消测试、新CLI测试、两Runner的dispatchControl
 Root实时确认固定镜像存在且无running Observer任务后放行串行Docker窗口，没有build/pull/retag或真实模型请求。82真实Codex CLI未接control，dispatched1/refused0，测试失败；83虽运行通过，84类型exit2暴露测试使用非法ModelBoundaryError类别等问题，均保留。85修正为合法evidence-expired拒绝，未放宽产品枚举：实际Codex 0.153.4容器`0124d60aa2efc38468910d6cdb1a97cbb11da7f8b86105f061d467e683849b1d`、Claude 2.1.252容器`5e5bee1a978414d7e05cdf3d76e178e0a7a04adbe1201bbb9ab7b8e381cca23a`均确认removed；失败运行terminal missing/exitCode null符合中止，不伪称模型成功。
 
 作者归还窗口后Root独查docker ps --all，两个本次ID均不存在，仅保留既有两日以前Exited容器，未删除。此为真实固定CLI+Owned协议的Runner拒绝接线，不是完整Request10 CLI闭环、语义CLI、共享外部槽或Claude live通过；后续矩阵与整票固定候选验收保持未完成。
+
+## 独立外部请求槽87–90
+
+Root亲读Owned detached-model输入、实际dispatchControl及三轮公开readRun断言，核87–90完整before/after相等和实际日志SHA。87真实RED：进程已结束但外部Promise仍pending，实际派发8而期望2。88 exit0、26/26、0skip/0cancelled，日志SHA `0ee879a16b96d34795b1c2f9a302a0a8350d6bfedee76c8ae2cc2d0e77d32ed8`；89类型检查exit0。
+
+现在两外部Promise持续占槽，下一run零外部派发；主动settle后旧run完全不变，第三run可重新派发8次。该Owned Runner返回安全not-created过程收据，同时独立外部Promise不响应abort；此为两类生命周期分离的业务回放，不是网络/容器容量实测。Root要求后续统一dispatch在send前（包括排队醒后）校验run仍running、attempt仍started，不只依赖调用者signal，防止已终态hook新发请求或改冻结计数。
+
+90已进入语义核验不返回矩阵，真实4000ms超时RED：26pass、1cancelled、exit1，日志SHA `e8cc782f51a7d93e493cfb229835b0267a9d888ecef8c811ece8f7c15ee659f1`。作者继续其GREEN，不计入已通过26/26范围；共享槽可配置范围、混合角色/资格/预算及真实CLI全链验收仍待完成。
