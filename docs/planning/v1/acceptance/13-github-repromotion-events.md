@@ -1053,6 +1053,10 @@ Root核对当前调用路径：私有`write`向实际`persist`传递finalize；`
 
 Root全文核对公开反例、实际RED/GREEN/回归汇总及四份完整before/after和日志SHA。224未冻结；作者继续同组head count/digest/first-last generation及真实expected manifest关联，Root并行准备独立head丢失/同进程及重启恢复probe，未执行不计通过。原§12有界索引、32KiB manifest、50实际成员及旧刊原generation契约不变，不能全历史扫描或用未来head覆盖旧刊。#13保持未完成。
 
+#### 原generation与当前head的核验边界
+
+同组实施前Root按§12核定：旧刊的必要原件按冻结step及其同generation真实frame的完整expected/member/capsule核验。head只是当前定位缓存，不能为核head而读取未来frame的完整材料并把无关未来来源权限加入旧刊依赖。当前head可与同node最新step的有界独立metadata核对generation/slot/id/ordinal/prior_digest，重导`hash([priorDigest,stepId])`；first_generation用同node最早step既有索引LIMIT1回核，同时检查数值、首尾范围及不超实际state。所有实际metadata读取照常计费，固定guard/安装见证和本刊原frame成员核验仍不可省略。该边界不声称已验证未来材料正文，不新增DDL/递归历史/全表扫描；须保留合法后续generation存在时旧刊可读的正向控制及独立字段故障恢复证据。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
