@@ -1,11 +1,21 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { SourcePolicySchema, policyDigest, type SourcePolicy } from "./collection.ts";
 import { GitHubConfigurationSchema, GitHubRepositorySchema, GitHubRunSchema, GitHubSnapshotSchema, GitHubWatchItemSchema, githubRules,
-  GitHubRankingSnapshotSchema, type GitHubRankingSnapshot, type GitHubConfiguration, type GitHubObservation, type GitHubReason, type GitHubRun, type GitHubSnapshot } from "./github-contracts.ts";
+  GitHubRankingSnapshotSchema, type GitHubRankingSnapshot, type GitHubConfiguration, type GitHubObservation, type GitHubReason, type GitHubRun, type GitHubSnapshot, type DevelopmentHistoryReadScope, type SyncResult } from "./github-contracts.ts";
 import { createGitHubAdapter, githubDigest, githubFailure, type GitHubAdapter } from "./github-adapter.ts";
+import { DevelopmentConfigurationSchema, DevelopmentRunSchema, GitHubRepromotionSnapshotSchema, PreviousDevelopmentEvidenceSchema, type DevelopmentContext, type PreviousDevelopmentEvidence, type DevelopmentConfiguration, type GitHubRepromotionSnapshot, type GitHubDevelopmentVerifier, type DevelopmentSnapshot, type GitHubPublicationContext } from "./github-development-contracts.ts";
+import { collectDevelopments, developmentPermission, developmentRunPermission, reconstructDevelopments } from "./github-developments.ts";
+import { AdvisoryHistorySchema, type AdvisoryHistory } from "./github-advisory-contracts.ts";
+import { consistentAdvisories } from "./github-advisories.ts";
+import { createDevelopmentContextIndex, developmentRouteColumns, developmentMaterialKinds, developmentDependencies, type IndexedContext } from "./github-context-index.ts";
+import { projectGitHubPublication } from "./github-publication-budget.ts";
+import type { QuotationPolicy } from "./github-quotations.ts";
+import { createMomentumStorage } from "./github-momentum-storage.ts";
+import { createGitHubReadBudget, finishGitHubReadBudget, type GitHubReadBudget } from "./github-read-budget.ts";
 
 export function githubPermission(source: SourcePolicy | undefined, configuration: GitHubConfiguration, atUtc: string, publication = false): boolean {
   return !!source && source.sourceId === configuration.sourceId && source.edition === "github-projects" && source.feedUrl === "https://api.github.com" &&
@@ -41,7 +51,8 @@ export function selectGitHubItems(runs: GitHubRun[], cutoffUtc: string, identiti
   }));
 }
 
-export function createGitHubObserver(options: { databasePath: string; configuration: () => unknown; policies: () => unknown; credential: () => unknown; clock?: () => string; adapter?: GitHubAdapter }) {
+export function createGitHubObserver(options: { databasePath: string; configuration: () => unknown; policies: () => unknown; credential: () => unknown; clock?: () => string; adapter?: GitHubAdapter;
+  developmentConfiguration?: () => unknown; developmentVerifier?: GitHubDevelopmentVerifier }) {
   const clock = options.clock ?? (() => new Date().toISOString());
   const adapter = options.adapter ?? createGitHubAdapter();
   mkdirSync(dirname(options.databasePath), { recursive: true, mode: 0o700 });
@@ -52,10 +63,105 @@ export function createGitHubObserver(options: { databasePath: string; configurat
   db.exec(`PRAGMA busy_timeout=5000; CREATE TABLE IF NOT EXISTS runs(slot TEXT PRIMARY KEY, payload TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS authorities(id TEXT PRIMARY KEY, version INTEGER NOT NULL, digest TEXT NOT NULL);
     PRAGMA application_id=1329746759; PRAGMA user_version=1;`);
+  if (options.developmentConfiguration) db.exec("CREATE TABLE IF NOT EXISTS development_runs(slot TEXT PRIMARY KEY, payload TEXT NOT NULL)");
+  if (options.developmentConfiguration) {
+    const columns = new Set(db.prepare("PRAGMA table_info(development_runs)").all().map((row) => String(row.name)));
+    for (const [name, type] of Object.entries(developmentRouteColumns)) {
+      if (!columns.has(name!)) db.exec(`ALTER TABLE development_runs ADD COLUMN ${name} ${type}`);
+    }
+  }
   const configuration = () => GitHubConfigurationSchema.parse(options.configuration());
   const policies = () => SourcePolicySchema.array().parse(options.policies());
+  function quotationLimit(identity: QuotationPolicy) {
+    const original = policies().find((entry) => entry.sourceId === identity.sourceId);
+    return original && original.version === identity.policyVersion && policyDigest(original) === identity.policySha256 && original.citation.enabled ? original.citation.maxCharacters : null;
+  }
+  const contextIndex = options.developmentConfiguration ? createDevelopmentContextIndex(db, (identity, materialKinds) => {
+    try {
+      const source = policies().find((entry) => entry.sourceId === identity.sourceId);
+      return !!source && source.version === identity.policyVersion && policyDigest(source) === identity.policySha256 &&
+        githubPermission(source, { schemaVersion: 1, version: 1, sourceId: source.sourceId, queries: [] }, clock(), true) &&
+        (!(materialKinds & 1) || developmentPermission(source, { sourceId: source.sourceId }, clock())) &&
+        (!(materialKinds & 2) || developmentPermission(source, { sourceId: source.sourceId }, clock(), "security"));
+    } catch { return false; }
+  }) : null;
+  let momentumStore: ReturnType<typeof createMomentumStorage> | null = null;
+  function ensureMomentum(config?: DevelopmentConfiguration|null) {
+    if (!momentumStore && (config?.momentum || db.prepare("SELECT id FROM authorities WHERE id='momentum-storage'").get())) {
+      momentumStore = createMomentumStorage(db, (identity) => {
+        try {
+          const source = policies().find((entry) => entry.sourceId === identity.sourceId);
+          return !!source && source.version === identity.policyVersion && policyDigest(source) === identity.policySha256 &&
+            githubPermission(source, { schemaVersion: 1, version: 1, sourceId: source.sourceId, queries: [] }, clock(), true) &&
+            (!identity.momentum || source.github?.events?.allowMomentumEvidence === true && source.github.events.allowEventIdentityHistory && source.github.events.allowMaterialEvidenceProjection) &&
+            (!(identity.materialKinds & 1) || developmentPermission(source, { sourceId: source.sourceId }, clock())) &&
+            (!(identity.materialKinds & 2) || developmentPermission(source, { sourceId: source.sourceId }, clock(), "security"));
+        } catch { return false; }
+      }, clock);
+    }
+    return momentumStore;
+  }
+  ensureMomentum();
   const history = () => db.prepare("SELECT payload FROM runs ORDER BY slot").all().map((row) => GitHubRunSchema.parse(JSON.parse(String(row.payload))));
   let active: Promise<GitHubRun> | undefined;
+  let historyReading = false;
+  type ContextReader = { verify(run: z.infer<typeof DevelopmentRunSchema>): boolean; snapshotRun(slot: string): z.infer<typeof DevelopmentRunSchema> | null; payloads: GitHubReadBudget };
+  function momentumSnapshot(slot: string, cutoffUtc: string, reader: ContextReader) {
+    try {
+      const actual = momentumStore?.snapshot(slot, cutoffUtc, reader.payloads);
+      if (!actual) return null;
+      if (momentumStore!.verify(actual, reader.snapshotRun, reader.payloads)) return actual;
+      return { ...actual, point: null, nodes: [], capsules: [], developments: [], reasons: ["github-momentum-history-unavailable"] };
+    } catch { return null; }
+  }
+  function withDevelopmentHistoryRead<T>(use: (scope: DevelopmentHistoryReadScope) => T & SyncResult<T>): T {
+    if (historyReading || use.constructor.name === "AsyncFunction") throw new Error("github-development-read-scope-invalid");
+    historyReading = true;
+    let live = true;
+    let began = false;
+    try {
+      db.exec("BEGIN"); began = true;
+      const invoke = (reader: ContextReader) => {
+        const scope: DevelopmentHistoryReadScope = {
+          authorize: (snapshot) => live ? authorizeInScope(snapshot, reader) : "github-observation-unavailable",
+          authorizeDevelopmentHistory: (snapshot, publication) => live ? authorizeDevelopmentHistoryInScope(snapshot, publication, reader) : "github-observation-unavailable",
+        };
+        const result = use(scope);
+        if (result !== null && (typeof result === "object" || typeof result === "function") && typeof (result as { then?: unknown }).then === "function") throw new Error("github-development-read-scope-invalid");
+        return result;
+      };
+      if (contextIndex) return contextIndex.withHistoryRead(invoke);
+      const payloads = createGitHubReadBudget();
+      try { return invoke({ verify: () => false, snapshotRun: () => null, payloads }); }
+      finally { finishGitHubReadBudget(payloads); }
+    } finally { live = false; try { if (began) db.exec("COMMIT"); } finally { historyReading = false; } }
+  }
+  function developmentAuthorityFailure(config: DevelopmentConfiguration, save = false): GitHubReason | null {
+    const hash = githubDigest(config);
+    const stored = db.prepare("SELECT version,digest FROM authorities WHERE id='development-configuration'").get();
+    if (stored && (Number(stored.version) > config.version || Number(stored.version) === config.version && stored.digest !== hash)) return "github-configuration-version-conflict";
+    if (save) db.prepare("INSERT OR REPLACE INTO authorities VALUES('development-configuration',?,?)").run(config.version, hash);
+    return null;
+  }
+  function authorizePrevious(evidence: PreviousDevelopmentEvidence[]): boolean {
+    try {
+      const current = policies();
+      return evidence.every((entry) => {
+        const source = current.find((source) => source.sourceId === entry.evidence.policy.sourceId);
+        return !!source && source.version === entry.evidence.policy.policyVersion && policyDigest(source) === entry.evidence.policy.policySha256 && developmentPermission(source, entry.configuration, clock());
+      });
+    } catch { return false; }
+  }
+  function authorizeAdvisoryHistory(history: AdvisoryHistory): boolean {
+    try {
+      const current = policies();
+      return [...history.entries, ...history.materials.map((entry) => entry.origin), ...history.mitigations.map((entry) => entry.origin)].every((entry) => {
+        const source = current.find((source) => source.sourceId === entry.evidence.policy.sourceId);
+        return !!source && source.version === entry.evidence.policy.policyVersion && policyDigest(source) === entry.evidence.policy.policySha256 &&
+          developmentPermission(source, entry.configuration, clock(), "security");
+      });
+    } catch { return false; }
+  }
   function authorityFailure(config: GitHubConfiguration, source: SourcePolicy | undefined, save = false): GitHubReason | null {
     const entries = [{ id: "configuration", version: config.version, digest: githubDigest(config), failure: "github-configuration-version-conflict" as const },
       ...(source ? [{ id: `source:${source.sourceId}`, version: source.version, digest: policyDigest(source), failure: "github-policy-version-conflict" as const }] : [])];
@@ -69,7 +175,37 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       return null;
     } finally { db.exec("COMMIT"); }
   }
-  function authorize(snapshot: GitHubSnapshot | GitHubRankingSnapshot): GitHubReason | null {
+  function authorize(snapshot: GitHubSnapshot | GitHubRankingSnapshot | GitHubRepromotionSnapshot): GitHubReason | null {
+    if ("developments" in snapshot) {
+      try { return withDevelopmentHistoryRead((scope) => scope.authorize(snapshot)); }
+      catch { return "github-observation-unavailable"; }
+    }
+    return authorizeInScope(snapshot);
+  }
+  function authorizeInScope(snapshot: GitHubSnapshot | GitHubRankingSnapshot | GitHubRepromotionSnapshot, reader?: ContextReader): GitHubReason | null {
+    if ("developments" in snapshot) {
+      try {
+        const checked = GitHubRepromotionSnapshotSchema.parse(snapshot);
+        const config = configuration(), source = policies().find((entry) => entry.sourceId === config.sourceId);
+        if (githubDigest(config) !== checked.github.configurationSha256) return "github-configuration-changed";
+        if (!githubPermission(source, config, clock(), true) || checked.github.runs.some((run) => run.policy?.policySha256 !== policyDigest(source!))) return "github-permission-changed";
+        const declarations = [{ id: "configuration", version: config.version, digest: githubDigest(config) }, { id: `source:${source!.sourceId}`, version: source!.version, digest: policyDigest(source!) }];
+        for (const declaration of declarations) {
+          const stored = db.prepare("SELECT version,digest FROM authorities WHERE id=?").get(declaration.id);
+          if (stored && (Number(stored.version) > declaration.version || Number(stored.version) === declaration.version && stored.digest !== declaration.digest)) return "github-policy-version-conflict";
+        }
+        if (checked.developments.configuration) {
+          const current = DevelopmentConfigurationSchema.parse(options.developmentConfiguration?.());
+          if (githubDigest(current) !== checked.developments.configurationSha256) return "github-configuration-changed";
+          const conflict = developmentAuthorityFailure(current); if (conflict) return conflict;
+          if (checked.developments.runs.some((run) => !developmentRunPermission(source, run, clock()) || run.policy?.policySha256 !== policyDigest(source!))) return "github-permission-changed";
+          if (!authorizePrevious(checked.developments.runs.flatMap((run) => run.assessments.flatMap((receipt) => receipt.previousEvidence)))) return "github-permission-changed";
+          for (const run of checked.developments.runs) if (run.security && !authorizeAdvisoryHistory(run.security.history)) return "github-permission-changed";
+          const historyFailure = authorizeDevelopmentHistoryInScope(checked, undefined, reader!); if (historyFailure) return historyFailure;
+        }
+        return null;
+      } catch { return "github-permission-changed"; }
+    }
     try {
       (snapshot.schemaVersion === 1 ? GitHubSnapshotSchema : GitHubRankingSnapshotSchema).parse(snapshot);
       const config = configuration();
@@ -79,6 +215,36 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       if (!githubPermission(source, config, clock(), true) || snapshot.runs.some((run) => !run.policy || run.policy.policySha256 !== policyDigest(source!))) return "github-permission-changed";
       return null;
     } catch { return "github-permission-changed"; }
+  }
+  function authorizeDevelopmentHistory(snapshot: GitHubRepromotionSnapshot, publication?: GitHubPublicationContext): GitHubReason | null {
+    try { return withDevelopmentHistoryRead((scope) => scope.authorizeDevelopmentHistory(snapshot, publication)); }
+    catch { return "github-observation-unavailable"; }
+  }
+  function authorizeDevelopmentHistoryInScope(snapshot: GitHubRepromotionSnapshot, publication: GitHubPublicationContext | undefined, reader: ContextReader): GitHubReason | null {
+    try {
+      const checked = GitHubRepromotionSnapshotSchema.parse(snapshot);
+      if (checked.developments.configuration?.momentum) {
+        const current = checked.github.runs.at(-1), frozen = checked.developments.momentum;
+        const actual = current ? momentumSnapshot(current.scheduledAtUtc, checked.developments.cutoffUtc, reader) : null;
+        if (actual && (!frozen || githubDigest(actual) !== githubDigest(frozen)) || frozen && !actual) return "github-observation-unavailable";
+      }
+      if (checked.developments.publicationProjection && !publication) return "github-observation-unavailable";
+        if (publication) {
+          const { publicationProjection, ...base } = checked.developments;
+          const origins = publicationProjection?.origins ?? base.runs.map((run) => ({ slot: run.slot, runId: run.id }));
+          const current = checked.github.runs.at(-1);
+          const persisted = current && base.configuration ? reader.snapshotRun(current.scheduledAtUtc) : null;
+          const originals = persisted && persisted.githubRunId === current!.id && persisted.configurationSha256 === base.configurationSha256 &&
+            githubDigest(persisted.policy) === githubDigest(current!.policy) && persisted.availableAtUtc <= base.cutoffUtc ? [persisted] : [];
+          if (origins.length !== base.runs.length || githubDigest(origins) !== githubDigest(originals.map((run) => ({ slot: run.slot, runId: run.id })))) return "github-observation-unavailable";
+          // The actual current slot, not a pair of caller-empty arrays, decides
+          // the original set. Loading it has authenticated its complete
+          // frozen prefix, even for groups that the final projection omits.
+          const original: GitHubRepromotionSnapshot = { ...checked, developments: { ...base, runs: originals, reasons: originals.length ? originals.flatMap((run) => run.reasons) : base.reasons } };
+          if (githubDigest(projectGitHubPublication(original, publication, quotationLimit)) !== githubDigest(checked.developments)) return "github-observation-unavailable";
+        } else for (const run of checked.developments.runs) if (!reader.verify(run)) return "github-observation-unavailable";
+        return null;
+    } catch { return "github-observation-unavailable"; }
   }
   function takeSnapshot(cutoffUtc: string, ranking: boolean): GitHubSnapshot | GitHubRankingSnapshot {
     utc.parse(cutoffUtc);
@@ -114,6 +280,7 @@ export function createGitHubObserver(options: { databasePath: string; configurat
   }
   return {
     async observeDue(input: { signal?: AbortSignal } = {}): Promise<GitHubRun> {
+      if (historyReading) throw new Error("github-development-read-scope-invalid");
       if (active) return active;
       active = (async () => {
       const startedAtUtc = utc.parse(clock());
@@ -121,6 +288,10 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       const prior = db.prepare("SELECT payload FROM runs WHERE slot=?").get(scheduledAtUtc);
       if (prior) return GitHubRunSchema.parse(JSON.parse(String(prior.payload)));
       const config = configuration();
+      contextIndex?.maintain();
+      const developmentConfig = options.developmentConfiguration ? DevelopmentConfigurationSchema.parse(options.developmentConfiguration()) : null;
+      const activeMomentum = ensureMomentum(developmentConfig);
+      const developmentConflict = developmentConfig ? developmentAuthorityFailure(developmentConfig, true) : null;
       const source = policies().find((source) => source.sourceId === config.sourceId);
       const last = history().filter((run) => run.configuration.sourceId === config.sourceId).at(-1);
       if (last?.resumeAtUtc && startedAtUtc < last.resumeAtUtc) return last;
@@ -191,15 +362,92 @@ export function createGitHubObserver(options: { databasePath: string; configurat
       run.availableAtUtc = utc.parse(clock());
       run.resumeAtUtc = adapter.resumeAtUtc();
       run.reasons = [...new Set([...run.reasons, ...run.queries.flatMap((entry) => entry.reason ? [entry.reason] : [])])];
+      db.exec("BEGIN");
+      let indexed: Map<string, IndexedContext>;
+      try { indexed = contextIndex?.readNodes(run.observations.filter((entry) => entry.reason === null).map((entry) => entry.nodeId), run.scheduledAtUtc, run.startedAtUtc) ?? new Map(); }
+      finally { db.exec("COMMIT"); }
+      const releaseContexts = new Map<string, DevelopmentContext>();
+      const securityHistory: AdvisoryHistory = { entries: [], materials: [], mitigations: [], unavailableNodeIds: [] };
+      for (const [nodeId, context] of indexed) {
+        const release = context.entries.filter((entry) => entry.kind === "release");
+        releaseContexts.set(nodeId, { previous: release.map((entry) => entry.development), previousEvidence: release.map((entry) => entry.origin), unavailable: context.unavailable, freeze: context.freeze });
+        if (context.unavailable) securityHistory.unavailableNodeIds.push(nodeId);
+        else {
+          securityHistory.entries.push(...context.entries.filter((entry) => entry.kind === "known-security").map((entry) => entry.origin));
+          securityHistory.materials.push(...context.entries.filter((entry) => entry.kind === "security").map(({ development, origin }) => ({ development, origin })));
+          securityHistory.mitigations.push(...context.entries.filter((entry) => entry.kind === "security-mitigation").map(({ projection, origin, receiptSha256 }) => ({ projection, origin, receiptSha256 })));
+        }
+      }
+      const developmentRun = developmentConfig ? await collectDevelopments({ run, configuration: developmentConfig, source, adapter, clock,
+        contexts: releaseContexts, authorizePrevious, advisoryHistory: developmentConfig.advisories ? securityHistory : { entries: [], materials: [], mitigations: [], unavailableNodeIds: [] }, authorizeAdvisoryHistory,
+        quotationLimit,
+        access: source ? { source, credential: options.credential, clock, authorize: () => {
+          const failure = check(); if (failure) return failure;
+          if (developmentConflict) return developmentConflict;
+          try {
+            if (githubDigest(DevelopmentConfigurationSchema.parse(options.developmentConfiguration?.())) !== githubDigest(developmentConfig)) return "github-configuration-changed";
+            const conflict = developmentAuthorityFailure(developmentConfig); if (conflict) return conflict;
+            return null;
+          } catch { return "github-configuration-changed"; }
+        }, deadline, ...(input.signal ? { signal: input.signal } : {}) } : undefined,
+        ...(options.developmentVerifier ? { verifier: options.developmentVerifier } : {}) }) : null;
+      if (developmentRun) run.availableAtUtc = developmentRun.availableAtUtc;
       const checked = GitHubRunSchema.parse(run);
-      db.prepare("INSERT OR IGNORE INTO runs VALUES (?, ?)").run(scheduledAtUtc, JSON.stringify(checked));
+      if (developmentRun || activeMomentum) {
+        const persist = (finalizeMomentum?: () => void) => {
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          const momentumPoint = activeMomentum?.makePoint(checked, developmentConfig, developmentRun);
+          const indexReady = contextIndex?.ready() ?? false;
+          const insertion = activeMomentum ? activeMomentum.insertRun(checked) : db.prepare("INSERT OR IGNORE INTO runs(slot,payload) VALUES (?, ?)").run(scheduledAtUtc, JSON.stringify(checked));
+          if (developmentRun && insertion.changes && contextIndex?.intact()) {
+            const payload = JSON.stringify(developmentRun);
+            db.prepare("INSERT INTO development_runs(slot,payload,source_id,policy_version,policy_sha256,available_at,payload_bytes,payload_sha256,material_kinds,dependency_policies) VALUES (?,?,?,?,?,?,?,?,?,?)")
+              .run(scheduledAtUtc, payload, developmentRun.policy?.sourceId ?? null, developmentRun.policy?.policyVersion ?? null, developmentRun.policy?.policySha256 ?? null,
+                developmentRun.availableAtUtc, Buffer.byteLength(payload), createHash("sha256").update(payload).digest("hex"), developmentMaterialKinds(developmentRun), JSON.stringify(developmentDependencies(developmentRun)));
+            contextIndex.committed(scheduledAtUtc, indexReady, { run: developmentRun, github: checked });
+          }
+          if (insertion.changes && momentumPoint) activeMomentum!.commit(momentumPoint, developmentRun);
+          finalizeMomentum?.();
+          db.exec("COMMIT");
+        } catch (error) { db.exec("ROLLBACK"); throw error; }
+        };
+        if (activeMomentum) activeMomentum.write(persist); else persist();
+      } else db.prepare("INSERT OR IGNORE INTO runs(slot,payload) VALUES (?, ?)").run(scheduledAtUtc, JSON.stringify(checked));
       return GitHubRunSchema.parse(JSON.parse(String(db.prepare("SELECT payload FROM runs WHERE slot=?").get(scheduledAtUtc)!.payload)));
       })();
       try { return await active; } finally { active = undefined; }
     },
     snapshot(cutoffUtc: string): GitHubSnapshot { return takeSnapshot(cutoffUtc, false) as GitHubSnapshot; },
     rankingSnapshot(cutoffUtc: string): GitHubRankingSnapshot { return takeSnapshot(cutoffUtc, true) as GitHubRankingSnapshot; },
+    repromotionSnapshot(cutoffUtc: string): GitHubRepromotionSnapshot {
+      const github = takeSnapshot(cutoffUtc, true) as GitHubRankingSnapshot;
+      const config = options.developmentConfiguration ? DevelopmentConfigurationSchema.parse(options.developmentConfiguration()) : null;
+      const developments: DevelopmentSnapshot = { schemaVersion: 1, cutoffUtc, configuration: config, configurationSha256: config ? githubDigest(config) : null, runs: [], reasons: [] };
+      const latest = github.runs.at(-1);
+      db.exec("BEGIN");
+      let captured;
+      try {
+        captured = contextIndex?.withHistoryRead((reader) => ({
+          run: config && latest ? reader.snapshotRun(latest.scheduledAtUtc) : null,
+          momentum: config?.momentum && latest ? momentumSnapshot(latest.scheduledAtUtc, cutoffUtc, reader) : null,
+        })) ?? { run: null, momentum: null };
+      }
+      finally { db.exec("COMMIT"); }
+      const { run, momentum } = captured;
+      if (run) {
+        if (run.githubRunId === latest!.id && run.availableAtUtc <= cutoffUtc && run.configurationSha256 === developments.configurationSha256) {
+          developments.runs = [run]; developments.reasons = [...run.reasons];
+        } else developments.reasons.push("github-development-unavailable");
+      } else developments.reasons.push(config ? "github-missing-event-run" : "github-development-disabled");
+      if (config && !contextIndex?.ready() && !developments.reasons.includes("github-development-history-unavailable")) developments.reasons.push("github-development-history-unavailable");
+      if (momentum) developments.momentum = momentum;
+      else if (config?.momentum) developments.reasons.push("github-momentum-point-unavailable");
+      return GitHubRepromotionSnapshotSchema.parse({ schemaVersion: 1, github, developments });
+    },
     authorize,
+    authorizeDevelopmentHistory,
+    withDevelopmentHistoryRead,
     close() { db.close(); },
   };
 }

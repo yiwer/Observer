@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { GitHubRepromotionSnapshot, GitHubPublicationContext } from "./github-development-contracts.ts";
 
 const utc = z.iso.datetime({ precision: 3, offset: false });
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
@@ -12,6 +13,12 @@ export const GitHubConfigurationSchema = z.strictObject({ schemaVersion: z.liter
 }).refine((value) => new Set(value.queries).size === value.queries.length);
 export type GitHubConfiguration = z.infer<typeof GitHubConfigurationSchema>;
 export const GitHubPolicyIdentitySchema = z.strictObject({ sourceId: z.string().min(1).max(200), policyVersion: z.number().int().positive(), policySha256: sha256 });
+export const DevelopmentConfigurationSchema = z.strictObject({ schemaVersion: z.literal(1), version: z.number().int().positive(), sourceId: z.string().min(1).max(200), releases: z.boolean(), advisories: z.boolean().optional(), momentum: z.boolean().optional() });
+export type DevelopmentConfiguration = z.infer<typeof DevelopmentConfigurationSchema>;
+export const ContextFreezeSchema = z.strictObject({ epoch: z.string().min(1).max(200), generation: z.number().int().nonnegative(), slot: utc, frozenAtUtc: utc, nodeId: z.string().min(1).max(200),
+  count: z.number().int().nonnegative().max(1000), bytes: z.number().int().nonnegative().max(16 * 1024 * 1024), digest: sha256,
+  usedCount: z.number().int().nonnegative().max(1000), usedDigest: sha256 });
+export type ContextFreeze = z.infer<typeof ContextFreezeSchema>;
 export const GitHubRepositorySchema = z.object({ node_id: nodeId, full_name: fullName, private: z.boolean(), archived: z.boolean(), disabled: z.boolean(), fork: z.boolean(),
   mirror_url: z.string().nullable(), visibility: z.string().max(100).optional(), is_template: z.boolean().optional(), stargazers_count: count, forks_count: count,
   language: z.string().max(200).nullable(), created_at: z.iso.datetime({ offset: true }), topics: z.array(z.string().max(200)).max(100).optional() });
@@ -44,8 +51,16 @@ export const GitHubSnapshotSchema = z.strictObject({ schemaVersion: z.literal(1)
 export type GitHubSnapshot = z.infer<typeof GitHubSnapshotSchema>;
 export const GitHubRankingSnapshotSchema = GitHubSnapshotSchema.extend({ schemaVersion: z.literal(2), watchItems: z.array(GitHubWatchItemSchema).max(50) });
 export type GitHubRankingSnapshot = z.infer<typeof GitHubRankingSnapshotSchema>;
+export type SyncResult<T> = T extends PromiseLike<unknown> ? never : T;
+export interface DevelopmentHistoryReadScope {
+  authorize(snapshot: GitHubRepromotionSnapshot): GitHubReason | null;
+  authorizeDevelopmentHistory(snapshot: GitHubRepromotionSnapshot, publication?: GitHubPublicationContext): GitHubReason | null;
+}
 export interface GitHubObservationReader {
   snapshot(cutoffUtc: string): GitHubSnapshot;
   rankingSnapshot?(cutoffUtc: string): GitHubRankingSnapshot;
-  authorize(snapshot: GitHubSnapshot | GitHubRankingSnapshot): GitHubReason | null;
+  repromotionSnapshot?(cutoffUtc: string): GitHubRepromotionSnapshot;
+  authorizeDevelopmentHistory?(snapshot: GitHubRepromotionSnapshot, publication?: GitHubPublicationContext): GitHubReason | null;
+  withDevelopmentHistoryRead?<T>(use: (scope: DevelopmentHistoryReadScope) => T & SyncResult<T>): T;
+  authorize(snapshot: GitHubSnapshot | GitHubRankingSnapshot | GitHubRepromotionSnapshot): GitHubReason | null;
 }

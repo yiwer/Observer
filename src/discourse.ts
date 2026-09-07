@@ -8,7 +8,7 @@ import { interestCoverage, selectInterests } from "./interest-selection.ts";
 
 type Discourse = Extract<ReportRecord, { schemaVersion: 7 }>["discourse"];
 export interface DiscourseOptions { configuration: unknown; adapter?: DiscourseAdapter; }
-export async function prepareDiscourse(input: { request: Extract<SixEditionRequest, { schemaVersion: 6 | 7 | 8 }>; configuration: DiscourseConfiguration; frozenAtUtc: string;
+export async function prepareDiscourse(input: { request: Extract<SixEditionRequest, { schemaVersion: 6 | 7 | 8 | 9 }>; configuration: DiscourseConfiguration; frozenAtUtc: string;
   adapter: DiscourseAdapter | undefined; policies: () => SourcePolicy[]; clock: () => string; signal?: AbortSignal }) {
   const configuration = structuredClone(input.configuration);
   const configurationSha256 = inputDigest(configuration);

@@ -95,7 +95,9 @@ export function rankGitHub(input: { snapshot: GitHubRankingSnapshot; interestPro
     quota: { target: 7, actual: selectedNodeIds.length, requiredNovel: Math.ceil(selectedNodeIds.length / 2), selectedNovel, eligibleNovel: novel.length } });
 }
 type RankedRecord = Extract<ReportRecord, { schemaVersion: 9 }>;
-function projectedRecord(record: RankedRecord): Extract<ReportRecord, { schemaVersion: 8 }> {
+type RankingRenderRecord = Omit<RankedRecord, "githubRanking"> & { githubRanking: Omit<RankedRecord["githubRanking"], "candidates"> & {
+  candidates: (Omit<RankedRecord["githubRanking"]["candidates"][number], "reason"> & { reason: RankedRecord["githubRanking"]["candidates"][number]["reason"] | "security-risk-quarantined" })[] } };
+function projectedRecord(record: RankingRenderRecord): Extract<ReportRecord, { schemaVersion: 8 }> {
   const { githubRanking: _ranking, ...prior } = record;
   return { ...prior, schemaVersion: 8, editorialContract: "observer-canonical-v6", github: { ...record.github, schemaVersion: 1,
     watchItems: record.github.watchItems.slice(0, 7) } };
@@ -109,7 +111,7 @@ export function consistentGitHubRanking(record: RankedRecord): boolean {
   try { return githubDigest(rankGitHub({ snapshot: record.github, interestProfile: record.interestProfile, history: record.githubRanking.history, algorithmVersion: record.githubRanking.algorithmVersion })) === githubDigest(record.githubRanking); }
   catch { return false; }
 }
-export function githubRankingMarkdown(record: RankedRecord): string {
+export function githubRankingMarkdown(record: RankingRenderRecord): string {
   const projected = projectedRecord(record);
   projected.github.watchItems = record.githubRanking.selectedNodeIds.map((nodeId) => record.github.watchItems.find((item) => item.nodeId === nodeId)!);
   let rendered = githubMarkdown(projected)

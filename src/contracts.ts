@@ -5,6 +5,7 @@ import { InterestSnapshotSchema, InterestSelectionSchema, InterestCoverageSchema
 import { DiscourseSnapshotSchema } from "./discourse-contracts.ts";
 import { GitHubSnapshotSchema, GitHubRankingSnapshotSchema } from "./github-contracts.ts";
 import { GitHubRankingSchema } from "./github-ranking-contracts.ts";
+import { DevelopmentSnapshotSchema, GitHubRepromotionRankingSchema } from "./github-development-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const utc = z.iso.datetime({ precision: 3, offset: false });
@@ -149,7 +150,8 @@ export const DomainEditionRequestSchema = SixEditionRequestSchema.extend({ schem
 export const DiscourseEditionRequestSchema = SixEditionRequestSchema.extend({ schemaVersion: z.literal(6), discourseSamples: z.array(z.unknown()).max(10).optional() });
 export const GitHubEditionRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(7) });
 export const GitHubHeatRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(8) });
-export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema> | z.infer<typeof EventEditionRequestSchema> | z.infer<typeof InterestEditionRequestSchema> | z.infer<typeof DomainEditionRequestSchema> | z.infer<typeof DiscourseEditionRequestSchema> | z.infer<typeof GitHubEditionRequestSchema> | z.infer<typeof GitHubHeatRequestSchema>;
+export const GitHubRepromotionRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(9) });
+export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema> | z.infer<typeof EventEditionRequestSchema> | z.infer<typeof InterestEditionRequestSchema> | z.infer<typeof DomainEditionRequestSchema> | z.infer<typeof DiscourseEditionRequestSchema> | z.infer<typeof GitHubEditionRequestSchema> | z.infer<typeof GitHubHeatRequestSchema> | z.infer<typeof GitHubRepromotionRequestSchema>;
 // Six-Edition research appends a known Edition suffix to the unchanged 200-character input ID.
 // This bounded envelope extension does not alter the legacy AgentRunner/CLI contract.
 const editionTaskId = z.string().min(1).max(200 + 1 + Math.max(...Object.keys(editionNames).map((name) => name.length)));
@@ -239,7 +241,8 @@ const DiscourseRecordSchema = DomainRecordSchema.extend({ schemaVersion: z.liter
 });
 const GitHubRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v6"), github: GitHubSnapshotSchema });
 const GitHubHeatRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v7"), github: GitHubRankingSnapshotSchema, githubRanking: GitHubRankingSchema });
-export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema, GitHubHeatRecordSchema]);
+const GitHubRepromotionRecordSchema = GitHubHeatRecordSchema.extend({ schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v8"), githubDevelopments: DevelopmentSnapshotSchema, githubRepromotion: GitHubRepromotionRankingSchema });
+export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema, GitHubHeatRecordSchema, GitHubRepromotionRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
 const LegacyReportVersionSchema = z.strictObject({
@@ -265,6 +268,8 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
   schemaVersion: z.literal(7), editorialContract: z.literal("observer-canonical-v6"), reportRecordSha256: sha256,
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v7"), reportRecordSha256: sha256,
+}), LegacyReportVersionSchema.extend({
+  schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v8"), reportRecordSha256: sha256,
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({

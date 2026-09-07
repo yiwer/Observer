@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { createSourceReader } from "./source-network.ts";
 import type { SourcePolicy, SourceReadRequest, SourceResponse } from "./collection.ts";
 import { GitHubRepositorySchema, GitHubReasonSchema, githubRules, type GitHubReason } from "./github-contracts.ts";
+import { ReleaseSchema } from "./github-development-contracts.ts";
 
 export const githubDigest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export function githubFailure(error: unknown): GitHubReason {
@@ -16,7 +17,7 @@ export function createGitHubAdapter(options: { read?: (url: string, request: Sou
   const read = options.read ?? createSourceReader();
   let cooldownUntil = 0;
   const headerLimit = (status: number, headers: Readonly<Record<string, string>>) => status === 429 || status === 403 && (headers["x-ratelimit-remaining"] === "0" || !!headers["retry-after"]);
-  async function get(url: URL, access: GitHubAccess) {
+  async function get(url: URL, access: GitHubAccess, route: "repository" | "releases" | "advisory" = "repository") {
     const failure = access.authorize(); if (failure) throw new Error(failure);
     if (Date.parse(access.clock()) < cooldownUntil) throw new Error("github-rate-limited");
     const secret = CredentialSchema.safeParse(access.credential());
@@ -29,7 +30,7 @@ export function createGitHubAdapter(options: { read?: (url: string, request: Sou
       const failure = access.authorize(); if (failure) throw new Error(failure);
       if (secret.data.expiresAtUtc <= access.clock()) throw new Error("github-credential-expired");
       return target.origin === "https://api.github.com" && !target.username && !target.password && !target.hash &&
-        (search ? target.href === url.href : /^\/repos\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(target.pathname) && !target.search);
+        (search || route !== "repository" ? target.href === url.href : /^\/repos\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(target.pathname) && !target.search);
     };
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -37,7 +38,7 @@ export function createGitHubAdapter(options: { read?: (url: string, request: Sou
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       if (access.signal?.aborted) throw new Error("github-cancelled");
-      const response = await Promise.race([read(url.href, { source: { ...access.source, limits: { ...access.source.limits, maxRedirects: search ? 0 : Math.min(access.source.limits.maxRedirects, githubRules.maxRedirects) } },
+      const response = await Promise.race([read(url.href, { source: { ...access.source, limits: { ...access.source.limits, maxRedirects: search || route !== "repository" ? 0 : Math.min(access.source.limits.maxRedirects, githubRules.maxRedirects) } },
         headers: { accept: "application/vnd.github+json", authorization: `Bearer ${secret.data.token}`, "x-github-api-version": githubRules.apiVersion }, signal: controller.signal, validateUrl,
         readErrorBody: (status, headers) => status === 403 && !headerLimit(status, headers) }),
       new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("github-timeout")); }, timeoutMs); })]);
@@ -69,6 +70,47 @@ export function createGitHubAdapter(options: { read?: (url: string, request: Sou
   }
   return {
     resumeAtUtc: () => cooldownUntil ? new Date(cooldownUntil).toISOString() : null,
+    async advisory(ghsaId: string, access: GitHubAccess) {
+      if (!/^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/.test(ghsaId)) throw new Error("github-invalid-response");
+      const { response, observedAtUtc } = await get(new URL(`https://api.github.com/advisories/${ghsaId}`), access, "advisory");
+      try { return { advisory: JSON.parse(response.body) as unknown, observedAtUtc, responseSha256: createHash("sha256").update(response.body).digest("hex") }; }
+      catch { throw new Error("github-invalid-response"); }
+    },
+    async advisories(cursor: string | null, access: GitHubAccess) {
+      const url = new URL("https://api.github.com/advisories");
+      const pageSize = Math.min(30, access.source.limits.maxItems);
+      url.searchParams.set("type", "reviewed"); url.searchParams.set("sort", "updated"); url.searchParams.set("direction", "desc"); url.searchParams.set("per_page", String(pageSize));
+      if (cursor !== null) { if (!cursor || cursor.length > 1000) throw new Error("github-invalid-response"); url.searchParams.set("after", cursor); }
+      const { response, observedAtUtc } = await get(url, access, "advisory");
+      try {
+        const advisories = z.array(z.unknown()).max(pageSize).parse(JSON.parse(response.body));
+        const links = [...(response.headers.link ?? "").matchAll(/<([^>]+)>\s*;\s*rel="next"/g)];
+        let nextCursor: string | null = null;
+        let paginationValid = links.length <= 1;
+        if (links.length === 1) {
+          const next = new URL(links[0]![1]!);
+          nextCursor = next.searchParams.get("after");
+          const expected = new URL(url); if (nextCursor) expected.searchParams.set("after", nextCursor);
+          next.searchParams.sort(); expected.searchParams.sort();
+          paginationValid = !!nextCursor && nextCursor.length <= 1000 && nextCursor !== cursor && next.href === expected.href;
+        }
+        return { advisories, observedAtUtc, responseSha256: createHash("sha256").update(response.body).digest("hex"), paginationValid, nextCursor: paginationValid ? nextCursor : null };
+      } catch { throw new Error("github-invalid-response"); }
+    },
+    async releases(fullName: string, page: number, access: GitHubAccess) {
+      const url = new URL(`https://api.github.com/repos/${fullName}/releases`);
+      const pageSize = Math.min(10, access.source.limits.maxItems);
+      url.searchParams.set("per_page", String(pageSize)); url.searchParams.set("page", String(page));
+      const { response, observedAtUtc } = await get(url, access, "releases");
+      try {
+        const releases = ReleaseSchema.array().max(pageSize).parse(JSON.parse(response.body));
+        const next = [...(response.headers.link ?? "").matchAll(/<([^>]+)>\s*;\s*rel="next"/g)];
+        const expected = new URL(url); expected.searchParams.set("page", String(page + 1));
+        const canonical = (value: URL) => { value.searchParams.sort(); return value.href; };
+        const paginationValid = next.length <= 1 && (next.length === 0 || canonical(new URL(next[0]![1]!)) === canonical(expected));
+        return { releases, observedAtUtc, responseSha256: createHash("sha256").update(response.body).digest("hex"), paginationValid, nextPage: next.length === 1 && paginationValid ? page + 1 : null };
+      } catch { throw new Error("github-invalid-response"); }
+    },
     async search(query: string, page: number, access: GitHubAccess) {
       const url = new URL("https://api.github.com/search/repositories");
       url.searchParams.set("q", `${query} is:public fork:false`); url.searchParams.set("sort", "updated"); url.searchParams.set("order", "desc");
