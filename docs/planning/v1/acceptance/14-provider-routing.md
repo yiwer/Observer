@@ -264,6 +264,8 @@ Root批准串行单Node本地容量窗口；作者归还后，Root亲读公开pr
 
 Root亲读角色计数、begin派发前校验及公开报告断言，核115–117完整before/after一致与实际日志SHA。115为maxResearchAttempts/maxVerificationAttempts/maxReviewAttempts尚不支持的配置RED；116实际完整文件37/37、0skip/0cancelled、exit0，日志SHA `41180e2dc22bcb4a6c0c06193c4ef034f5c5b9f8b7c204f61f1855a8cceb714a`；117类型检查exit0。配置研究2、主核验1、复核0时，实际attempt仅research/research/verification，复核明确review-unavailable、存在attempt-budget-exhausted决策，六栏结构保留且world一条已满足严格Gate的故事发表。实现范围分别0–24、0–30、0–30；该低配置例不代替默认最大组合、retry或异常token验收。
 
-运行范围纠正：作者原用`^(?!Audit)`希望排除容量例，但它匹配Node根suite空名，115/116实际仍包含两容量测试，未重新协调容量窗口。作者主动报告，原capture保留；Root当时无重测试或Docker并行，未发生资源冲突，不把该次写成35项普通回归。116 capture12559.3489ms、实际峰值RSS466,884KiB；新配置字段后容量审计2,818,572字节，低预算审计6119字节。后续排除规则先用小probe实测，含容量的单文件回归按真实范围协调。
+运行范围纠正：作者原用`^(?!Audit)`希望排除容量例，但115/116实际仍包含两容量测试，未重新协调容量窗口。作者先提出根suite空名解释，随后极小probe发现补`.+`仍无效，故撤回该根因结论，不能称已诊断。作者主动报告，原capture保留；Root当时无重测试或Docker并行，未发生资源冲突，不把该次写成35项普通回归。116 capture12559.3489ms、实际峰值RSS466,884KiB；新配置字段后容量审计2,818,572字节，低预算审计6119字节。后续排除规则先用小probe实测，含容量的单文件回归按真实范围协调。
 
 数值预留后续证据：Root用本机Node实际确认JSON.stringify(Number.MAX_VALUE)为23字节，而合法非负0.0000012345678901234567为24字节，已交作者作为边界回归输入。作者拟增加每数值64字节保守余量，尚未核验该修正；不将意图记为通过。
+
+筛选工具独立复现118/119：小probe仅两个test，Audit项执行即主动throw，ordinary项成功；118负向正则仍执行Audit，1pass/1fail、exit1，SHA `1451fb9d805dc999e078be7055287408641d9e229d969ef8071471f022e7454c`。119使用Node原生`--test-skip-pattern Audit`仅ordinary 1/1、exit0，SHA `e4c716e3998df210a5e6c707112506b72d729687daf18818973c3b65c78aa2a9`。Root核两capture before/after及实际hash，亲读probe并独立执行同skip命令得到1/1。118/119是追加复现，不冒充首次输出；这只确认可用筛选办法，不是产品新增通过项或根因诊断。
