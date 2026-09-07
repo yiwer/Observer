@@ -1290,6 +1290,14 @@ Root再次gh只读核#13仍OPEN，原三类进展、可重算衰减/绕过/配�
 
 Root核两份实际日志、完整before/after稳定及SHA，核测试正文与具体失败位置；无产品修改。需继续查明并建立最终Report实际可选/novel前提，保留原127胶囊的时间/完整peer及此前拒绝断言，不放宽新颖性配额。当前不是该组完整PASS，原档保留。
 
+### 274–277：明确配额前提后startup/context组通过
+
+274仅在小时144的实际HTTP输入加入novel，未改变127及此前Point/完整peer/时间和拒绝断言，首次1/1通过；日志SHA `eb1f2ae3ef962e4bcabf544aae13fe2a9d86b0e45b3fa78cc90947ca17c851fd`。为确认273原末期失败原因，275另行保留不加novel的公开诊断：eligibleNovel=0、actual=0、selectedNodeIds为空，repeat为eligible-development但reason novelty-quota。原生exit1（无novel却要求选中novel），日志SHA `42882e504003ee6aa0ecd74d7478641ed2236d56942c78c2c46fecc0c237264f`；这是出版控制前提诊断，不是reset产品RED。
+
+276恢复仅144的真实novel控制，完整原组1/1、11362.1388ms总时长、exit0，UTC2026-09-07 20:45:43.309Z–20:45:54.736Z，日志SHA `9f7890e2d544538879743a5b0e72ebaff31d1c5de6cce3a4aec5868316bc8235`。实际quota为eligibleNovel1/actual2/requiredNovel1/selectedNovel1，选repeat+novel。真实startup超28未授胶囊、65 peer不完整打断低段、78仍无资格；102–126完整低段+127高生成26点reset，21个完全一致measured peers逐点验证，原onset被末期消费，三刊重启全等。
+
+277-momentum-startup-peer-reset-typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核274–277实际结果/SHA、完整before/after稳定与最终正文；另比对276与271全部src指纹无差异，没有产品修复，按公开表征收束该范围，不假称RED→GREEN。混合优先级、dirty/pending不能洗白及整段momentum遗漏三项继续，最终统一门不删。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
