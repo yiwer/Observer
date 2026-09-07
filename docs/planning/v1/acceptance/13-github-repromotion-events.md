@@ -1372,6 +1372,14 @@ Spec发现P1静态证据：`github-momentum-storage.ts` makePoint把同node全�
 
 Root已安排作者完整momentum单文件，之后冻结原全量check→smoke再提交修订候选；期间不并行Root大型业务/Docker门。独立4GHSA公开探针准备中，尚未执行；新source指纹不得自动继承首候选容量PASS。正式复审、最终固定SHA独立/兼容及实际master验收仍未完成，#13不关闭。
 
+### 修订候选独立风险探针准备及完整单文件在途
+
+Root独立reviewer未读作者新增测试，以公开observeDue/repromotionSnapshot/authorize/produce/authenticated readReport和真实SQLite准备`data/root-v1-13-risk-witness-review/four-ghsa-overflow-probe.mjs`，SHA `294730ecbf911579f0d03dc06a8ae976b73d844daee6bf10ac2bf7534f0d9197`；README SHA `040e2269687c7f64c70540a3a964a75a704cf3b3c657a8a33800deb1a6a19365`。Root全文审读：20节点两次真实相隔24小时观察，4条同node完整high GHSA，原件/ordinary保存，whole witness unavailable且真实origin匹配，20 momentum unknown、无momentum事件，但4条合法security更新继续出版，认证读取及重启整snapshot/Report相等；不把此场景称unknown/withdrawn全部隔离证明。所有执行数据库保留。
+
+Root新增固定输入包装器`data/root-v1-13-review/risk-witness-overflow-probe.mjs`，SHA `3dff093837c1bedb11ebcd49b1a59e3ddc1e0e391f0913dd4a002f07aca43cbd`，30秒直接子进程上限、原输入前后hash核对，将经既有60秒单fd捕获器在新完整候选上执行。当前仅syntax检查通过，尚无独立业务结果。
+
+297-momentum-risk-witness-regression完整单文件实际运行中；作者原生handle53142已poll确认active，无terminal。Root跨会话尝试poll该handle得到Unknownprocess，不据此认定退出或重启；作者持有原句柄继续观察。最新冻结storage SHA `d87e43a7114e7d5ca8e73a48b0ba1e75c58af79bcdf0d7c3d73dbd2fb5d3b9e4`；之后原全量check/smoke和新候选提交仍待真实终态。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
