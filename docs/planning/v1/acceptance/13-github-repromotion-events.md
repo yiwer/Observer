@@ -700,6 +700,49 @@ Root已全文亲读`data/v1-13-momentum-design/history-read-scope-review.md`并�
 
 各阶段还须固定相同遍历顺序，避免cap附近相同材料产生不同unavailable集合：Root建议先核本刊真实current原run，再按固定Report id顺序核旧刊，最后publication复核复用本阶段current缓存；初始可先用原snapshot的一参授权，不凭空需要尚未导出的publication历史。作者可先完成当前mitigation首片再接scope，正式typed映射须写入§8并公开验证。此项是已批准待实现，不是现有顶层共享预算PASS。
 
+### 141–144：真实缓解基线首片核验
+
+Root重新读取140–144各原metadata，逐份比较完整before/after并重算原output.log SHA，全部吻合；亲读公开scheduled refresh测试及`github-mitigations.ts`和v2摘要验证路径。141在基线后完整publication纯回放中报`github-repromotion-input-invalid`，是v2输入摘要字段顺序不一致的实际失败；修正为精确`schemaVersion/formatVersion/evidence/previous/previousMitigations/contextFreeze`。142是新增测试四处数组非空类型错误，不冒称业务RED。原日志均保留。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 141-mitigation-baseline | 0/1，474.6911ms，exit1 | 04:04:40.509Z→04:04:41.058Z | `ca8463c11841c84974837ceaaa067bdefa78b2bd8e0c74da6ec63f8b6a9f3009` |
+| 142-mitigation-types | TS2532四处，exit2 | 04:04:54.107Z→04:04:56.243Z | `4fe08b4cd4bf501264a068cfe7285d9a911a6253d0b1641665d6f503b603839f` |
+| 143-green-mitigation-baseline | 44/44，5559.7504ms，exit0 | 04:05:18.340Z→04:05:23.973Z | `96505352116e5d33a64d31fde3a49d0be2d7d3a4bb29b8c41919dc9f0880635a` |
+| 144-mitigation-types | exit0，空log | 04:05:24.736Z→04:05:26.824Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+本片公开行为是：首次完整high风险不调用缓解模型；下一实际scheduled refresh接受完整9字`目前没有缓解措施。`作为explicit-none基线；之后重启继续输入该完整旧投影，首次origin仍指向真实第二轮run；基线不新建或消费发展事件，原initial identity不变，最终归档重启可读。作者已接入获批fresh四kind/v2格式，但本片没有实现或验证none→B文字new-remediation、完整共享阶段容量、旧WIP安装迁移或极端动量；44项是两份专项的合并局部结果，不是全票测试或独立业务PASS。
+
+独立none→B→none探针仍在首跑前准备，固定原任务每期四个novel及1/5/4/5/4席期待；没有为了简化改成每期两个novel。短句字数静态为none9、B14、effect6，原source500不提高。尚未冻结完整探针、尚未执行，不提前记PASS。Root核验期间作者继续已批§8.5同步read scope接线，无冻结要求。
+
+### 145–151：同步read共享原字节上限与独立回归
+
+Root亲读新公开66刊容量测试、scope/Observer实际三阶段接线，独核145–151全部原metadata完整before/after及原log。145因Owned新node缺Release路由而首刊0≠1，尚未触及容量；146才真实复现：逐期真实发表66份各含一个发展事件的Report10，只在Owned故障阶段给66个父GitHubRun追加合法JSON空白到每行1,048,575 bytes（均小于1MiB），单父合计69,205,950>64MiB，所有业务字段不变，鉴权read仍被接受。故障finally恢复原父payload，重启原刊可读；没有SQL编造业务发展或消费。
+
+147为新增同步泛型推断TS2345失败。148为scope guard误拦本次私有commit、首刊前提失败，不是容量已通过。修复后150同一公开反例1/1，151两专项实际45/45（其负向name pattern未排除大样本，原日志明确仍执行；不能只据命令意图标成轻量回归）。150与151原UTC有重叠，分别使用独立TEMP，均完整源码稳定；不把该耗时当串行性能基准。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 145-red-history-read-budget | 首刊前提失败，exit1 | 04:08:39.651Z→04:08:40.087Z | `a9a026377838660ca14542a762142bb869b50f3f7cb604f72d6241a3c329e61f` |
+| 146-red-history-read-budget | 缺期待的read拒绝，exit1 | 04:08:58.874Z→04:09:56.388Z | `20f0cf7e9a873f5f08a601ce7bf05a0987c8c00905f5eeaf200924f74aaa95f6` |
+| 147-history-scope-types | TS2345，exit2 | 04:12:44.265Z→04:12:46.559Z | `6128a35242b598754ef89104d0ac4afd9c366895bb0a285d23f7f0b2d4c607c4` |
+| 148-green-history-read-budget | 首刊前提失败，exit1 | 04:12:47.342Z→04:12:47.793Z | `97646279d5036989f8b29aaa272f3bd23666cc8368a066998897ed469850a1e2` |
+| 149-history-scope-types | exit0，空log | 04:13:28.730Z→04:13:30.843Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 150-green-history-read-budget | 1/1，59579.7817ms，exit0 | 04:13:31.666Z→04:14:31.326Z | `33f0e496a1cb5411a3446206901c0dc471991ec6ad5b22b68c80c608e53c35cb` |
+| 151-history-scope-regression | 45/45，64731.1914ms，exit0 | 04:14:12.334Z→04:15:17.132Z | `84b0afa395422d9c9e99d0f2a480bcbdd71db06aca34fad46206eeeb6180e4fb` |
+
+作者151明确提供15秒源码冻结，Root复用未修改的原包装、fixture/oracle执行以下五组，共**12项node:test和5份旧Record9全文/MD/Record hash检查**。全部exit0；完成即明确解除冻结，让作者直接继续none→B。Root随后逐份核原metadata完整before/after、实际native.log SHA以及50个TS Module各自等于作者151原metadata，差异0。没有把本轮独立回归冒称独立66刊容量或最终固定提交验收。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| wip-scope151-lawful-release-01 | 8组/9tests | 04:16:20.123Z→04:16:25.010Z | `e0025ea970c096971f7f006550745b0007f31efe37e090df38458d436ac55a77` |
+| wip-scope151-security-return-01 | 1/1，499.0143ms | 04:16:25.739Z→04:16:26.529Z | `12ba8dd209eda420b1578a3825bbaa0792e8e95279207dcca72008b2aac23d8e` |
+| wip-scope151-record9-01 | 5份旧刊完整字节 | 04:16:27.229Z→04:16:27.635Z | `f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699` |
+| wip-scope151-four-node-history-01 | 1/1，523.3259ms | 04:16:28.280Z→04:16:29.096Z | `7e546c61ee130e814da291dcbc9fb80b4c899149ef7ad617567d7307bd295708` |
+| wip-scope151-whole-run-integrity-01 | 1/1，231.4078ms | 04:16:29.708Z→04:16:30.221Z | `93b6844aa4ce341f58e044cccf54bc522f21697613e5259b22c023a782388720` |
+
+scope当前/历史共享上限已有上述作者真实反例修复；生命周期、逃逸/重入、出场撤权仍另准备窄公开独立characterization，不提前计PASS。Root本轮再次live读取GitHub #13仍OPEN，未回写tracker。旧WIP三-kind安装不迁移的明确批准仍有效，不因fresh四-kind测试通过称旧WIP自动可读。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
