@@ -676,6 +676,30 @@ Root亲读公开新增安全反例/actual current slot修复，逐份核135–13
 
 138作者主动提供冻结时，Root独立Release整run遗漏探针尚在首跑前准备，Root立即明确解除，没有让产品作者等待。独立预定输入为合法短证据Request8 R→Release+4novel真实成刊，伪造只整删development run/projection并同步真实派生coverageGap/ranking/MD/hash，保留父GitHub snapshot、普通排名、旧刊历史和全部观察DB；从原5席含已报道事件变为伪4席无事件仍须拒读，恢复原payload后重启可读。当前只批准静态字段范围，未运行、不计独立PASS。作者继续出版负向与后续已批准mitigation，不因准备探针暂停。
 
+### 139、140与独立整run遗漏首跑
+
+Root全文亲读139新增公开跨来源/跨kind测试，独核其完整metadata前后及原log。139原安全source额度50、旧完整23字excerpt合法采集，换新source500精确复用该安全材料并同时取得合法Release；实际出版旧source四份92超额，仅省略security整组，Release原证明仍在但不能让该node绕过安全历史未知，最终只发表fresh，重启read一致。此为首跑characterization 1/1、452.4755ms，UTC **2026-09-07T03:52:57.510Z→03:52:58.039Z**，log SHA **db13783601ec347b6ba54be5cd5852c205d500d2240fff7e34d9c24bb4c1d46d**。不把不同source的500额度转授旧source。
+
+140进入已批文字缓解首片：首次确定性high风险成功且不调用模型，下一真实scheduled refresh本应建立explicit-none基线却仍0次模型调用，期待1而真实RED。Root亲读公开测试/原日志并核完整before/after及hash **2ac7b2343ded458acf546084a1f21e2cfca90f9476921ce295c35b231531b8a8**，UTC **03:58:42.912Z→03:58:43.381Z**，390.1473ms。该条并未证明基线持久化或后续B已完成，作者正做最小GREEN。
+
+独立整run遗漏三文件准备完成，Root全文亲读README/probe；fixture与原合法34字版字节/hash一致，无业务期待后改：`data/root-v1-13-publication-integrity-review/README.md` SHA **A395B83084A0719679B67F4F40BC3A310420533D51F4D46BAA76030644C7ADB7**，fixture **00A29C5F37B41041FC20A535B9C3453EF270E8560A323CF3702E417E83A54BC2**，probe **63BB52DE9020EA3EA6D97BE1503DD037D5C5A8FE465C02F307ACBE6ED6FBCB92**。Root新增包装`publication-whole-run-integrity-probe.mjs` SHA **CB2D4A74BB77E77F0F6A2F0510BE34B431523674E7432EEFC1FBA7CC94AA1130**，运行前后同时核三件及两份原来源文件，原capture不改。
+
+140只是新增baseline RED测试、产品仍138修复版，作者提供明确5秒窗口。Root首次执行`data/root-v1-13-review/wip-quote140-whole-run-integrity-01` **1/1、exit0、220.3555ms**，UTC **04:00:30.318Z→04:00:30.836Z**，log SHA **25d5e07a09719446144d1c33c90083f1036921bd6a9158b3f6a6e3fb10218446**。原报告无projection段但有真实run与已报道Release，Owned整删run后五席变四席、去掉发展/引文，Schema及公开ranking/Gap/MD/hash自洽仍拒鉴权read；finally原样恢复原payload，两个旧刊重启读取及原观察snapshot不变。Root完成即解除冻结，之后独核全部before/after、log及逐模块等于作者140原metadata。这是修复后的独立characterization，不伪称Root取得136的RED；不与117/134不同时点相加冒称同一SHA最终通过。
+
+本轮另通过实际`gh issue view`读取#13仍OPEN、assignee yiwer、updatedAt `2026-09-06T04:05:48Z`；命令经已确认live的session19198等待到exit0，不因10秒首yield重启。无tracker写入或凭证读取。
+
+### 同步历史读取阶段预算口径及scope方向
+
+独立只读核查与Root亲读实际源码确认：当前`contextIndex.snapshotRun/verify`仅各次内部共享1000-origin/64MiB；`githubEventHistory`逐旧刊调用authority、produce前后/read当前与历史又多次调用，因此**不能声称顶层read已有共享原run上界**。旧§8“单次freeze/snapshot/authorize/read”未展开嵌套边界，Root在此补清，不把子调用通过冒称顶层容量通过。
+
+明确按**同步只读验证阶段**共享预算：一次readReport的当前刊及全部所需旧刊同一阶段；produce首await前冻结历史为一阶段，最终Report `BEGIN IMMEDIATE`中的全量复核为另一全新阶段。各阶段1000 distinct origin slots、两类原run共64MiB和成功/unknown缓存；失败不退已用字节或抹除attempted槽。绝不跨await、跨事务持锁或复用验证缓存，不声称整个produce总共只有64MiB。原snapshot/collect操作域独立，旧#11普通history原文读取路径不借本次改写；JS堆/耗时仍不是原JSON bytes承诺。
+
+Root已全文亲读`data/v1-13-momentum-design/history-read-scope-review.md`并核SHA **F7AFDBDA95BAA2814FF3D85166A7165D2A8967776D0FB9C4137D268C813F30E8**，批准其中最小现有authority方法方向：`withDevelopmentHistoryRead<T>(use:(scope:DevelopmentHistoryReadScope)=>T & SyncResult<T>):T`，scope只提供现有repromotion authorize与带可选publication上下文的authorizeDevelopmentHistory。authority自己创建私有Budget和同步只读事务，内部复用避免nested BEGIN；调用方不传budget/DB/token/skipguard，不增持久Reader或新存储。旧Record路径不变；新Record10缺必要scope时fail-closed，不退回逐刊刷新额度。
+
+生命周期：同步callback，类型拒Promise，运行前拒可识别async function、返回thenable拒绝；这不是能取消任意异步副作用的沙箱，实际Observer接线不得启动异步工作。finally结束自有事务、清预算、令逃逸闭包失效；外部重入拒绝，内部显式复用。只在同一SQLite读快照复用已核原run，缓存命中仍核当前原依赖用途/权限与时间，出场复核本阶段使用的权限；不能把该快照说成看见并发后续提交。最终Report写事务和GitHub只读事务仍是两个连接的不同事务，无await嵌套。
+
+各阶段还须固定相同遍历顺序，避免cap附近相同材料产生不同unavailable集合：Root建议先核本刊真实current原run，再按固定Report id顺序核旧刊，最后publication复核复用本阶段current缓存；初始可先用原snapshot的一参授权，不凭空需要尚未导出的publication历史。作者可先完成当前mitigation首片再接scope，正式typed映射须写入§8并公开验证。此项是已批准待实现，不是现有顶层共享预算PASS。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
