@@ -18,7 +18,7 @@ const protocolRuntime = (scenario: string) => ({ kind: "protocol-fixture" as con
 async function fixture(t: TestContext, extra: Partial<Parameters<typeof createClaudeRunner>[0]> = {}, observerExtra: Partial<ObserverOptions> = {},
   factories = { runner: createClaudeRunner, observer: createObserver }) {
   const directory = await mkdtemp(join(tmpdir(), "observer-claude-"));
-  const runtime = extra.runtime ?? { kind: "claude-cli" as const, image: execFileSync("docker", ["image", "inspect", "observer-v1-05-claude:2.1.252", "--format", "{{.Id}}"], { encoding: "utf8", timeout: 5000, windowsHide: true }).trim() };
+  const runtime = extra.runtime ?? { kind: "claude-cli" as const, image: "sha256:0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269" };
   if (extra.runtime?.scenario === "recorded-success") {
     const sample = await readFile("tests/fixtures/claude/success.jsonl", "utf8");
     const script = await readFile("tests/helpers/claude-protocol.py", "utf8");
