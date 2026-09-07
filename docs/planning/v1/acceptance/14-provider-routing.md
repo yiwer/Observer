@@ -171,3 +171,11 @@ Root核62–67完整before/after一致及实际日志SHA，亲读公开produce/r
 66改用第二次失败携runId的鉴权readRun作为业务oracle，不改产品同日唯一版本契约：20/20、0skip、0cancelled、exit0，日志SHA `cb26b33c63ec75adf5ae83f57d1f546641ea5ff20a99221a15f298c55c9ee34b`；65/67类型检查exit0。100ms attempt加100ms cleanup等待后，不返回Owned Runner记cleanup-unverified、未知usage仍null；报告六栏Gap，随后同routing装配的新run零attempt且明确熔断，原run原因不变。没有真实进程/容器，不声称进程已被杀死。
 
 Root要求继续覆盖及时返回但execution.cleanup=unverified/failure=cleanup-failed的Runner，以及前一栏成功、后一栏清理不明后不能再启动Verifier；所有派发需统一安全门。另需主动resolve/reject已超cleanup grace的deferred Runner后重新读冻结run/report，证明迟到写被拒绝；永久不返回例不能替代该证据。真实固定CLI cleanup/readback、宿主请求Promise及跨run共享预算仍未验收。
+
+## 及时清理失败与迟到冻结回归68–73
+
+Root亲读公开测试和统一begin安全门，核68–73各capture完整before/after及实际日志SHA。68真实RED；69 exit0、21/21、0skip/0cancelled，日志SHA `6cfec906165b58619c00d5970446e784ada43d9909052a59435f7f4008b4d0a2`；70类型检查exit0。world研究成功后AI及时返回cleanup-failed，实际run只有这两次研究attempt，不启动后续研究或Verifier；未核验故事不发表、六Edition保留。
+
+71将totalTimeoutMs恢复批准的1000ms下界并更新快速例，21/21通过；这不是新的故障修复RED。72新增迟到resolve/reject回归直接22/22通过，0skip/0cancelled，日志SHA `0dab7f9e52f74124914376021db10e905a60883cf313fdf9b4a1f003f5c56d4f`：先超cleanup grace冻结run/report，再主动settle原deferred并排空一轮事件队列，鉴权readRun/readReport保持完整相等；无Provider配置重启run也相同。没有为已有正确行为伪造RED。
+
+73跨produce共享进程槽真实RED，22/23、exit1，日志SHA `77cf1bd6453f9747a694c881ef7276c44b1753a326f90d15ed6c5b733e07d02f`，作者继续最小GREEN。该并发矩阵仍未通过，不计入已有22/22范围；所有证据仍为未冻结WIP局部测试。
