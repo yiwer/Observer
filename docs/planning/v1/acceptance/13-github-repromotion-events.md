@@ -1400,6 +1400,18 @@ Root按diagnosing-bugs先建立更小只读反馈：`docker-image-inspect-diagno
 
 作者已收回94360实际terminal，当前无Root大型业务进程。已安排作者会话相同只读10次inspect及原Claude首个case单独诊断捕获，先不全量retry；单case结果不得替代全量，未rebuild/retag/restart/prune或改tests/并发。
 
+### Docker最小反馈：复现与自行恢复，根因未认定
+
+作者会话精确10次inspect全部NoSuchImage；Root后来以同一最小脚本在作者cwd也10/10失败。三份只读result.json原档SHA分别为Root首次ambient成功 `71b0897b50371571eab557041c23fea8af47d04f604e42f2b9ec4492cbe9a28e`、作者失败 `4cfd21c5d126ee16c5b2d6bb3b69883d671ae521503d1df0bcd5c67381cfcda2`、Root作者cwd失败 `634996684e79fbaccc1731efc34620e4f69bdb2dcca8f1376215a3e42776c0b6`。这是不到1秒的实际NoSuchImage反馈，不把瞬时成功当故障消失证明。
+
+Root新增`claude-first-case-diagnostic-probe.mjs` SHA `562e93e6b1976938da4fdc1bf0c22b53b80be30a5c2792019cad732f0db5021d`，仅以原test-name运行既有首case，保持test文件hash。经原单fd捕获器执行`wip-298-claude-first-case-diagnostic-01`实际0/1、exit1，UTC2026-09-07 21:28:32.529Z–21:28:32.959Z；日志SHA `51f439846b408058a36fa2e119b832886da1e98d58e8a9106dd3577573935972`，错误仍为fixture第21行image inspect，而非Report或新动量代码。
+
+在该快速反馈后提出可证伪假设：cwd可执行解析、context/host不同、时间相关镜像引用可用性。只读检查显示两个cwd解析相同绝对docker.exe，无工作目录同名程序；绝对exe加显式Linux pipe仍曾失败，随后Root原cwd也失败，不能维持“只因作者cwd/会话”的解释。读取固定immutable ID得到原镜像及原tag；21:20–21:30镜像事件窗口没有返回记录，此有限事件查询不能证明历史绝无变更。
+
+新增只读`docker-image-reference-diagnostic.mjs` SHA `3ca58f6b0c9285f920d2f0a61a176a2874e290a315354f9ca0e8e1febcd70392`，绝对exe/显式同Linux pipe下tag和immutable ID交替各10次全部匹配；结果SHA `a5ef4feef69dff95fe7aa58bff7a4cd469a12980a3d0dd33eabbdbfe4955e06c`。其后原同首case在`wip-298-claude-first-case-diagnostic-02`实际1/1、0skip、exit0，UTC21:30:39.334Z–21:30:41.148Z；日志SHA `5c55be034950ad18f44f98ff4a0dae2e933f31a8bc597a253f123938a884801e`。Root核两个capture完整before/after与原生日志SHA；没有修改product/tests/镜像/host配置或重启/retag/prune，诊断原档保留，不宣布查明根因或修好Docker。
+
+所有Root诊断进程已terminal，已通知作者释放Root占用。现仅许可一次有界同源完整299-risk-witness-full-check-retry：原命令/测试集合/并发/固定镜像不变，若再失败不自动整次重复；若全部通过再300 smoke、scopecheck和修订候选提交。原单casePASS不替代full-suite，#13仍OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
