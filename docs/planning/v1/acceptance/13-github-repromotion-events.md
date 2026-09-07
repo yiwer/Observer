@@ -1057,6 +1057,14 @@ Root全文核对公开反例、实际RED/GREEN/回归汇总及四份完整before
 
 同组实施前Root按§12核定：旧刊的必要原件按冻结step及其同generation真实frame的完整expected/member/capsule核验。head只是当前定位缓存，不能为核head而读取未来frame的完整材料并把无关未来来源权限加入旧刊依赖。当前head可与同node最新step的有界独立metadata核对generation/slot/id/ordinal/prior_digest，重导`hash([priorDigest,stepId])`；first_generation用同node最早step既有索引LIMIT1回核，同时检查数值、首尾范围及不超实际state。所有实际metadata读取照常计费，固定guard/安装见证和本刊原frame成员核验仍不可省略。该边界不声称已验证未来材料正文，不新增DDL/递归历史/全表扫描；须保留合法后续generation存在时旧刊可读的正向控制及独立字段故障恢复证据。
 
+### 225–227：当前head字段与冻结旧刊
+
+真实25小时首刊后再实际提交第26个generation，先确认完整旧刊仍可读。随后五个独立Owned故障分别只改实际head的step_count、step_digest、first_generation、last_generation、last_step_id，每次保留其他原件/承诺，恢复原guard后读取，再精确恢复字段并读回原整刊，最后重启复读。225五个子用例均Missing expected exception（父测试连同子测试原生0/6）；226按上节有界首尾metadata方案核head后原期待6/6通过，5426.3929ms。227 typecheck exit0。
+
+Root全文核测试与实际checkedHead路径，核完整before/after、原生日志SHA与汇总：225 `20f8d9105617c55858e6ebca01a12671ac92e3d24163297407e76bfe7f184c8f`，226 `373bc90cf7f7d57268e9f555b93bd5f3e51b14da9e804baa57b467788a59a4ba`，227 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。这不是所有step/frame成员或恶意多承诺改写的证明；同组下一片继续真实frame expected完整清单，未冻结或称最终通过。
+
+Root独立head丢失探针已全文审读并在首跑前冻结：`data/root-v1-13-momentum-head-review/README.md` SHA `c22378309b6fdcbe3c9ba61717aac88505006a9f5c4d3b4238977b68d50f51bb`、`momentum-head-probe.mjs` SHA `36f19b0f334f3c9b733ff14ba6762685f70018484825490bf9db8d4306e0f330`，复用未改fixture `515c790cf5e895c0e55c3eb2d99db96ac0a5e12df3256f0a12859d990b0daa11`；Root capture wrapper `data/root-v1-13-review/momentum-head-probe.mjs` SHA `03f2c4b1691df60ef0d52303f5abeec1e1338626d1f4b00be999eb50f1adfe25`。只通过node --check，**未执行业务**。它从公开Report定位实际R，单head删除/事务内原guard恢复后分别记录read拒绝及snapshot原20个ordinary全等、无momentum；finally原row/guards精确恢复，同进程再独立read及重启整刊相等。SQL仅故障与恢复，不构造业务oracle；不导入作者测试或私有算法。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
