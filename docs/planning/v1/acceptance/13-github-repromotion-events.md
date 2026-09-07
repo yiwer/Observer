@@ -1040,6 +1040,19 @@ Root核对当前调用路径：私有`write`向实际`persist`传递finalize；`
 
 219-momentum-write-finalize-typecheck exit0（空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`）；220-momentum-write-finalize-controls原startup及状态超限恢复控制2/2、5259.7187ms、exit0，日志SHA `51792364a675ec2dfd26b758844ebae2eef20e14918f779457e3bcc048247569`。Root核对两份完整before/after、实际日志SHA及220原生汇总。没有立即追加Root冻结；下一逻辑窗口再批回归，不把218结果称为219–220源码的独立通过。下一公开片为实际head丢失与精确恢复，全部其余验收保持不变。
 
+### 221–224：实际head丢失反证
+
+真实25小时采集并出版首个动量Report后，仅删除`repeat`对应实际momentum_heads单行；保存精确原row及delete/insert guard，删除后恢复原guard再进行公开读取。其他raw/frame/step/capsule/Report承诺不改。221读取错误放行（Missing expected exception）；222增加同预算、1KiB限制的实际head读取并拒绝缺失后，同原期待1/1通过：旧刊拒绝，snapshot动量不可用而ordinary仍20，finally精确恢复并重启读回原整刊。该片只证明缺失拒绝，不证明head所有字段或frame清单已经完整核验。
+
+| slice | 实际结果 | output.log SHA256 |
+|---|---|---|
+| 221-momentum-missing-head-red | exit1 | 2cc390935630281d65d9c1e7145befb824d34cdb7f18f0ef749d3747d6efc098 |
+| 222-momentum-missing-head-green | 1/1，exit0 | 728ac4bb8ad5a1b1470870c4323cf2a5c6ece2896484db8c062b863cead781e5 |
+| 223-momentum-head-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 224-momentum-head-regression | 12/12，40612.452ms，exit0 | 252203bc260149df5da2e7fee1a10208bc972192f773a7aea68024b792657e12 |
+
+Root全文核对公开反例、实际RED/GREEN/回归汇总及四份完整before/after和日志SHA。224未冻结；作者继续同组head count/digest/first-last generation及真实expected manifest关联，Root并行准备独立head丢失/同进程及重启恢复probe，未执行不计通过。原§12有界索引、32KiB manifest、50实际成员及旧刊原generation契约不变，不能全历史扫描或用未来head覆盖旧刊。#13保持未完成。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
