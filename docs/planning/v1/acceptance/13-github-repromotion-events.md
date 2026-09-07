@@ -1,6 +1,6 @@
 # V1-13 执行与待验收记录
 
-状态：in-progress；唯一产品作者为`implement_v1_13_resume`。90窗口Root 11个独立测试和5份旧刊通过；99窗口新独立GHSA范围A→B→A首跑1/1通过。作者结构化安全修订及非法same收据局部11/11；共同引文99真实RED已复现、修复中，纯文字缓解精确§10已批准待实施；动量参数/episode语义已批准但产品全链路未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13仍OPEN（本轮实时readback确认）。以下逐段记录按实际发生顺序保留，末段为最新进度。
+状态：in-progress；唯一产品作者为`implement_v1_13_resume`。117稳定源码窗口Root新合法短证据Release 9项、原安全3项与旧引文反例1项，共13个独立测试通过，另5份旧刊内容不变；不将新输入冒称原长引文输入继续通过。作者共同引文局部34/34；出版/read计费、纯文字缓解、再次增长产品全链路仍未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13最近实时readback为OPEN，本段不作新tracker写入。以下逐段记录按实际发生顺序保留，末段为最新进度。
 
 ## 固定任务与依赖
 
@@ -549,6 +549,64 @@ Root亲读100–105原日志、公开容量测试及当前共同reserve接线，
 105诊断来自公开snapshot的真实DevelopmentRun序列化字节和实际Owned故障父行：损坏/健康DevelopmentRun分别**1,531,082 / 1,530,967**字节，损坏/健康父GitHubRun分别**934,214 / 942,502**字节，均在单行上限内。Root另算重复同坏origin29次为**71,493,584 > 67,108,864**字节，确认它足以定位原64MiB重复计费问题，而操作内单次缓存可留下健康项目的预算。当前每run只有29个不同material，不是290或1000容量验证；源码仍仅模拟HTTP/语义，不作实际模型质量结论。
 
 Root另派独立作者在新`data/root-v1-13-citation-review/`准备旧输入+保留副本共同计费探针，尚未首跑。预声明A完整38字、B完整15字、source额度76：先普通Request8发表R，再collect A不出版（两份A=76），下轮若比较B，旧输入38+永久previous38已满，新B收据30应被拒。不要求B一定调用模型；能预检跳过合理，但不能裁A历史或假消费。此为已批§10的独立检查，不增加产品规则或改旧Root oracle。
+
+### 106–111：同源旧Release输入与保留共同计费
+
+Root逐个核106–111的实际原metadata/log SHA及完整before/after，108真实旧引文反例为：A完整23字、source额度46，下一轮已用旧model输入23与永久previous23，却仍保留B新verification。109修复后该新片通过，但合并31/32；失败是原4个repeat配额样本在旧+新实际引文副本计费下超过500，使最后r4本轮没有资格，而非配额规则/消费被改。作者仅将该样本证据v2换成完整23字短句，原“3 novel→6位置、只消费3可见发展、后续r4仍可报告”业务期待不改，111合并32/32；110类型检查通过。Root没有把109的31/32记为全绿。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 106-current-quote-regression | 31/31，exit0，4548.5209ms | 03:08:00.102Z→03:08:04.731Z | `f2e44a6c506acf1e20783ec16def719f38796c31b5ef1ae5d575a5dc0d0ca1dc` |
+| 107-current-quote-typecheck | exit0，空log | 03:08:05.499Z→03:08:07.536Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 108-release-old-quote-red | 0/1，exit1，408.2190ms | 03:08:53.470Z→03:08:53.952Z | `2696d0b20a68508dd9f392eb0ce0608fdbfe4897e7d9008061505e1eabc50dab` |
+| 109-release-old-quote-green | 31/32，exit1，4588.8188ms | 03:09:16.723Z→03:09:21.376Z | `56d36e00fa1a7daa346d701f2cd1673725c955f95d545ee50a79009d96c93a99` |
+| 110-release-old-quote-typecheck | exit0，空log | 03:09:22.284Z→03:09:24.330Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 111-release-old-quote-regression | 32/32，exit0，4609.6635ms | 03:09:49.583Z→03:09:54.259Z | `6795031f53806bcfe501c1055a3f212176f34f1c25230cbbc9983e144a9a1f5f` |
+
+111只覆盖同source旧Release路线；跨原source、GHSA旧材料、完整归档出版计费仍required。作者主动提供冻结时独立新counterprobe尚未完成最终静态映射，Root立即明确解除，未让产品作者等待未就绪探针。
+
+Root另独立检查旧Root Release fixture：A全文确为133个ASCII/codepoint，模型旧input+保留previous+当前verification/development四份为**532>500**，原A→B也更长。不能要求产品绕过该计费规则以保证不合法输入的旧positive继续PASS。Root已指派另一个独立作者仅在新`data/root-v1-13-lawful-review/`准备完整短中文证据v2；七个基础scenario及A/B唯一scenario本体须与原文件逐字/hash相同，仅两个新fixture的正文改为语义等价完整短句、原category/object/scope保持，原source500不提升。旧原fixture、oracle与日志完全保留，不将新输入运行称作旧输入PASS；新计费counterprobe与新合法positive共同保留约束与完整业务目标。目前为准备，尚未执行v2。
+
+### 112–117：原来源计费、GHSA旧材料与整节点缺额语义
+
+Root亲读新增公开测试与实际计费实现，独核112–117各原metadata完整before/after和原log SHA。112是新source较小额度错误承担旧source完整Release证明，模型收到空历史而真实RED；113修复为先按原policy identity确认实际许可/limit，再按sourceId共同累计，合并33/33。115的GHSA旧material为完整23字，原history、永久receipt.previous、实际model.previous三处正好69，仍接受另一个修订而真实RED；116合并34/34，114/117类型检查exit0。116不自动证明整history缺额或exact/same跨来源反例已覆盖。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 112-old-source-quote-red | 0/1，exit1，332.9950ms | 03:17:02.329Z→03:17:02.731Z | `13cebcc88a16ad73a1f2204be97c14f990ce171de50decc50378d73089ba5134` |
+| 113-old-source-quote-green | 33/33，exit0，4824.1803ms | 03:18:00.709Z→03:18:05.610Z | `edb75668dbb1990f92eb5eb440da81c103e6f0256a4f966339e7f07eb2277aaa` |
+| 114-old-source-quote-typecheck | exit0，空log | 03:18:06.379Z→03:18:08.434Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 115-security-old-quote-red | 0/1，exit1，400.9950ms | 03:19:37.806Z→03:19:38.281Z | `99ac346e6a61665f71e2803549c5a74e92b819bfb1da5d2123bbfdaea5c4b8ab` |
+| 116-security-old-quote-green | 34/34，exit0，4699.4862ms | 03:28:33.657Z→03:28:38.432Z | `20d7aeddd184294a8d8793ad40fc1fb7610f9fcf9106f42b9ec550bea64d7494` |
+| 117-security-old-quote-typecheck | exit0，空log | 03:28:39.270Z→03:28:41.275Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+Root批准复用既有`history.unavailableNodeIds`表示合法引文额度不足造成的**整node安全历史未知**，不新增Schema/DDL。仅安全history投影比较可排除合法整node缺失；原actual run相等、所有已冻结prefix/count/bytes/digest、真实origin/member及逐原来源权限全部保留。节点必须属于本轮有效候选，合法缺额保留原freeze；既有index本来不可用路径仍按原规则fail-closed，不能借标志洗掉损坏。整node不得残留部分entries/materials/receipt/security development，不能当初次或复用旧good授资格；风险未知节点隔离，不连带抹去其他ordinary节点。Root静态实读116的verify/readNodes及ranking，确认实际整prefix调用未移走、ranking会因history unavailable隔离；剩余公开characterization继续实施。
+
+### 独立旧引文首跑与合法短证据v2的117窗口
+
+Root全文读新`data/root-v1-13-citation-review/`三文件、最终调整区域及包装，首跑前业务期待固定：A完整38字、B完整15字、固定source76；A采集两处76不出版，下一轮旧模型输入38与永久previous38已满，不得留B新摘录或假消费A，独立novel仍可出版/读取/重启重算。不强制模型调用，允许合法预检跳过；本次实际完整A被发送。
+
+- README SHA **9A80F41C7FF8D5FA25B24854F327180D588DDE05EBBABBE65296CDF65FAB0280**；独立作者交接曾误插空格，实际文件及包装hash核对未受影响。
+- fixture SHA **D9646F7A24A58EFE70B15AC3F6825936D6ABE1CFEF7036593C5CCFFF8A8ADCEB**，probe SHA **99F33F4E1C44B212A6C7223F2685A3FD39DFFC216FD175DD20C18517709D8D79**，Root包装SHA **A02359D906BDCF24D6B5D128BBBC2BC6A84E33BC2C95C6C15F680B91BCF0D153**。
+- 115稳定窗口首次`wip-quote115-old-input-01`为1/1、exit0、223.7332ms，UTC **03:26:31.049Z→03:26:31.574Z**，log SHA **e551fd28423f1ac2f5b9090c19320b209d5dc46ac894dc6afc2c9f6e3273ad9e**。Root逐模块核其源码等于作者115原metadata，完整before/after与原log吻合，完成即解除冻结。
+
+Root另亲读合法v2全部说明/manifest/两个静态引文账，并由新包装在业务前后重核：八个scenario原新字节/hash相同，两个fixture全文只替换三个完整中文body，其他字节不变。A34/B36 codepoints；observe静态账重复A136、A→B140、回A208；publication明示库存最高416，但这不是最终实际计费/实测承诺，额外实际用途仍要计费。原长英文输入及所有旧日志保留，不把v2结果记为原输入通过。
+
+- v2 README **07C7F919EB3346CAB562BD256E137AFCD2415E0986AE1679358082EF9AD6276D**；manifest **A00A38B5BD03834F62252EF3A32228E1797C5B718C75F6AF4A39C3C01CCB77DD**；静态账 **7B966DA363FFE02FC2E789D44D1FEE0EEE3D4862E1F8C0F876234D0203A8EA56**。
+- v2主fixture **00A29C5F37B41041FC20A535B9C3453EF270E8560A323CF3702E417E83A54BC2**；revision fixture **8D464DF5B069FA6C8473364123AFE2E194EDEA2977CA57C898E14F0A2A625B3B**。八原scenario SHA见manifest及前段记录。
+- Root新`lawful-release-family-probe.mjs` SHA **1B1033A741EF8F48E15168E609B6D7D5788B3FEB57E0694D21E472E91DCD80AC**；固定manifest前后验所有原/新文件及说明/账，核仅body替换等式与codepoint/bytes/算术，逐子进程继承原fd、30秒有界。原capture不改。
+
+作者117稳定冻结约10秒，Root执行下表五组，完成明确解除，随后逐份核完整before/after、原log SHA及每一src模块均等于117原metadata。Release v2为首次业务执行八组九测试（包含context/head损坏两个反例），加原security scope两项、原GHSA回A一项、原旧引文一项，**同一117源码13个node:test通过**；另Record9五刊不是node:test计数。全部Owned HTTP/语义替身、真实SQLite；无真实来源、模型质量或整票最终SHA资格声明。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| wip-quote117-lawful-release-01 | 8组9/9，exit0 | 03:29:46.242Z→03:29:50.800Z | `ea7a7eaabb884ad5c9fabc7010e995ff4609d35bef849d4ad243e53ed74f49a7` |
+| wip-quote117-security-scope-01 | 2/2，318.2041ms，exit0 | 03:29:51.191Z→03:29:51.731Z | `5fec4b54e68c0fbe19a7ca35fe709aee080d959b2353951fed3e25c5bcf632c6` |
+| wip-quote117-security-return-01 | 1/1，411.4501ms，exit0 | 03:29:52.121Z→03:29:52.815Z | `75897a42fc2bf41e6a38ffa3b88a97c3313b2bd7c81c3d63ac6506a5fbf87a36` |
+| wip-quote117-record9-01 | 5刊完整Record/MD原hash不变，exit0 | 03:29:53.137Z→03:29:53.523Z | `f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699` |
+| wip-quote117-old-input-01 | 1/1，220.9960ms，exit0 | 03:29:53.832Z→03:29:54.338Z | `60280f5da34ba8d866e415f733eb892f43d52f663126ad2862d109cb0c59af39` |
+
+另已派独立作者准备固定policy69、四node分别合法取得23字material后同轮完整history至少92的整node缺额反例；不预定哪node先耗尽、不把内部Release/security先后顺序当规范，仅准备未运行。Root也静态指出Release单条仍有UTF16 `.length` 边界，与总pool codepoint修复不同，要求后续独立非BMP用途覆盖，不把250emoji双副本测试视为所有Unicode边界已通过。
 
 ## 兼容及安全
 
