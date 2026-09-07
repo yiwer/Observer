@@ -1172,6 +1172,26 @@ Root全文审读原三文件、v2差异与V2-NOTE。实际合成token为30字节
 
 已公开前四组实际字节为6,812,798、7,111,931、7,411,064、7,710,197；后续公共原因含github-momentum-point-unavailable。第五组未成功取回，不能把预计大小冒充实测。更小pool仍失败提示需单独核池变化/新node/step或原件路线；不能继续把该现象笼统归为bank超界，或反复减pool绕过潜在真实缺陷。下一隔离可用小topics的同样换池公开控制，保留248/249前提失败，不变更32MiB目标或预算门。
 
+### 250–254：校准真实观察池后取得bank目标RED
+
+按diagnosing-bugs先缩小为小payload同样换池的公开控制。250实际momentum存在，但完整Point为22候选而不是测试假设的20：既有观察器继续刷新已验证旧身份，离开搜索结果不代表离开实际候选池。251校准为22候选、旧两项quarantined、五个既存capsule仍保留、无新development，首跑1/1通过；不是产品修复。
+
+后续容量控制改为真实搜索填满50席（18旧+32新），但252仍无法取得第五胶囊。253公开诊断进一步显示测试HTTP缺少下一页Link：仅收到30/50，实际32候选仍补回旧两node。仅fixture增加默认关闭的显式searchPagination选项，本场景开启；254实际两页50/50、无旧两node、后三组公开控制通过。以上读取控制失败不归为bank产品RED，原档不改。
+
+Root逐项核250–254完整before/after相等、实际output.log SHA及日志结果：
+
+| slice | 实际结果 | output.log SHA256 |
+|---|---|---|
+| 250-momentum-pool-change-red | exit1，22不等于20的错误测试前提 | b0773a6ed068e94eefc7cf507910686d49f69cfa92142216bc51adbc89212eed |
+| 251-momentum-pool-retention-characterization | exit0，1/1 | 0251bce972e4b07453c482c179cbb933ffa8602c289450c2f265d4ed39011add |
+| 252-momentum-bank-limit-red | exit1，取证控制未成立 | 67379069bc0bb3703313517b40674b149e752108045c8acb0f99dfb701265a8f |
+| 253-momentum-bank-pagination-diagnostic | exit1，分页诊断 | 1c4536700a67c977d68dc173c5a9bc3e261b8534a5e9fac0b2d29d8553ce5160 |
+| 254-momentum-bank-limit-red | exit1，真正目标断言失败 | 646e8d4149320a350e1694f2a00c72917a23a20065412bf8eb0b4f8c56de73f6 |
+
+254原生UTC2026-09-07 20:15:31.535Z–20:15:40.503Z，8649.4778ms。五个真实公开胶囊实际字节为6,812,798、7,111,931、7,411,064、7,710,197、8,009,330，各<8MiB；完整bank JSON **37,055,326 bytes >32MiB**。28个唯一完整Point各<1MiB，startup各<=28点，首次23小时信号在批准容差内。原27阶段公开GitHubRun/DevelopmentRun加全部胶囊、完整Point及已批准manifest/step上限的payload保守超集为 **53,827,328 bytes <64MiB**。至此才到原27应保留码点前四完整组的断言，实际momentum undefined；未把后续换池本身当作目标行为。
+
+Root已审公开测试并允许按既定§12整组码点分配最小修复。临时bank Gap不得改持久onset/消费，纯重算与实际授权必须一致，不能接受caller删组自证。当前切片的旧27快照重启相等是待执行回放控制，不能替代后续Report发布/读取路径验收。当前仅目标RED已核，尚无本组GREEN或Root独立复跑，#13保持OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
