@@ -193,6 +193,24 @@ Root另独立准备`novelty-withheld-consumption-probe.mjs`，SHA **38CAE871B18E
 
 作者后续日志由Root实读并核29–32 metadata/hash与完整before/after：29类型检查exit2是新增quota测试闭包类型收窄遗漏，SHA **4d149fb8d84a57d342eb31fd46f0fb69dd231016f8c7b191c84002d0410e6f7f**，原失败保留；30 typecheck于00:58:10.035Z→00:58:11.930Z exit0；31 Release于00:58:12.688Z→00:58:14.528Z、11/11、1762.3147ms、exit0，SHA **b21e61157ab5eafe3f801c9ecd8e355b708aa3f1d31133571eaff209d3d49ece**。32首GHSA tracer于01:01:07.682Z→01:01:08.012Z、0/1、253.808ms、exit1，未实现的DevelopmentConfiguration严格拒绝`advisories`，SHA **33b10dfd6f3b3f398913221e63933ff9a3cce364d3972b5ed307038ce22629ad**。这是实际新能力RED，不是已完成安全公告验收。
 
+### GHSA首片与当前风险隔离切片
+
+Root亲读新`github-advisories.ts`、`github-advisory-contracts.ts`及权限分派源码，并核33–39各metadata/loghash与完整before/after一致。首片仅覆盖明确node映射、reviewed且high/critical、完整有限scope的初次风险更新；两个显式映射分别走现有仓库Adapter核同stable node，不靠包名猜关联。已有公告补查、实质修订、冲突/撤回和有界历史仍需后续实现，不能称整个GHSA已完成。
+
+| 作者切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 33-first-ghsa-green-attempt | 0/1，exit1，372.5241ms；新测试Markdown转义期待错误 | 01:06:50.511Z→01:06:50.965Z | `a6c167f695b5e562b1f4d53b898e129908b3d1a69ccb130e92cb57bacfb69da4` |
+| 34-ghsa-typecheck | exit0，空log | 01:06:51.731Z→01:06:53.729Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 35-first-ghsa-green | 12/12，exit0，1788.312ms | 01:07:12.031Z→01:07:13.893Z | `9c0df4161741fadf7b716fa647bc0e9acd0ea8fe87813f040ab68108e351e57a` |
+| 36-ghsa-unknown-risk-red | 1/2，exit1，455.505ms | 01:08:43.950Z→01:08:44.470Z | `6bf420259e4d648a87d50e6110156b96934d7459e8cd335b049da4b35d6bd82c` |
+| 37-ghsa-unknown-risk-green | 13/13，exit0，1839.116ms | 01:09:48.832Z→01:09:50.745Z | `e7224503b1a92ed2764860ea8b7b6f7dd0b990032603f47d99b630ed559271e2` |
+| 38-ghsa-risk-typecheck | exit0，空log | 01:09:51.595Z→01:09:53.548Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 39-known-ghsa-refresh-red | 2/3，exit1，562.13ms；已知公告不在增量列表且补查失败，冷却过后错误普通入选 | 01:11:26.861Z→01:11:27.497Z | `6871bd3ea9a01b34fa8d092d2ef5623b25d2d2c1e8abd7148a0b83f9c48d0c83` |
+
+33原日志保留，Root查看失败头及当前测试相应断言：范围`>=1.0.0 <1.2.0`在Markdown按既有规则输出`&gt;`/`&lt;`，作者只修正新测试的显示映射并新增Record中原始scope精确字节断言，不把该次归为产品漏洞或修改旧oracle。36则是真实审计/正文缺口：节点已排除，但候选reason仍可能表示selected并缺风险说明；Root批准新Repromotion增加严格隔离理由，原Heat枚举/运行默认保持，renderer只接受展示投影而不承担权威验证。37已在作者局部闭合，Root独立该项尚待稳定窗口。
+
+Root独立新增`security-scope-probe.mjs`，最终首跑前SHA **7ED671F4F37D38D6BA66CA4E32A7C338328BA7617CA5A5114DFEB1B493DF48D9**，2个预设场景只使用Owned官方形状响应、真实两库、公开observe/produce/read/restart：advisories-only配置且Release字段许可false；完整scope可作为风险更新救冷却；相同公告scope为null时，**此前未报道且普通正分**的项目也必须被隔离并显示unknown。第二项不利用冷却先行遮蔽风险门。脚本在首次运行前明确该对照，仅语法检查通过，尚未运行、不计PASS；与0novel probe等待作者GREEN/typecheck后短冻结一起执行。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
