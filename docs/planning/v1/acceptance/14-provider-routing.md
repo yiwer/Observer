@@ -269,3 +269,11 @@ Root亲读角色计数、begin派发前校验及公开报告断言，核115–11
 数值预留后续证据：Root用本机Node实际确认JSON.stringify(Number.MAX_VALUE)为23字节，而合法非负0.0000012345678901234567为24字节，已交作者作为边界回归输入。作者拟增加每数值64字节保守余量，尚未核验该修正；不将意图记为通过。
 
 筛选工具独立复现118/119：小probe仅两个test，Audit项执行即主动throw，ordinary项成功；118负向正则仍执行Audit，1pass/1fail、exit1，SHA `1451fb9d805dc999e078be7055287408641d9e229d969ef8071471f022e7454c`。119使用Node原生`--test-skip-pattern Audit`仅ordinary 1/1、exit0，SHA `e4c716e3998df210a5e6c707112506b72d729687daf18818973c3b65c78aa2a9`。Root核两capture before/after及实际hash，亲读probe并独立执行同skip命令得到1/1。118/119是追加复现，不冒充首次输出；这只确认可用筛选办法，不是产品新增通过项或根因诊断。
+
+## 数值保留与有界同Provider重试120–124
+
+Root核120–124完整before/after一致、实际日志SHA，并亲读公开测试与接线。120直接回归36/36、exit0，SHA `0f00921ff16b07d4130b930f941d70081dc27102d505e0ccfd037d66087f0d2b`；121类型exit0。合法长小数、Number.MAX_VALUE、5e-324三个Owned成本值经研究attempt审计与无Provider重启保持相等，不人为舍入或设置业务成本封顶。预留增加84×3×64字节余量；此例是数值保留回归，不伪称精确审计预算边界RED。
+
+122为sameProviderRetries配置尚不支持的RED，SHA `c07d13095d56d0e78b3f280baccd3acacba057db76448534c6904982e2dc2bd1`；123为37/37、exit0，SHA `c45d8848a2ddf3a01d2b4a4f26fcb304336b9e698b1360c97ceb8369297557d9`；124类型exit0。两次GREEN均0skip/0cancelled，但命令使用原生skip-pattern Audit，实际排除了两个容量例，不是全文件或整票通过。Codex/Claude分别作主，四普通栏短暂unavailable后均A→A成功；主持续失败时A→A→B→B成功，无B→A回跳，provider-retry明确记录。依据既定版本化路由类别判断，不改变旧Runner统一retryable:false契约；全六栏24尝试上界与拒绝类别仍需后续矩阵。
+
+Root源码核查提出后续局部失败边界：schema合法但taskId/provider/edition/evidence身份不匹配的invalid-routed-result当前位于研究inner catch外，可能整轮失败并留下started attempt；已要求作者通过公开测试按局部失败/明确终态处理，不能让一栏恶意身份取消此前成功栏。policy-violation禁用该Provider本run余下角色、资格状态及完整真实CLI仍未验收。当前GitHub实读#1–#13 CLOSED、#14–#28 OPEN，未提前关闭#14。
