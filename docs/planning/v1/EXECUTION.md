@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- 2026-09-08最新：#13最终候选 **24c38a11d45f949c48e856d015c5b91908ee7d11** 已接受并本地集成至 **c987c6aa11e267327b47c37f0d465d5c8ea9edfc**。作者、Root干净detached、实际master完整check各403/403，smoke各3/3；Root两种built各26项#13专项、Record9五刊、20项#12/13项#11/29既有调用/Record7两刊与Record8四刊/Spec9组/参数回放通过；同候选原LF工作树的独立bank与metadata容量门2/2通过。Standards 0硬违规/原2非阻断P3，Spec 0开放阻断。完整证据及CRLF前置失败保留见[#13最终验收](acceptance/13-github-repromotion-events.md#最终候选与实际-master-验收)。允许回写关闭#13后推进#14；代码未push、真实外部门槛不变。下列#13旧候选/整改条目为历史过程，以本条和最新验收记录为准。
+
 - 当前实施票：#13 GitHub重大进展一次性重新入榜，base **ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3**，专属`Observer-worktrees/v1-13` / `ticket/v1-13`。首个候选 **2a125fe9c73504f06b17b171ceb2cd3f1367334c** 已提交；作者完整check 402/402、smoke 3/3，Root固定候选bank/metadata行数独立容量门均通过。首轮正式双轴审查：Standards 0硬违规/2非阻断P3；Spec 1项P1——同node超过3条合法GHSA可能使动量witness strict解析抛错并回滚整次观察，而非按约定整witness unavailable并保留真实origin。作者正在公开接口复现/修复；候选尚未接受、未集成，#13实时仍OPEN，不能推进#14。原全量Docker失败与全部旧候选/探针原档保留。详细切片、完整证据与后续进展见[#13记录](acceptance/13-github-repromotion-events.md)，不把局部PASS当整票通过。
 - 2026-09-07因Owner询问再次实时核对：GitHub #1–#12全部CLOSED、#13–#28仍OPEN，没有漏关已验收票。Owner插入的[Sandcastle＋Docker研究](../../research/sandcastle-docker-agent-sandbox-2026-09-07.md)已完成并交付，Root亲读全文并独核上游SHA/发布及核心Docker源码后作为独立研究文档本地提交；不采纳为V1依赖、不改变Runner/PRD/ADR/tickets，也没有安装/执行外部代码。当前主线仍为#13。
 - 已完成票：#1–#12，均完成实施、双轴 review、独立冻结验收及本地 master 集成，GitHub 已读回 CLOSED。

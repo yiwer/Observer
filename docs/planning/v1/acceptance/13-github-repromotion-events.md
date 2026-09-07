@@ -1484,6 +1484,43 @@ Root允许唯一作者只改tests/claude-runner.test.ts第21行，Root全文diff
 
 此为最终候选上的独立全套与smoke通过，不是actualmaster验收、真实Claude外部调用或生产资格通过。后续仍需固定候选专项/旧刊继承门、集成及实际master验收；不关闭#13，不重写r1失败。
 
+## 最终候选与实际 master 验收
+
+2026-09-08（Asia/Shanghai），最终作者候选 `24c38a11d45f949c48e856d015c5b91908ee7d11` 已通过独立验收并本地集成。三个提交依次映射为 `2a125fe → 626d449`、`8e05440 → 80a6b5a`、`24c38a1 → c987c6aa11e267327b47c37f0d465d5c8ea9edfc`。Root核产品src/tests/scripts/package及lock的Git内容与候选无diff；干净候选生成的109个构建文件在实际master全部存在且逐字节一致。master dist另有三个既有旧codex-container/worker产物，未删除、未纳入“全部目录相同”的声明；当前src/scripts无其引用。无关`.idea/`始终保留。
+
+### 固定候选专项与容量
+
+- detached `accept-v1-13-r2/data/root-v1-13-r2-inherited-01/independent-result.json`：13/13原检查组通过，含19项#12、13项#11、29次更早调用、Record7两刊/Record8四刊和参数回放；结果SHA `17eb661ab286a174ee8c6297553cbf54ad662489038f1d80b5f7142e667b1e43`。额外selection-gap 1/1和`root-v1-12-spec-review/r2-24c38a1-djCoRh`的9组规格回放通过。
+- `data/root-v1-13-review/candidate-24c38a1-built-*-01`固定14份capture全部exit0，包含26项node:test、0skip及Record9五刊整报告/MD字节一致；Root核所有完整before/after及原日志SHA。Release使用此前已审查的lawful完整短文本，8组9项原业务oracle不变；不是旧超配额英文positive通过。内部历史WIP提示不改，固定SHA执行身份由外层capture证明。
+- `candidate-24c38a1-bank-v3-01`在detached前置失败，日志SHA `246c7ec326d530928d0221d734d5451da30a8dbc3ed6c41a836d7dbe240e4041`；并未进入容量业务。`git ls-files --eol`和Root文本比较确认三个route文件仅新checkout CRLF与作者LF不同，Git blob内容相同。未改pin、oracle或旧工作树；同24c38a1 clean作者LF工作树运行Root原探针。
+- `candidate-24c38a1-author-bank-v3-01`：1/1、0skip，UTC22:05:12.175Z–22:05:50.632Z，日志SHA `01a99b70538d62856fd4a63c857b24fb0f65604858d0537044804ee19dfe4602`。实测五个完整capsule合计36956546字节>32MiB，前四28969537字节；payload保守上界53698174<64MiB，四个整体准入、第五身份保留而proof缺口，Report/重启读取一致。103产物清单逐项size/SHA吻合。
+- `candidate-24c38a1-author-metadata-v4-01`：1/1、0skip，UTC22:05:50.926Z–22:06:59.224Z，日志SHA `0650b9788b8a718c7fea6e40c54c6deec571061ad36cd39fc0ecfec3a8db05d4`。328真实Owned slots独立授权通过；共享phase50通过/278拒绝、明确metadata-limit，fresh scope恢复；664产物清单逐项size/SHA吻合。两次before/after完整一致，journal completed且无failure/意外HTTP/model。此为Root独立执行于同提交作者工作树，不伪称detached容量PASS；也不是8MiB字节阈值或进程heap实测。
+
+### 实际 master 冻结结果
+
+固定 `c987c6aa11e267327b47c37f0d465d5c8ea9edfc` / master，测试期间仅既有未跟踪`.idea/`：
+
+| 门 | 实际结果 | 原始证据 |
+| --- | --- | --- |
+| 原完整check | 403/403、0skip、exit0，185176.5337ms | `data/root-v1-13-master-check-01`；UTC22:07:48.242Z–22:10:58.695Z；log SHA `c1e808c3a8eebbaee401c037562d7a319d2e47703fac2cd416ebe295808d2641` |
+| 原smoke | 3/3、0skip、exit0，1276.9318ms | `data/root-v1-13-master-smoke-01`；UTC22:11:29.603Z–22:11:33.758Z；log SHA `34294b38cfddd35fad18c2b88460dc070221359cb602fbfa8e9b47151fb6098b` |
+| 原继承门 | 13/13组，与上表候选范围相同 | `data/root-v1-13-master-inherited-01/independent-result.json` SHA `048c3c243741fca366674820fd7d636b8a60c8a394dc69acafac46a70949dcce` |
+| #12补充 | selection-gap 1/1；Spec9组 | `data/root-v1-12-review/v1-13-master-selection-gap-01-result.json`；`data/root-v1-12-spec-review/r2-c987c6a-H2q6Do` |
+| #13编译产物专项 | 14份capture，26项node:test、0skip与Record9五刊整字节一致 | `data/root-v1-13-review/master-c987c6a-built-*-01`，UTC22:12:10后–22:12:52.248Z |
+
+Root重新核上述完整before/after、每份日志实际SHA和退出终态；全部进程已结束。继承捕获是stdout/stderr拼接，不称到达时序日志；#13捕获与check/smoke各按原capture声明。作者/候选/集成原失败全部保留，不拼接PASS。
+
+### Issue六项验收映射与结论
+
+1. 三类事件及实质修订：已版本化§2–§7和三个repromotion测试文件；Release/GHSA/momentum有实际Owned采集、稳定身份、普通小更新拒绝及四GHSA完整风险回归。
+2. 一次消费：lawful Release 9项、security material-return与真实momentum多期公开produce/read/restart覆盖重试、改名、A→B→A及成功INSERT才消费。
+3. 精确参数与配额：已批准§6–§7规则及纯排名保存回放；混合security/release/momentum、无novel不消费、容量/新颖性不足Gap通过，不削弱至少一半novel整数边界。
+4. 安全风险展示：security-scope/material-return/mitigation-v2、未知风险隔离及四GHSA溢出保留完整安全事件通过；不执行仓库代码、不扫描或推荐安装。
+5. 可重算与缺口：保存原普通Heat和事件输入、完整重放、配置/历史scope/整run/真实来源依赖验证以及旧刊字节检查通过。
+6. 跨期：首次入选、重复抑制、实质修订、低质量不凑数、配额冲突和SQLite重启均经作者与Root公开业务接口验证。
+
+最终Standards：0硬违规、原2项非阻断P3维护建议；Spec：0开放阻断，原4-GHSA P1已用不改变原断言的RED→GREEN关闭，最终镜像pin delta两轴0新增。**接受#13开发实现，允许按流程关闭Issue并推进#14**。此结论只涵盖固定Owned输入、真实本地SQLite/隔离CLI协议和独立回放；不覆盖真实GitHub来源许可/语义质量、Claude live、部署、产品邮件/PDF或连续14天人工核验。代码未push，生产未启用。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
