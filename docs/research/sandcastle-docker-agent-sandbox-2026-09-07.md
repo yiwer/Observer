@@ -7,6 +7,10 @@
 
 ## 结论
 
+### Owner 后续确认（2026-09-08）
+
+Owner 回复“ok 按你的意思来”。执行边界保持为：Sandcastle 不加入 Observer V1 主依赖、不替换现有 Runner；有限 PoC 作为独立后续评估，不接生产库、SMTP、真实秘密或正式发布链路。此确认不是 PoC 已执行、通过或生产采用的证据；本次主线仍先完成现有 ticket 的独立验收。
+
 **技术上可行，作为“可信代码仓库上的并行编码/评审编排层”有条件推荐；作为 Observer V1 新闻研究 Runner 的直接替换，不推荐。** 它的优势是统一 agent 调用、Git worktree/分支流程、会话、流式输出及沙箱生命周期；安全隔离主要来自所选 provider，而不是一个叠加在 Docker 之上的新安全内核。[README][readme]｜[Docker provider][docker-provider]
 
 默认接入不能称为 Observer 的“安全升级”：当前 Sandcastle Docker 路径是可写工作区、默认联网、允许 agent 完整编码工具的工作流；Observer 当前是离线、只读、资源受限的容器，通过宿主可信 model broker 处理指定 Evidence Bundle。两者目标不同。下文建议保留后者，仅把前者作为独立开发工具候选。[Sandcastle 启动参数][docker-life]｜[Observer 容器边界](../../src/agent-container.ts)｜[Observer Codex Runner](../../src/codex-runner.ts)｜[Observer Claude Runner](../../src/claude-runner.ts)

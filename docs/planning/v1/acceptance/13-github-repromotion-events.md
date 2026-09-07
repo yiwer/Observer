@@ -1470,6 +1470,20 @@ Root允许唯一作者只改tests/claude-runner.test.ts第21行，Root全文diff
 
 303-claude-immutable-image-full-check原全套已由作者持有52004启动，原并发/全部tests无筛选跳过，src54仍8e05440字节。当前只计单case/类型检查通过，最终完整check/smoke、独立test-only提交复审、新detached及actualmaster门仍待完成；r1失败与此前所有失败保留。
 
+### 固定测试镜像提交及正式 delta 复审
+
+作者303完整check最终403/403、0skip、exit0，日志SHA `861070f09e27382819554583cf2fe16f00558719f6aa662c7a60de5fdc214c71`；304 smoke最终3/3、0skip、exit0，日志SHA `22a5bf2db325e2837cf014cc1831f9ee3697443b321ce8731451f35ead6e5378`。Root重新核验两份完整before/after一致、实际日志hash吻合、当前全部记录文件hash无差异。两次执行发生在提交前，不能写成提交后独立验收。
+
+作者提交 `24c38a11d45f949c48e856d015c5b91908ee7d11`（test(claude): pin approved immutable runtime image）；相对 `8e054405e315347ed0a0f335feb2c88bcd9d58a5` 仅tests/claude-runner.test.ts:21一行。Root确认固定点有效、three-dot非空、提交列表后，两个独立reviewer并行只读复审：Standards硬违规0、新heuristic0；Spec缺失/错误/扩张0。实际CLI、版本、用量、清理、容器不可变身份断言不变。该delta结论不撤销此前全功能review的两个非阻断P3，也不宣称Docker故障根因解决。
+
+新建干净detached `O:/GenesisCode/Observer-worktrees/accept-v1-13-r2` 固定24c38a1；按锁文件离线 `npm ci --ignore-scripts --offline --no-audit --no-fund` 成功安装7包。原run-frozen-capture已串行启动其 `data/root-detached-check-01`；完成状态以该目录终态元数据为准，开始运行不是PASS。旧r1失败保留；built继承门、最终#13专项、actualmaster集成验收仍待完成，Issue #13继续OPEN。
+
+### 新干净候选完整门终态
+
+`accept-v1-13-r2` 固定24c38a1的Root独立check真实exit0，403/403、0skip，UTC2026-09-07 21:57:23.945Z–22:00:37.284Z，测试188121.0995ms；原始日志SHA `f19c9c863a790ea35659536d7e1e223928abc79e133c91ee115ffc4bdcdc4c93`。随后原smoke真实exit0，3/3、0skip，UTC22:01:28.904Z–22:01:33.071Z，1297.5379ms；日志SHA `e571ef825a6b8e6845dcb6876200b20c0452f95aba50336bd1908de3cdf334e4`。Root重新计算实际日志SHA并核完整before/after clean detached身份相等；两个原生命令已终结，无在途测试。
+
+此为最终候选上的独立全套与smoke通过，不是actualmaster验收、真实Claude外部调用或生产资格通过。后续仍需固定候选专项/旧刊继承门、集成及实际master验收；不关闭#13，不重写r1失败。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
