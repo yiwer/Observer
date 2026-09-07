@@ -1,6 +1,6 @@
 # V1-13 执行与待验收记录
 
-状态：in-progress；唯一产品作者为`implement_v1_13_resume`。当前已完成80局部冻结诊断，Root原10个独立测试及5份旧刊回放通过；GHSA实质修订精确收据已批准分片实现，纯文字缓解的有界证据方案仍在协调，动量参数/episode语义已批准但产品全链路未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13 OPEN。以下起点及逐段记录按实际发生顺序保留，末段为最新进度。
+状态：in-progress；唯一产品作者为`implement_v1_13_resume`。90源码冻结窗口Root原10个独立测试、新Release A→B→A首跑及5份旧刊回放通过；GHSA范围扩大和新增包已获局部GREEN，纯文字缓解有界投影语义已批准，精确持久接线待作者映射；动量参数/episode语义已批准但产品全链路未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13 OPEN。以下起点及逐段记录按实际发生顺序保留，末段为最新进度。
 
 ## 固定任务与依赖
 
@@ -427,6 +427,59 @@ Root新派fresh独立验收作者，仅写`data/root-v1-13-revision-review/`；�
 首跑前Root发现重算Interface误接裸InterestProfile，已让探针作者仅改为先验证归档profile等于预声明输入，再传真实InterestSnapshot；未运行过业务，故不是产品RED、没有改A/B/历史/配额期待。Root复读修正并核最终SHA：README **77340714D54A5D81308F5DC7C1375B2640342722D4246A4B78F133D2958A7AEA**，`revision-publication-fixture.mjs` **6BA6F43AECB064E83E80130D73650A547C4CBC3D2EA1A6C601790373AF701FA2**，`release-revision-return-probe.mjs` **C7E6F43EB35E575667251FB1E13A978D86C95F2FACCD5B3D126FC1C84DA1BBA8**。原Root fixture/probe不变。
 
 Root另建运行包装`data/root-v1-13-review/release-material-return-probe.mjs`，SHA **368DEEB09E21648EC978FC796F2EA0B2633588B9E465CA6DE06D58C1F5BED7A5**，前后强核上述三文件hash再单fd继承执行一个场景；父capture仍记录实际模块/状态指纹及原日志。当前均仅语法通过，业务未执行，不计PASS，等待下次真实源码冻结。
+
+### GHSA 81–90：真实范围/新增包 RED 与局部 GREEN
+
+Root重核作者81–90每个metadata的完整before/after、原始`output.log`及SHA，均未发生执行中源码/测试变化；另亲读公开security测试与相关投影实现，没有读取作者helper。81与87均在实际publish结果缺少冷却中的repeat节点而失败，不是Schema/fixture前提失败；82虽25/25但83类型检查仍失败，84修正后85再次25/25。86的A→B→A首跑即PASS，只记characterization，不伪称RED。90是下一条severity公开RED，当时尚未增加产品分支。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 81-security-range-expansion-red | 0/1，exit1，440.8245ms | 02:30:53.877Z→02:30:54.392Z | `7cd13fd6d7bde0d0ecf7dd891c93e7152b591b7445fe1ee8a28cfe6270beb4ea` |
+| 82-security-range-expansion-green-attempt | 25/25，exit0，4201.4108ms | 02:35:26.819Z→02:35:31.093Z | `37fadccc7377a8662123feeb3aa83e42ab593fe7347849251cf85d48a6da22fa` |
+| 83-security-range-expansion-typecheck | exit2；Zod union动态展开和optional函数类型错误 | 02:35:31.936Z→02:35:33.987Z | `cd23345222177fa3ba764ea7a29da0fe9db7b2ca0dd9c5543fc70619280ca506` |
+| 84-security-range-expansion-typecheck | exit0，空log | 02:35:59.381Z→02:36:01.392Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 85-security-range-expansion-green | 25/25，exit0，4222.7193ms | 02:36:02.164Z→02:36:06.461Z | `6b831d801fc464b421f7cf1e357e3ee947c94e8d43e07734451919759eb37fc6` |
+| 86-security-aba-characterization | 1/1，exit0，549.7938ms | 02:37:15.283Z→02:37:15.909Z | `a46f912c828e0e4547ec51f19bec679999b02730825ca669c32906cf39ab2072` |
+| 87-security-new-package-red | 0/1，exit1，438.3813ms | 02:37:50.662Z→02:37:51.181Z | `ccbdce827ee3b7064fc87b1a7ac5823c67f3e3d04ec8acfe124f8841454cd091` |
+| 88-security-new-package-green | security 8/8，exit0，1479.7718ms | 02:38:08.776Z→02:38:10.330Z | `9f409ba085f4fea1faa854c548f2bd5bd54f7433a6a19a320836ccbfb4267f13` |
+| 89-security-new-package-typecheck | exit0，空log | 02:38:11.090Z→02:38:13.274Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 90-security-escalation-red | 0/1，exit1，433.1230ms | 02:38:47.447Z→02:38:47.947Z | `b58b7052e5bc1e8aa0e9d0dd1a8681ad64d80fdd4007ea3eb65a54fff2cc7c36` |
+
+Root核日志的首个汇总脚本遇到空typecheck日志时仅摘要regex报null，未改文件；随后单独重核84/89的完整metadata与空文件hash通过。读取路径误指Root树/猜目录的ENOENT同样只是只读检查失败，不记产品失败。
+
+### 90稳定源码窗口：11项独立测试及5份旧刊通过
+
+最初请求85冻结，但作者明确告知期间已推进至90-RED-stable-source，因此本轮严格命名`wip-ghsa90-*`，不是85或全套GREEN源码。Root逐项比对十个capture的src摘要与作者90原metadata完全一致，且每次完整before=after、原log hash匹配。源实现仍是88/89通过后的版本，作者tests中含尚待实现的severity RED；Root没有运行那份测试后声称它已通过。全部为WIP诊断，无固定新产品SHA，不替代最终验收。
+
+原八组10个node:test期待未改，原Record9 reader/baseline未改；新增Release语义字典及三文件hash在前段冻结后未改，A→B→A首次业务执行即PASS。Root完成后明确解除作者冻结继续下一片。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果/总时长 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| wip-ghsa90-release-01 | 1/1，263.5466ms，exit0 | 02:44:21.007Z→02:44:21.490Z | `2ba071f8469b5402283ee7ae7eb7a9dddea945da348fef86dfc13df08343ed34` |
+| wip-ghsa90-long-01 | 1/1，313.9767ms，exit0 | 02:44:22.220Z→02:44:22.769Z | `46e7e85d5bcc6b360fd0cd1850e142dac6d4d677876a3cf02b4a3f340a016296` |
+| wip-ghsa90-integrity-01 | 1/1，265.6385ms，exit0 | 02:44:23.480Z→02:44:23.969Z | `bea2998662d627cdc9bdcc71800495ae2da3f0ea05efd891d31951cc4d260c08` |
+| wip-ghsa90-reissued-01 | 1/1，257.5128ms，exit0 | 02:44:24.621Z→02:44:25.109Z | `49bc58c0be4dd8cba05aea80f499a63c03c2d22dbed8a83a19b2595793b6db31` |
+| wip-ghsa90-no-novel-01 | 1/1，248.7068ms，exit0 | 02:44:25.764Z→02:44:26.246Z | `520ea58705051be49e7e167e5d7eead89050693b75ff0e02d16b0bde785ea8ed` |
+| wip-ghsa90-scope-01 | 2/2，325.0569ms，exit0 | 02:44:26.888Z→02:44:27.421Z | `0e0623f1d20324423327409eda4741b5514ae71731d70fd3de1e3bb509466a4c` |
+| wip-ghsa90-context-loss-01 | 2/2，602.9362ms，exit0 | 02:44:28.035Z→02:44:28.869Z | `47de9f052e1c707efc0a3c8fb97dedd11ce64c523a541bd25b628beabbb3e6e9` |
+| wip-ghsa90-cutoff-01 | 1/1，241.6014ms，exit0 | 02:44:29.496Z→02:44:29.956Z | `21cb55261bf154a27a0cd25b0069f650ae2d30899019da9aa229d0e2362552fb` |
+| wip-ghsa90-record9-01 | 原5刊字节/鉴权，exit0 | 02:44:30.580Z→02:44:30.967Z | `f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699` |
+| wip-ghsa90-material-return-01 | 新1/1，383.5034ms，exit0 | 02:44:31.589Z→02:44:32.248Z | `066b294ded1f7b5cab55e8918f8265ca668f4596c88107703faec38479a7f5c8` |
+
+### 有界纯文字缓解方案批准及精确接线要求
+
+Root全文亲读独立设计`data/v1-13-momentum-design/security-mitigation-projection.md`，SHA **8D4B447B0FA8CB290A7FB0278D2730F89B20CA3F54F51AE496A474A39730B5FF**。批准语义与同一`assessSecurity`有界增量，待唯一作者将精确DDL/strict版本/计费接线写正式§10后核准，不把设计者的未执行三族场景计作PASS：
+
+- `unknown / explicit-none / measures`，措施再区分`mentioned / explicit-only`；缺措辞不是none、普通提及不是穷尽。短quote含原UTF-16位置，实际子串/边界验证；scope必须引用当前完整有限vulnerability元组，单句必须支持全部保留条件和措施。采用1–3条、每条effect最多120的有界投影，不保存旧description全文。
+- 初始完整风险保持确定性，允许首轮unknown、后续真实scheduled refresh通过同一次可选评估补采。未知→已变B不能倒填旧none；真实none/only-A→实质B有正向路线，mentioned-A路线须明确替代及新增保护能力，不从字段名或“新”字推定。结构相同不能让text路线永远early-return跳过。
+- 全历史短投影及实际原run/freeze绑定；首次origin不覆盖，同义复用旧身份。A→B→A不许用晚出的B造新A；未出版B不消费，已知baseline不是material或Report。flat origins + receipt IDs避免递归复制，无自报hash权威；model输入摘要绑定展开后的完整旧集合。
+- 批准第四个非事件context kind `security-mitigation`，不是假initial-risk/排名资格/消费，不新增表。共用每node1000、row64KiB、全部projection16MiB、原run/操作/typed header等全部原上限；可选baseline不足可unknown，但已用于text资格的投影必须与材料共同完整准入。
+- 安装选择最终fresh context schema/marker v2；精确CHECK/marker摘要由作者展开再核。#13尚未发布，旧WIP三-kind安装允许明确fail-closed并保留原资料，不承诺其Record10自动迁移或洗白；已验收Record1–9及旧普通库读取仍须保持。不清库、不重写旧JSON、不伪造epoch迁移。
+- 当前和所有旧projection/origin加入用途2依赖闭包，读前guard/header/逐原来源许可，读后真实member及完整prefix校验。保留引文限额、TTL、cutoff、实际完成时间与成功Report唯一消费。
+
+引文歧义在实施前明确：既有正式文档的“摘录总量不超过`min(500, source.citation.maxCharacters)`”按同一次实际使用的原`sourceId`聚合，Release/GHSA/mitigation共同计费，不按文章、接口、assessment或政策版本重发额度。沿既有出版流程以Unicode codepoint计字数，quote offset另按UTF-16。单条500限制仍保留；模型输入/永久归档中实际使用的旧摘录同样受其原来源许可与限额，不通过新字段、复制或多policy identity规避。flat事实引用的精确去重和各操作计费域仍需正式契约映射，不接受只口头称有预算。
+
+该要求揭示现有Release逐assessment限额与新GHSA局部累计不一致，作者将另建公开RED修复；预算故障fixture可新建合法短引文版本并证明原body字节仍达到目标，但保留原71证据及所有Root冻结oracle，不能改旧日志。独立验收作者另在全新`data/root-v1-13-security-revision-review/`准备范围A→B→A公开探针；当前仅任务分配，尚无执行证据。
 
 ## 兼容及安全
 
