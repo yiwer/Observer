@@ -98,6 +98,20 @@ Root只读核对`observer.ts`确实重导真实历史，已解除冻结让作者
 
 为并行推进未冻结动量设计，Root派`/root/v1_13_momentum_design`只在`Observer/data/v1-13-momentum-design/`写Owned固定输入/预声明偏好/独立参数比较和episode证明建议，不写作者src/tests/正式规格，不自动批准阈值。主作者已协调不重复另写模拟，仍为唯一产品writer，获批后必须用实际公开TDD落实；模拟结果不是产品测试或真实GitHub质量证据。
 
+### 配置权限切片及跨修订契约
+
+作者`09-config-change-red`实际2/3、565.9651ms、19:35:55.227Z→19:35:55.856Z、exit1，原文在配置被禁用后仍送到外部verifier，log SHA **11d7a070b27681cd8b99dffe2902762ea1834214808bad55bf5f007a5d1a9c70**。修复为observeDue首await前冻结developmentConfiguration，每HTTP/模型前后重核；`10-config-change-green`3/3、599.2267ms、19:36:28.446Z→19:36:29.117Z、exit0，log SHA **df69592783bfc95407e8949dccef0249ad905a9aa28f114e30ce3393ad85e353**。
+
+配置版本片保留两次不同含义的RED：`11-config-version-red`3/4只先观察到缺少冲突Gap，fixture的Release发布时间尚在未来，不能声称该次已证明原文泄漏；log SHA **1b978e3435a8f8de84d004b503dd8c496b47299d5272ac5688da175172aa826b**。只把观察时刻移到发布时间后，`12-config-version-red-valid-time`3/4、643.3909ms、19:37:11.342Z→19:37:12.055Z、exit1，实际观察到禁用/回滚后原文外发，SHA **189684f36b15567c7583d65c7e41bb5327690049b09f7a17368c99ff6e23ff66**。持久authority表新增development配置版本/摘要并拒同版编辑和回滚后，`13-config-version-green`4/4、707.3074ms、19:37:12.783Z→19:37:13.567Z、exit0，SHA **612f02c082f48a81ed1fde0ba1bb57e67fc2394eaa1940ad8acfc2fca26dfff6**；`14-config-typecheck`19:37:14.284Z→19:37:16.163Z exit0。Root实读09–14原log/metadata，hash及全部before/after核对一致；仍为作者WIP片，非Root独立该项验收。
+
+Root批准未发布Development assessment receipt增加`previousEvidence`，同步加入输入摘要与严格重算；每个previous按observationId、node、原policy、availableAt和足够的原父run身份精确绑定，不把复制ID当权威。旧证据必须在本轮上下文冻结时已可用，逐原source核各阶段许可；same必须引用输入内合法development，实质新修订与A→B→A查询全量已知和已报道身份，未知不转为空。每仓库1000个development上下文仅是容量提案，不能无限all再slice或让每小时重复收据消耗上限；新增索引DDL须先协调。已允许先推进可界定小量真实run的跨修订TDD，容量问题仍pending，不可带未解决无界方案冻结验收。
+
+### 动量设计固定输入（比较前）
+
+设计agent在比较器尚未编写/运行时冻结`data/v1-13-momentum-design/fixed-inputs.json`，SHA **485316017ACB919DEA0F16B58035B52ED5CD3CA77A16993BFE50418C2B7CDD9C**，及`expectations.json`，SHA **129D97D708694FB387341725C431E2816553D71E1C45BADCE6BD3542972FB522**。Root亲读全部方向期待、独立复核hash，并程序遍历20场景/266帧/5459行：非负整数计数、双点先后、截止可用性及同node同观察时刻计数一致性无异常；这只是输入校验，不是产品或参数通过。
+
+Root已提示两个解释局限：场景09同时标记总体不完整，不能单独证明零/负/cold等每个过滤器；min20与midrank p0.975有数学耦合，最小样本的独立影响还在cohort fallback，不能冒称独立统计校准。普通takeSnapshot只保留当期双点且按当前config/policy筛历史，不能直接担当长期episode证明。reset证书及新onset必须保持可比规则/采样语义/peer输入；仅切换查询使分位降低再切回不能造新episode，严格peer可比性可能抑制真实发现的取舍需明确。全部阈值/证明仍待比较后Root批准。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
