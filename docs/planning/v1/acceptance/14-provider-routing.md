@@ -53,3 +53,19 @@ Root完整读取作者`docs/implementation/v1-14.md`，并对照当前Edition分
 `08-t1-valid-edition-assignment`真实1/1、0skip、exit0，UTC2026-09-07 22:32:21.810Z–22:32:22.351Z，log SHA `076e80871d3660fa6ad5f75f12b7c9afdc7c4b3177236e58fc690178685f5eab`；`09-t1-typecheck`exit0，空log SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root重算日志并核完整before/after相等，亲读测试、schema/DDL与新路由/FinalEditor接线；真实produce/Gate、Report与GitHub SQLite、Owner鉴权readReport/readRun、重启读取通过。旧01/03/04/06失败全部保留。
 
 Root释放源码短冻结，允许下一条主失败备成功RED→GREEN，不要求每条GREEN停等审批。后续审计片仍须完成：冻结出版receipt和独立终态的明确关联、readRun行身份和有界解析、全失败时调用方可获得runId、安装/丢失/重启abandoned与终态覆盖规则。当前仅主成功切片，fallback/仲裁/有界运行尚未完成；未做票末双轴或整票验收，不集成产品、不关闭#14。
+
+## 主备与局部失败切片10–18
+
+Root读取新增公开测试并核各capture完整before/after一致、实际log SHA吻合：
+
+| 切片 | 真实结果 | 日志SHA |
+| --- | --- | --- |
+| 10 fallback RED | 1/2，未切换导致实际故事0而期望4 | `19191df0af7fce8fb00124b37cc93e6bc3eb4a6f6014239d36925ba8c81c6929` |
+| 11 fallback GREEN | 2/2、0skip；Codex/Claude互换主备，核验随实际成功Provider | `513fcebcc4e93fa68f0a671222812df87f8baa6ef859b31c61cd4283912f6c7c` |
+| 13 local failure RED | 2/3；外部抛错整期agent-unknown | `81ea1447ab47ffaaec70efd28bce146dd0a5b81f5276fff113ffde0c5928ece0` |
+| 14 local failure attempt | 2/3，仍失败；测试误要求无契约保证的故事数组次序 | `ee5faa3922f568eda1ff5bd0f3a67ac3c5df80e356b82c70169bd8f39a183576` |
+| 16 local failure GREEN | 3/3、0skip；按固定成员集合验证，不修改产品排序 | `e5b31acfccfb60686c4a44fe411f808cf270348c8e9a3d1fd43698abb2abaa46` |
+| 17 failed-run identity RED | 3/4，失败调用不能取得runId | `a0c17affa21c7a0df8f899af1274f1ae57d5b0d241366e24a70d1d00775b05e8` |
+| 18 failed-run identity GREEN | 4/4、0skip；invalid-bundle-identity失败携安全runId，无Report，鉴权读取和重启一致 | `f0b927ee26223232f3e459c136d945f65e15a0ebfe0968cddc9d5c7117c75721` |
+
+12 typecheck exit0。局部异常例为AI栏两Provider都抛错，世界/财经/前沿科技保留，两个失败原因与Provider记录且不留异常原文；不是全部Provider失败或真实服务故障验收。18只证明其具体无Report失败路径，不外推至未测试的全部失败类别。14虽目录含green，实际exit1明确保留，不计PASS。作者继续冻结receipt/独立终态关联、DDL和有界读；Root补充Owner不启用Provider的只读重启也应可查历史安全审计，资格撤销不能遮蔽审计。
