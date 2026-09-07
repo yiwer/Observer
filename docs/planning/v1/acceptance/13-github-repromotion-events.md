@@ -1420,6 +1420,20 @@ Root新增`claude-first-case-diagnostic-probe.mjs` SHA `562e93e6b1976938da4fdc1b
 
 独立最终矩阵须使用已批准lawful-release-family完整8组9测试，原7个基础Release+revision业务oracle由固定manifest证明未变、仅合法引用输入替换；不得再次把原532>500英文positive当合法期待。其余history scope/configuration/whole-run/old-input/安全原件及quota/缓解/Record9、动量budget/head/startup、新四风险与bank/metadata资源探针仍保留，另继承#12/#11和Record7/8基线，不用本次403项代替Root独立门。
 
+### 修订候选8e05440与双轴复审
+
+作者提交 **8e054405e315347ed0a0f335feb2c88bcd9d58a5**，相对首候选2a125fe仅storage与新增公开测试两文件60新增/6删除；Root实际git核完整SHA、非空three-dot diff、commit list及clean状态，300捕获的96个src/tests/config文件与提交后实际文件差异0。原整票baseline仍ec9b91c。已建立干净detached验收树`O:/GenesisCode/Observer-worktrees/accept-v1-13-r1`，尚未称该树check通过。
+
+两个原独立reviewer对该固定修订并行复审，未修改文件或执行测试。**Standards：0文档硬违规、0新增heuristic**；原两P3非阻断的material-presence清单重复、Unicode比较器重复维持，不要求本次扩大重构。riskWitness集中构造及actual verify复用一致，公开回归走采集/出版/重启。**Spec：原P1关闭，0新增确认问题或scope creep**；完整风险数/JSON字节检查先于strict Point解析，整witness unavailable保留origin，真实原件全投影重导验证mode/origin/overflow理由。256KiB分支代码存在不等于阈值已runtime饱和；独立最终门继续。复审通过不抵消后续验收要求。
+
+### 固定8e05440独立风险与bank通过
+
+`candidate-8e05440-risk-witness-01`新独立公开四风险探针实际1/1、0skip、exit0，UTC2026-09-07 21:36:28.847Z–21:36:29.686Z；日志SHA `44e53f8a7e72f3a7a80e8a262ca140edad79b8f9d2b38079dd36ee3d7891520c`。20真实候选两次观察、4完整GHSA原件/安全事件、whole witness降级/实际origin、公开authorize、原ordinary与重启全snapshot/Report均通过；数据保留`root-v1-13-risk-witness-review/run-xN0fKi`。Root核完整before/after、实际SHA和54模块，候选保持clean。
+
+`candidate-8e05440-bank-v3-01`实际1/1、0skip、exit0，UTC21:36:42.056Z–21:37:20.783Z，日志SHA `b199fc54c409d9f16451026a1da70d49281be96d37a88cc2083ac2b6a5774fa3`。原五实际startup capsules/codepoint whole-bank分配/排除身份与Report回读oracle无改变。Root核完整before/after、实际日志SHA、103份manifest文件大小/哈希均相符，journal completed、failureClass=null、unexpected HTTP/model=0。该bank规模不测试observed风险字节上限或生产性能。
+
+之后Root串行启动`candidate-8e05440-metadata-v4-01`，native94424当前运行；无作者全量或其他Root大型业务并行。新版本metadata实际结果、其余固定独立矩阵、detached完整门和actual master集成仍待完成，#13保持OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
