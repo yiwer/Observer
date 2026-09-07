@@ -227,3 +227,9 @@ Root亲读公开测试、dispatchControl和发表前authorize，核97–100完�
 作者继续获槽后同步失败释放、资格/来源复查、审计容量及真实语义CLI接线；原30主核验+30条件复核/24研究含retry、异常用量与六Edition历史矩阵仍保留。当前普通四栏Owned fixture通过不替代社会/GitHub采集、参数容量、固定候选双轴review和整票验收。
 
 审计上限后续裁定：作者提供合法JSON转义ID上界估算（15000 review约42,960,000字节、10000 link IDs约12,030,000字节，加1MiB余量为56,038,576），32MiB初值不足。Root批准64MiB（67,108,864）作为v1可信安装硬上限/default进入容量TDD，低配置仍先预留、实际UTF-8计量和明确降级；不是容量已通过。完整schema余量须实测，最大可达端到端组合与纯schema极值分别标明，不绕过原CLI输入/输出上限；重型回放另经Root串行协调。
+
+## 缺少Adapter的局部降级101–103
+
+Root亲读公开三轮produce/readRun例和研究槽外层try/finally，核101–103完整before/after一致及实际日志SHA。101真实RED保留；102 exit0、31/31、0skip/0cancelled，日志SHA `d9c69d32150531c67c228d681dd3b2ee54be6a081a30c1607588e53ed371dac9`；103类型检查exit0。world两Provider均无Adapter时先明确runner-unavailable，其他三普通栏成功；三轮run各三次研究、所有实际attempt成功，未因重复缺Adapter耗尽共享名额。
+
+该修正把Adapter存在性检查移至acquire之前，因此测试不能直接证明获槽后的同步异常释放。Root要求后续以获槽后可信资格回调throw等公开故障例，再正常运行验证槽仍可用；不以当前缺Adapter绿色替代。作者继续实际SourcePolicy在每次broker派发前复查的切片，尚未计为通过。#14仍未提交固定候选或整票验收。
