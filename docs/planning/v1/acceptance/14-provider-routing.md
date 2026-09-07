@@ -251,3 +251,11 @@ Root批准串行单Node本地容量窗口；作者归还后，Root亲读公开pr
 110限定容量用例1/1、0skip/0cancelled、exit0，日志SHA `4e194d1f67ee6a6475213dc106af77d30f8e8e4e8bc02cfe759b7a66038eb159`；111类型检查exit0。实际审计2,818,470 UTF-8字节，capture耗时1785.2425ms，测试进程resourceUsage.maxRSS为447,164KiB（约437MiB）。world使用20故事×50陈述、两个Owned独立来源及合法转义ID；研究与语义输入/输出均断言小于原1MiB/2MiB限制，1000条review完整可读并在只读重启后保持相等。读写采用可信固定64MiB硬限，不信任收据自声明。
 
 这是可达1000陈述的局部容量证据，不是15000纯schema极值、六栏最大组合、真实CLI或完整性能验收。Root已批准下一112/113低配置审计预算RED→GREEN独占本地窗口，无Docker/联网；要求派发前实际UTF-8最坏投影与终态余量预留、明确audit-budget-exhausted且保留每条Claim的Gate终态，不能通过静默丢弃审计达标。结果尚待核对，#14仍ACTIVE且未冻结候选。
+
+## 低配置审计预算112–114
+
+作者归还本地窗口，Root核112–114完整before/after一致及实际日志SHA，亲读公开测试和预留/双重写入限制。112是maxAuditBytes字段尚不支持的配置RED，日志SHA `f5a3d4a405cacbf8b856e73aab1afa3811f859e48fd9895af8385fae3d997e24`，不能称已有预算越界行为复现。113限定测试1/1、0skip/0cancelled、exit0，日志SHA `09abfb8497cc7e5593093d1c7455771bd9a8a87739b2655fe5d83d30c6d154d0`；114类型检查exit0。
+
+512KiB配置下，world两个语义批次在派发前明确audit-budget-exhausted，零world核验attempt、零虚构review；真实Gate保留1000条Claim终态，另外三普通栏发表。run实际6042 UTF-8字节，capture819.5064ms，测试进程峰值RSS302,048KiB；无Provider配置重启run完整相等。预留覆盖已有/潜在review的实际转义字节、84 attempts、512固定Edition决策、终态字段和来源ID；读写同时执行可信64MiB及低配置界限。
+
+此例不证明全部schema数值/字节极值。Root指出Number.MAX_VALUE的JSON文本不必然覆盖所有合法costUsd序列化长度，后续需保守余量或完整上界证明，不可藉此引入业务成本封顶。初始收据自身超低预算时作者明确报告为派发前capacity错误，不宣称该情形已有完整持久审计。真实语义CLI、资格撤销、全角色/重试/异常用量、六栏历史及票末固定候选验收仍待完成。
