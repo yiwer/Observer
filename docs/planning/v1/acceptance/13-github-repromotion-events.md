@@ -1434,6 +1434,32 @@ Root新增`claude-first-case-diagnostic-probe.mjs` SHA `562e93e6b1976938da4fdc1b
 
 之后Root串行启动`candidate-8e05440-metadata-v4-01`，native94424当前运行；无作者全量或其他Root大型业务并行。新版本metadata实际结果、其余固定独立矩阵、detached完整门和actual master集成仍待完成，#13保持OPEN。
 
+### 固定8e05440 metadata及完整Root专项目录通过
+
+`candidate-8e05440-metadata-v4-01`实际1/1、0skip、exit0，UTC2026-09-07 21:37:43.905Z–21:38:52.321Z，总68176.36ms；日志SHA `fbd6d700665bfdb1faed5eefbae759c25c8a0fa99aabe0ee027a7263889f3ccd`。Root核完整before/after、实际日志、664份manifest大小/哈希全相符，journal completed、failureClass=null、unexpected HTTP/model=0。原328实际观察和metadata行数原oracle通过，不称8MiB精确阈值或heap性能测试。
+
+随后Root原native30516串行运行其余13组，真实terminal exit0；均为相同固定8e05440/54 TS模块，原capture/probe/fixture/hash不变，前后完整状态稳定、每份日志SHA实际相符。总计连同bank/metadata/四风险为16个捕获目录，**28项node:test、0fail/skip，另5份旧Record9全文与Markdown不变**。Record9 reader是独立归档验证程序而非node:test，故不冒充五个测试计数；lawful family为原8组9测试，旧wrapper的历史WIP说明原样保留，当前外层capture明确固定完整候选。
+
+下面捕获均在`data/root-v1-13-review/candidate-8e05440-<name>-01/`，13组UTC总窗21:39:16.745Z–21:39:57.779Z：
+
+| name | 实际范围 | native.log SHA256 |
+| --- | --- | --- |
+| configuration-capture | 3 | d1fe67e9af84a999c27315eb13d12e93d7a45782cf2c7c38f1a0ed9c358a69b9 |
+| history-scope-lifecycle | 3 | d283ac9eaf22fd9ca07847c0ab716cf2f3c20151504c3b1a05be4cae09668ae0 |
+| lawful-release-family | 9 | 5ff8bd5eb0862361dfbe4ba8e9349f259af8fe704028c4c8fafc05c5bb2281b3 |
+| momentum-budget | 1 | 539eeca111d4469502d689e82dd6851dd537087f4ae6a4ffa3ed0b06ed967b83 |
+| momentum-head | 1 | fd4e71ed4beb13f349f18a628fde1fbafd3a9ebba4bba043e2a6b1ae8ac8cf77 |
+| momentum-startup-v2 | 1 | 5c5f603c05afa53eed830b951ae71193f339621d027beac02f3e46886868218c |
+| old-input-citation | 1 | d3b4387e7f9a9233bda1e212bec74732d10f4d4a1ebc44d3c2edebcd68619720 |
+| publication-whole-run-integrity | 1 | 8ac5e1f79c6acf0d9542d3d0a8fb2807fffafea355fa5951ed96377879b1da91 |
+| record9-compat | 5旧刊 | f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699 |
+| security-history-quota | 1 | 754e886c16f215b115b850165a8c2029c0f36f74a87202b462e51e868daa8e49 |
+| security-material-return | 1 | 2a70a6d611b2607915f39102105d47584ed54a224daf1190063f3595f4f6eb60 |
+| security-mitigation-v2 | 1 | a9cebcef0f11fb8507276dc5d03d4dd673942f9986145f2621c61c39aa1ff2a6 |
+| security-scope | 2 | 07ba6cbaaa2166bb570649747296eef8960858d2e15a0465e077563584b980b5 |
+
+所有Root专项目录终结后，干净detached `accept-v1-13-r1`依据锁文件`npm ci --ignore-scripts --no-audit --no-fund`成功安装7包，不运行安装hook。Root随后用原run-frozen-capture在完整固定SHA/空branch下启动`data/root-detached-check-01`，native9385当前运行，原typecheck/build/全部tests集合均保留；未与大型独立/Docker门并行。detached check/smoke、built旧#12/#11/Record7/8等继承门、实际master集成和验收尚未完成，#13不关闭。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
