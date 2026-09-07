@@ -217,3 +217,11 @@ Root核91–96完整before/after一致及实际日志SHA，亲读semanticAttempt
 93发表前总时限真实RED后，94 exit0、28/28、0skip/0cancelled，日志SHA `1edd44fb53a12bafec0e53265f817d8525a7ba53595a720bc44eb2c0b81a4fd2`；95类型检查exit0。world已核验成功，AI核验跨1000ms总deadline时，produce返回routing-total-deadline及runId，不正常发表先前故事，目标Report不存在，failed审计可重启读取。这是核验阶段跨时限例，未代替Editor/事务阶段容量回放。
 
 Root提醒Owner在核验或复核期间取消必须在整轮提交前重查：Gate与复核catch可能吸收Verifier异常，不能仅靠semanticAttempt抛错证明取消阻止发表。96保留终态host hook仍能派发的真实RED，28/29、exit1，日志SHA `43bd95284e38ab857f5a1f289083a1d0aaf0ef26674ddcee33721dfee022b463`；作者继续该修正，不计为通过。当前全部为WIP局部证据。
+
+## 终态派发与核验期间取消97–100
+
+Root亲读公开测试、dispatchControl和发表前authorize，核97–100完整before/after一致及实际日志SHA。97 exit0、29/29、0skip/0cancelled，日志SHA `5d45391c82c0031be72bafd1a5b9d1b054f544d9387dabc269adbad15b5ca50f`：保留的host hook在run已完成时拒绝新dispatch，鉴权run/report均完整相等；控制入口及排队醒后均要求run running、attempt started。
+
+99新增取消回归直接30/30通过，exit0、0skip/0cancelled，日志SHA `57e73d1d4c7454ff9caabd6a88a0d946280d83e8be6adf146156d60caaf4b143`。主Codex核验及Claude条件复核两个场景中，实际调用开始时Owner取消，最终agent-cancelled、failed run、相应attempt cancelled、目标Report不存在；既有提交前取消保护生效，不伪造新RED。98/100类型检查exit0。
+
+作者继续获槽后同步失败释放、资格/来源复查、审计容量及真实语义CLI接线；原30主核验+30条件复核/24研究含retry、异常用量与六Edition历史矩阵仍保留。当前普通四栏Owned fixture通过不替代社会/GitHub采集、参数容量、固定候选双轴review和整票验收。
