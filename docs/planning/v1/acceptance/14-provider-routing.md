@@ -149,3 +149,9 @@ exit0，结果`root-old-source-control-1788821803465/read-evidence.json` SHA `dc
 Root核完整before/after一致与实际日志SHA，亲读公开预取消测试。53真实RED；54为17/17、0skip、exit0，日志SHA `5ea5a06f4c5f49b04d22bbac0bb15577cee8193135700eede2a51b4ecbc4ff4c`；55类型检查exit0。Owner在dispatch前取消时，调用返回agent-cancelled及runId，readRun可读failed、明确failureReason、零attempt。
 
 这不证明在途取消或总deadline。作者下一片的有限迟到结果用于验证不采纳和已知usage保留；仍须后续非settling外部任务、有界cleanup/readback与不放行新进程的验证，不能把await runner.run最终返回误称无限等待已受控。
+
+## 有限迟到结果切片56–58
+
+Root核完整before/after一致、实际日志SHA并亲读公开测试。56 exit1、17/18，具体RED是RoutingConfiguration尚不支持limits（unrecognized_keys），不能表述为已复现迟到发表。57 exit0、18/18、0skip，日志SHA `8bdd1904becd4f1e77e10fbe3a0f87a3f48d6ff83c4dccd004cbf69433c9beb9`；58类型检查exit0。固定Owned主Provider等待130ms、attempt上限100ms，四栏主结果不被采用，均记timeout，input10/output20已知用量保留，备Provider实际完成四栏。
+
+此片只证明有限迟到结果处理，不证明永不settle的Runner或transport有界终止。Root亲读既有agent-container及两Runner：容器返回前有身份cleanup/readback，但宿主broker.respond Promise独立，容器removed不能证明外部请求已结束。已要求进程池和外部请求池分别保持名额释放与取消证据，迟到响应不得回写；共享预算和完整终止仍为待实现/验收目标。作者仍在运行，Root不重复启动实现或抢先运行整票测试。
