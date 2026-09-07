@@ -1,6 +1,6 @@
 # V1-13 执行与待验收记录
 
-状态：in-progress；唯一产品作者为`implement_v1_13_resume`。90源码冻结窗口Root原10个独立测试、新Release A→B→A首跑及5份旧刊回放通过；GHSA范围扩大和新增包已获局部GREEN，纯文字缓解有界投影语义已批准，精确持久接线待作者映射；动量参数/episode语义已批准但产品全链路未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13 OPEN。以下起点及逐段记录按实际发生顺序保留，末段为最新进度。
+状态：in-progress；唯一产品作者为`implement_v1_13_resume`。90窗口Root 11个独立测试和5份旧刊通过；99窗口新独立GHSA范围A→B→A首跑1/1通过。作者结构化安全修订及非法same收据局部11/11；共同引文99真实RED已复现、修复中，纯文字缓解精确§10已批准待实施；动量参数/episode语义已批准但产品全链路未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13仍OPEN（本轮实时readback确认）。以下逐段记录按实际发生顺序保留，末段为最新进度。
 
 ## 固定任务与依赖
 
@@ -511,6 +511,21 @@ Root随后全文读作者正式§10，批准其三阶段精确计费（observeDu
 - Root新包装`data/root-v1-13-review/security-material-return-probe.mjs` SHA **606EF5E43F34307041ADB24E9E096E51EC9A2F7FB45C8524A4433EDD50B61716**，每次在原capture记录模块/状态外，前后强核这三个外部文件hash，单fd继承运行，timeout30秒。只新增包装，不改旧capture/oracle。
 
 两份原probe脚本及包装仅语法检查通过；业务首次运行待作者下一短冻结，不计PASS。精确Interface映射为`assessSecurity`单assessment、完整`SecurityMaterial.origin`、真正归档`InterestSnapshot`，Root已静态对照，不将语法通过升格为运行兼容。
+
+### 96–99与新独立安全修订首跑
+
+Root核96–99各原metadata完整before/after及log SHA，亲读新增两条公开测试。96是非法same引用虽未使仓库入选，却被保留为supported verification的真实收据缺陷；不能夸大成已重复出版。97将该非法引用拒为null，安全局部11/11，98类型检查通过。99提供250个codepoint、含非BMP emoji的完整Release摘录，真实verification与development两处保留恰好用满500；同源GHSA仍保留额外范围修订而RED。该失败明确发生在相关公开snapshot收据，非引用前提不足；共同预算修复尚未在此段获得GREEN。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 96-security-unknown-same-red | 0/1，exit1，435.9836ms | 02:53:13.413Z→02:53:13.925Z | `7474d0c739c7c9c7b091940dcac2cbf455d2e33ab49e59a17b5a7f82bd21bb97` |
+| 97-security-unknown-same-green | 11/11，exit0，2056.1784ms | 02:53:35.825Z→02:53:37.957Z | `2760bfdb042b88ca800e2f52e2a320f7d1fc13ad9f022b603f620c886cfadcf4` |
+| 98-security-unknown-same-typecheck | exit0，空log | 02:53:38.729Z→02:53:40.771Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 99-shared-citation-red | 0/1，exit1，403.8954ms | 02:56:52.619Z→02:56:53.103Z | `ee9bc26ef1c7cec1dc379df1b4b6c2af6f745bb6fa48c5d0c3531a8e0123c890` |
+
+作者随后明确提供99-RED-stable-source短冻结，src是97/98已通过版本，tests另含99预期RED。Root首次执行前段已冻结的独立GHSA探针，`wip-ghsa99-security-return-01` **1/1、exit0、404.5079ms**，实际UTC **02:57:34.166Z→02:57:34.868Z**，原log SHA **63645b827b6356e8ea61f9c5322516c29d7d8d4fe0d39907173dd2a7f5810c2c**。Root独立重核完整metadata前后相等、hash，并将每个src模块与作者99原metadata逐项比较完全一致；新README/fixture/probe/包装的冻结hash不变，无业务期待修正。Owned DB与原日志保留，Root完成后明确解除冻结。
+
+这是独立范围扩大、回A抑制、完整实际origin及消费历史、重启/公开重算的WIP诊断，不能合并成同一固定SHA的12测试最终通过，更不代表未实现的共同引用/自然缓解/动量已通过。Root同期实时读取GitHub #13为OPEN、assignee yiwer，未修改tracker或调用真实来源。
 
 ## 兼容及安全
 
