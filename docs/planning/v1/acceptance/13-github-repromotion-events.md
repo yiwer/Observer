@@ -644,6 +644,25 @@ Root已全文亲读独立`data/v1-13-momentum-design/publication-quotation-revie
 
 新的四node69额度独立探针三文件已准备在`data/root-v1-13-security-history-quota-review/`，Root全文亲读README/fixture/probe，尚无业务运行。准备版SHA分别为README **951D4C739FE8449ACDD814C1C28C9A52075B56D7489392DF1BFD075678038C12**、fixture **94E159D4E85F8C3ECB39D3A65E8B686536CB8869241CBB6E0C8CE9374B1833D8**、probe **B95F82641112F2332A9033E8ED61863B816079FA2983EB6DA38CE5184D39D8C1**。首跑前Root发现probe额外要求`risks[].status=unknown`过强：已批允许当前GHSA事实完整/high-risk而其安全历史unknown，隔离由history标志及ranking说明。原三文件保留，另准备v2仅将该附加风险数组期待改为实际候选`eventReason=security-risk-unconfirmed`，保持整node历史缺失、全部原freeze、46字正向账、四node有效、未选/未消费及独立novel出版重启等原业务期待；这不是运行失败后降期待。v2及首跑尚待后续记录。
 
+### 129–134：出版投影首片与独立四节点额度首跑
+
+Root亲读129公开反例及新`github-publication-budget.ts`/authority接线，独核129–134各原metadata完整before/after和原log SHA。129在同来源大小两个Release均可合法采集后，出版仍把较大组（实际五份超500）列为已报道而真实RED；目标只撤该整证明，保留小组事件、两个普通项目位置、Gap及原观察run。130/131为多一个括号导致TS语法失败（native1/type2），不是产品业务反例；原日志保留。132首片1/1、133类型0、134合并40/40，尚不覆盖所有篡改/跨kind/来源混用边界。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 129-publication-quotation-red | 0/1，393.5998ms，exit1 | 03:41:38.723Z→03:41:39.200Z | `e0d01cd4db489d2279470c846345064d8ee8be70342abbc831cc61adbe75ce40` |
+| 130-publication-quotation-green-attempt | TS语法失败，exit1 | 03:45:15.403Z→03:45:15.687Z | `17a50707304349673274264522a5f41d13b3253b1e368bca03c138e4c573dbf6` |
+| 131-publication-quotation-typecheck | TS1109，exit2 | 03:45:16.455Z→03:45:16.992Z | `61edf5010500abf8f10cc584cddf7ede411ac10909e2ab9bfd98c3b2124dbc9d` |
+| 132-publication-quotation-green-attempt | 1/1，389.0003ms，exit0 | 03:45:30.979Z→03:45:31.444Z | `d71a3d8a1ee27967441565674b6f183fa8ac7858f96692704eb40d4f8d19327b` |
+| 133-publication-quotation-typecheck | exit0，空log | 03:45:32.207Z→03:45:34.257Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 134-publication-quotation-regression | 40/40，5359.6279ms，exit0 | 03:45:44.177Z→03:45:49.602Z | `284ac061306a43fb980bda58b177eba279882c24f7ac83af290a409dca278e95` |
+
+四node独立探针v2仅首跑前的精确字段替换已由Root亲读完整README-v2和实际`git diff --no-index`核验：原三文件hash不变，probe只删一条强制当前risk unknown断言，并增三行检查真实ranking节点及history unknown事件原因。README-v2 SHA **D63A56442935A1D731F284288C5B75EE5D830095C5B5F5606B66926EECE30EA8**；probe-v2 SHA **569A0D45BD64A790B06470AC7D916A65158CA9665CF2CEA57B5CCD8A1D64ABE6**；Root新包装`security-history-quota-probe.mjs` SHA **CBB53177372AA2A88DA91FEE439CE2E69763BD7F3F80F031415202313234CDC9**，前后校验原三件和新两件，共五文件。原capture不改。
+
+作者134提供5秒源码冻结，Root首次业务执行`data/root-v1-13-review/wip-quote134-four-node-history-01`：**1/1、exit0、475.0758ms**，UTC **03:47:05.543Z→03:47:06.320Z**，原log SHA **8bcfe43fa5f75c2296f8b902a37dab32cffbd55c8508002cea2450e34c7e59df**。Root完成即明确解除冻结，后逐模块核等于作者134原metadata、完整before/after与原log匹配。实际八段正向账逐条打印：四次initial各0，四次expansion各verification23+development23=46，同一policy69从未改变；终局四节点有效、历史最低92导致至少一整node unknown，完整剩余历史、四novel出版/原刊及新刊重启可读、四份旧material历史cutoff snapshot不变全部满足。它不是Publication整组剔除的全部攻击验收，亦不能将134此一项与117十三项合并称同一最终SHA通过。
+
+Root随后静态指出新publication authority可能存在空域绕过：只比`origins.length===base.runs.length`，若caller整删runs与projection，两者皆空可能不回查实际原run。作者独立也定位到此点；已准备下一公开安全隔离→删整run→重算ranking/MD/hash反例，Root另派独立作者用合法Release失去已报道事件的输入准备相反路径。不把当前静态推断冒称已执行RED。修复方向仍按真实父current slot、冻结config/原source identity、原cutoff前实际可用性回查完整集合；合法旧slot没有事件run、实际失败、配置不符及晚于cutoff完成必须区分，不因后来的数据倒灌。该方向属于已批实际origins全集校验，无新增外部接口或用户权限。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
