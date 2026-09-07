@@ -225,3 +225,5 @@ Root亲读公开测试、dispatchControl和发表前authorize，核97–100完�
 99新增取消回归直接30/30通过，exit0、0skip/0cancelled，日志SHA `57e73d1d4c7454ff9caabd6a88a0d946280d83e8be6adf146156d60caaf4b143`。主Codex核验及Claude条件复核两个场景中，实际调用开始时Owner取消，最终agent-cancelled、failed run、相应attempt cancelled、目标Report不存在；既有提交前取消保护生效，不伪造新RED。98/100类型检查exit0。
 
 作者继续获槽后同步失败释放、资格/来源复查、审计容量及真实语义CLI接线；原30主核验+30条件复核/24研究含retry、异常用量与六Edition历史矩阵仍保留。当前普通四栏Owned fixture通过不替代社会/GitHub采集、参数容量、固定候选双轴review和整票验收。
+
+审计上限后续裁定：作者提供合法JSON转义ID上界估算（15000 review约42,960,000字节、10000 link IDs约12,030,000字节，加1MiB余量为56,038,576），32MiB初值不足。Root批准64MiB（67,108,864）作为v1可信安装硬上限/default进入容量TDD，低配置仍先预留、实际UTF-8计量和明确降级；不是容量已通过。完整schema余量须实测，最大可达端到端组合与纯schema极值分别标明，不绕过原CLI输入/输出上限；重型回放另经Root串行协调。
