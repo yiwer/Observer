@@ -1158,6 +1158,14 @@ Root全文审读原三文件、v2差异与V2-NOTE。实际合成token为30字节
 
 后续bank资源组需真实每capsule<8MiB而完整组>32MiB、共享payload不先触64MiB，按node码点整组分配，不改数学状态或丢旧身份；安装/事务组还须分别核缺结构不能重建与ordinary可用性，不能以某处constructor拒绝或blanket catch代替两者。当前这些仅待核问题，不计通过，#13保持OPEN。
 
+### 248：bank场景的公开取证控制尚未成立
+
+248-momentum-bank-limit-red通过真实hour23–27先后五个top节点构造不同onset（不是五个同时extreme），预定从26的公开前四capsule、28换出bank-00后的公开后四capsule取union，先核每组<8MiB、总>32MiB及目标phase payload<64MiB，再断言27应按码点保留前四组。原27目标oracle没有SQL构造/改写承诺。
+
+实际首跑在28的后四组控制处momentum undefined，读取capsules发生TypeError，**尚未取得第五组实际尺寸，也未到bank容量及目标断言**。因此目录虽名red，不计32MiB目标RED。原生exit1、7841.8504ms，日志SHA `b3efbef7a0805e569a9885130494e6948495289a23ce7388f0ac7aa0a8a5335a`；Root全文核测试与实际错误、完整before/after及实际SHA。
+
+下一诊断保留原档，输出已公开firstFour各字节/总和、原run+DevelopmentRun累计bytes、唯一Point bytes和nextPool公开Gap；更小后续控制pool若成功，仍须单独证明原27目标完整payload不先撞64MiB，不能用该控制成功替代前提。未先认定undefined原因是bank超界，不改既定cap/原27oracle，不把初始化/取证失败冒称产品缺陷。#13继续推进。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
