@@ -120,3 +120,32 @@ Root亲读公开测试、正文生成和实际Gate修改，核46–52完整befor
 预算片新增必须验证的组合：15000个review条目与当前1MiB审计读取限制不相容，不能成功发表后readRun/readReport自拒。批准32MiB作为版本化安全审计工程初值进入TDD，写前/读前同限，不影响原模型输出等限制，也不声称总内存上限。需按实际UTF-8和最坏收据预留，默认最大合法批次及低配置前置降级分别覆盖；只读重启不得信任任意receipt自报无限上限。此容量目标尚未验证。
 
 本轮实时`gh issue list`确认#1–#13 CLOSED、#14–#28 OPEN，无漏关已验收票。Root另派独立fresh-context子代理从固定#13源码准备旧Record10基线，只在独立data目录工作，不动作者WIP，不用新源码生成旧证据；在Root核完前不声称基线已验收或#14兼容通过。
+
+## 固定旧Record10基线与Root控制回放
+
+独立子代理交付`data/root-v1-14-record10-compat/`；Root亲读fixture、freeze脚本、v1/v2 reader，并用固定clean `24c38a11d45f949c48e856d015c5b91908ee7d11`的src独立运行：
+
+```powershell
+node data/root-v1-14-record10-compat/read-compat-v2.mjs O:/GenesisCode/Observer-worktrees/accept-v1-13-r2/src ts root-old-source-control
+```
+
+exit0，结果`root-old-source-control-1788821803465/read-evidence.json` SHA `dc41eb4d94ccd7da97caf9f11b998b8911c04f39c7faf189f8a4e02126b0374d`。Root重算15个冻结文件和58个旧源码/包输入SHA均吻合，目标HEAD/status/完整模块树及package输入前后相同。原始冻结数据库不变；reader仅在副本装配authority并调用鉴权readReport，错误token拒绝，不produce/observe/联网。
+
+基线由旧固定源码公开生成，非新代码反向构造：`2026-09-02-v1` Record9记录普通榜历史；`2026-09-03-v1` Record10中ROOT_REPEAT普通分为0，但Owned重大release经真实GitHub开发与再推广链再次入选，唯一reportedDevelopment、正文摘录及开发ID进入Markdown。SourcePolicy、配置、时钟、Owned输入和数据库完整冻结；这是source-only语义替身基线，不是外部GitHub/真实模型验收。
+
+| 固定锚 | SHA256 |
+| --- | --- |
+| manifest.json | `e8154dc8860741cfba0c9f8df93bb88225a14681d82014b5d90ceb032ec2a88f` |
+| read-compat-v2.mjs | `b30341473968d8a3af27bf2ce49a44696fc02830e05adab7e9b2a050e28f4883` |
+| reader-v2-manifest.json | `7e16c56998476c34739a5f81144e36fe3f8bc425b5f0a0f8988e760a03c243e3` |
+| Record10完整report | `4908566c06e29d5e57f68cfda45ef4a80d44230570e1837b2c1be2420b97e474` |
+| Record10 record | `e8b8e6cb0ed749854a281953fc129086e800df63b911ba3b2f5085a51e4d56c5` |
+| Record10 canonical Markdown | `5e9391d648ac4aac4e5bc4273e8ba5efc106e41e78f6cc2e64f5742a940108f5` |
+
+两个旧报告整体/record/Markdown均逐字节与摘要一致。v2以旁挂清单追加目标指纹，原manifest/v1 reader未覆盖。后续对固定#14候选src/dist调用相同reader（参数为绝对模块目录、ts或js、唯一label），外层再绑定候选SHA/构建证据；当前未对#14 WIP运行，不宣称新版本兼容通过。该单个release基线不替代其余旧版本、GHSA/动量和历史消费回归矩阵。
+
+## 预取消切片53–55
+
+Root核完整before/after一致与实际日志SHA，亲读公开预取消测试。53真实RED；54为17/17、0skip、exit0，日志SHA `5ea5a06f4c5f49b04d22bbac0bb15577cee8193135700eede2a51b4ecbc4ff4c`；55类型检查exit0。Owner在dispatch前取消时，调用返回agent-cancelled及runId，readRun可读failed、明确failureReason、零attempt。
+
+这不证明在途取消或总deadline。作者下一片的有限迟到结果用于验证不采纳和已知usage保留；仍须后续非settling外部任务、有界cleanup/readback与不放行新进程的验证，不能把await runner.run最终返回误称无限等待已受控。
