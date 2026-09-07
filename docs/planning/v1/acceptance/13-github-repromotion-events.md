@@ -211,6 +211,34 @@ Root亲读新`github-advisories.ts`、`github-advisory-contracts.ts`及权限分
 
 Root独立新增`security-scope-probe.mjs`，最终首跑前SHA **7ED671F4F37D38D6BA66CA4E32A7C338328BA7617CA5A5114DFEB1B493DF48D9**，2个预设场景只使用Owned官方形状响应、真实两库、公开observe/produce/read/restart：advisories-only配置且Release字段许可false；完整scope可作为风险更新救冷却；相同公告scope为null时，**此前未报道且普通正分**的项目也必须被隔离并显示unknown。第二项不利用冷却先行遮蔽风险门。脚本在首次运行前明确该对照，仅语法检查通过，尚未运行、不计PASS；与0novel probe等待作者GREEN/typecheck后短冻结一起执行。
 
+### GHSA补查修复后Root六组独立回放
+
+作者39反例在`40-known-refresh-green`闭合为14/14、1896.6266ms、exit0，UTC01:19:18.310Z→01:19:20.282Z，SHA **8051a0d7250176c8ff87e85718e0d1c2627a899a2e99d7a13a80486c982aaf9d**；`41-security-refresh-typecheck`于01:19:29.515Z→01:19:31.478Z exit0、空log。Root解析两份metadata、重算日志hash并核完整before/after一致。Root在其短冻结窗口运行原6份独立脚本，所有预先固定期待未改，各组新目录、单原始fd、实际UTC/native exit及完整模块/Root脚本/HEAD/status指纹；另独立重算loghash和完整before/after一致。仍是WIP局部诊断，不是clean SHA关闭验收：
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果/总时长 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| wip-ghsa-release-01 | 1/1，201.4441ms，exit0 | 01:20:02.982Z→01:20:03.409Z | `b884dff6bd3339592098c9d41d06f2cd13ec7f9cc93084fbca27b6942cfe708c` |
+| wip-ghsa-long-01 | 1/1，246.8995ms，exit0 | 01:20:03.749Z→01:20:04.216Z | `9a9b755c8693f862ad81adbadae7f84d15e8932aa1255031b9c22e7f4d5b9a4c` |
+| wip-ghsa-integrity-01 | 1/1，209.0558ms，exit0 | 01:20:04.543Z→01:20:04.968Z | `b025633b067e57d7d4fc2316ce96629b8f8427f293a52886c526ba3a09a4b5d9` |
+| wip-ghsa-reissued-01 | 1/1，202.3027ms，exit0 | 01:20:05.334Z→01:20:05.749Z | `5c425508e5af28224e5035d4ae90e2ee220fa85ed2c7e5d20463baf759dec6e1` |
+| wip-ghsa-no-novel-01 | 1/1，193.6345ms，exit0 | 01:20:06.058Z→01:20:06.461Z | `da8dbf86d51f7d152d823a8d068e7366dfa3304c134da61c1f82faee39775d99` |
+| wip-ghsa-scope-01 | 2/2，225.7496ms，exit0 | 01:20:06.763Z→01:20:07.198Z | `8b7109c927e3d3c604e767340a2873cc5f57804a47efa6d8f744f64879f7ceaa` |
+
+新增3项首次实际通过：0 novel未入选不消费，后来出现novel才消费且空刊不增加报道频率；advisories-only/Release许可false仍可完整风险更新；未报道且原普通正分项目因scope未知被排除，候选和正文一致显示不确定风险。未读取作者helper、无真实网络/模型/SMTP。原4项回归也通过，共6组7测试。Root已解除冻结，允许作者继续，所有旧失败继续保留。
+
+### 历史索引完整性协议及新窄Interface
+
+独立索引反证任务已完成，Root分段全文亲读最终`data/v1-13-momentum-design/release-index-review.md`，SHA **457B66F0A4359BBFF038493996F84D250999273BA27BB0E56A5C29DF9D23EF0E**；不含产品修改/测试。Root批准以下协议，不将设计文档当PASS：
+
+- 四表逻辑结构为contexts、heads、pending、state；固定真实run INSERT登记pending，包含较早slot晚提交；单边派生变更设dirty，既有未知dirty不因下次正常采集自动清除；缺state/guard失效。保持第一次canonical origin，不用后来更早slot覆盖旧刊定位。
+- expected count/bytes/集合承诺由已核真实run的应新增清单产生，再与实际INSERT结果独立比较，不从可能缺行的contexts重新自证。冻结epoch/generation/时间域及完整manifest保存进真实assessment，并回核其原run成员，防止改早generation并清空previous后自hash通过。
+- snapshot、最终只读授权与archive按原freeze完整前缀重取真实上下文，核原证据与来源；未来第1001个发展不能倒灌使昨日合格归档突然超界。索引不记消费，不替代成功Report。
+- 每node1000、row64KiB、单次上下文16MiB、旧slot每批100只是待落地的已有容量方向；作者还须提出原DevelopmentRun/父GitHubRun单行字节、批次及单次累计原bytes和不同origin预算。精确DDL及这些数值仍待批准。16MiB不是永久整表大小；新写入保留typed权限路由身份。无header旧库若无法合法读取来源身份，明确Gap，不能把SQLite json_extract宣称为未解析旧材料或借新来源权利洗白；本票未发布，不承诺自动无权迁移全部WIP库。
+
+Root另批准同一`GitHubDevelopmentVerifier`可选窄`assessSecurity(input)`处理实质修订；初次完整风险仍确定性。严格旧evidence/字段old-new/类别/短摘录/输入摘要绑定，same及A→B→A核完整历史，结构不是语义真值或权限。批准同步只读`authorizeDevelopmentHistory?(snapshot)`，专门核旧刊原freeze域真实成员及完整集合，不要求今天采样配置同hash来改排旧刊；仍逐原source核当前使用许可。新Record10缺该能力fail-closed，旧Record不变；当前produce另用当前配置authorize，不能被历史核验入口替代。
+
+按codebase-design，补建、完整性、权限与容量留在观察Module内部，不将checkpoint或“历史已完整”状态交给Request/Agent。作者继续安全修订与索引具体方案；动量尚未产品实现，无产品提交、整票check/smoke、双轴最终review或master集成。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
