@@ -1242,6 +1242,38 @@ Root已审公开测试并允许按既定§12整组码点分配最小修复。临
 
 bank独立探针另行推进，不重复委派。原成员、完整frame/head、RiskOrigin/pool、unknown GHSA隔离、已有reset/legacy、共享payload/metadata行及单capsule代表性场景已有明确局部证据，可收束该范围，但不泛化未测的权限生命周期或metadata8MiB实际字节阈值。完成有限P0及bank后，仍须最终固定SHA full check/typecheck/smoke、完整专项、原旧刊oracle、Standards/Spec双轴review及detached/master集成门；静态结构/预算检查不能写成未执行的运行时PASS。
 
+### 264–268：损坏写入、zeroNovel与显式capability表征
+
+264分别精确移除实际state/pending表及该表guards，旧ordinary snapshot/Record9仍全等，当前momentum unavailable、旧Record10拒绝。实际下一slot采集明确拒绝，公开rankingSnapshot完整不变；精确CREATE原结构/原行/guards恢复并重启后，同slot真实observe成功、公开末run slot相符、旧两刊恢复。没有旁路提交或额外产品修复。这是损坏时新写失败且旧普通读取可用的实测，不是新采集可用或dirty/pending可洗白。
+
+266以三份真实Record9覆盖完整20node；随后真实完整reset形成可用episode，公开quota.eligibleNovel=0时无选取/消费。再持续真实观察至后报加入实际novel，公开选取repeat+novel，同development/onset消费一次，两刊重启完整相等。268分别缺少/显式false的momentum capability：真实普通current/historical stars200/100仍可选，动量完整20候选current/historical均null、nodes unknown、无capsule/消费，整刊重启相等。没有声称配置缺失等于capability缺失，也没有将该组代替后续实际撤权生命周期。
+
+Root核全部公开测试正文、完整before/after与实际日志SHA：
+
+| slice | 实际结果 | output.log SHA256 |
+|---|---|---|
+| 264-momentum-missing-transaction-tables-public | 首次3/3，exit0 | d140786276a29ca0c441c7351f1e96a90fa637ad79c53ef00158e263ca682f07 |
+| 265-momentum-installation-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 266-momentum-zero-novel-public | 首次1/1，10804.1197ms总时长，exit0 | b86a45a5ec4bf83df0e3d965fd4addc6f8db6c91271610e03ab17cce8fb9ff42 |
+| 267-momentum-zero-novel-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 268-momentum-capability-public | 首次3/3，exit0 | ab9c35b4b4338ec71637ed6f8eaff2448143462fb422d4f85ada8fb3dab5313a |
+
+这些是既有实现公开表征，不假称新的RED→GREEN；mixed priority、实际撤权/恢复、startup/context、dirty及整段遗漏仍按有限P0继续。
+
+### 268窗口：独立bank首跑与Report回放通过
+
+独立代理只准备Root新目录`data/root-v1-13-momentum-bank-review`，不导入作者测试/私有算法，不SQL构造胶囊。Root全文审读fixture/probe/README，首跑前纠正GitHubRun时间字段为scheduledAtUtc（Point/DevelopmentRun仍slot），实际选择用selectedNodeIds而非输入watchItems；这些为准备期静态纠错，无业务失败。Root另实核257→262唯一source变更为installer明确ROLLBACK/null，payload路线不变，显式批准storage pin `4fc3bfc3d5ebe9a688ae563ed7c5a6d4cfd0d950e42ba7f3cd94ccd98a626f46`，未自动接受漂移。
+
+首跑冻结三文件：README `ebdfc2502df668f7ab2b89789dc6bb6b3d5acab2ee0d73bb41bbb55b1943d2c6`；fixture `1283cd1aee9c31584bd4294b717334cf298c236ad6ee09db4609ae760aaeff85`；probe `82bc7eaffe723b935e1b93a3a918789b5e241ef9bd23e5e33ad2d56842895faf`。合成owner token实际44 ASCII字节，README首跑前校准。新专用`capture-momentum-bank.mjs` SHA `b42d8dea8334be818901279ee561ac4fda2374855f3d60b03850e4b43a51e71a`，预声明120秒硬超时、直接单子进程/原生单fd/fsync、所有source和三文件前后指纹；未修改旧60/240秒捕获器。
+
+作者明确确认268稳定窗口后，Root运行`wip-capability268-bank-first-01`，UTC2026-09-07 **20:35:25.184Z–20:36:03.787Z**，原生1/1、0skip、exit0，native.log SHA `ce0efc0eb1cd6d36bacb131c6f73c1edd2fa15e9638111a1c3068742d98649ac`。终结立即释放；Root核完整before/after相等、54模块全部匹配268.after及实际日志SHA。
+
+独立B00–B19输入、不同star plateau、28真实目标观察及第29次50席30+20分页控制，得到五个实际capsule字节 **6,795,612 / 7,093,458 / 7,391,306 / 7,689,156 / 7,987,008**，各<8MiB；首四数组28,969,537B，完整五组 **36,956,546B >32MiB**。28实际GitHubRun、28实际DevelopmentRun和28唯一Point原件闭包均成立；当前20step与frame manifest上限计入后，原27snapshot阶段payload保守超集 **53,698,174B <64MiB**。未用作者先前尺寸代替独立实测。
+
+公开原27保留前四完整码点组，B04仍extreme且原onset/capsuleId保留、固定资源Gap、无momentum development，普通20候选不丢。真实Report27完整momentum等于原snapshot、actual selectedNodeIds非空、无事件消费；第28后同进程认证读和重启整刊读取全等，原27snapshot重启全等。Report各阶段独立，不将snapshot容量上界泛化为所有Report阶段上界。
+
+原档`tmp/root-momentum-bank-Gy7xg6`的103项manifest实际bytes/SHA全部相等；journal completed、failureClass null、意外HTTP/model均0。该结果是已审WIP的独立bank与Report控制，不是全部50capsule、所有权限/安装/context边界、heap/performance或最终固定SHA/生产通过。有限剩余P0与最终统一门继续，#13仍OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
