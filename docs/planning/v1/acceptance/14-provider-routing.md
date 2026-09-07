@@ -39,3 +39,9 @@ Root完整读取作者`docs/implementation/v1-14.md`，并对照当前Edition分
 5. FinalEditor局部一致性或哈希不授予来源/历史authority，实际publish/read仍完整校验。
 
 已放行首个实际`produce → authenticated readReport/readRun → SQLite重启`主成功tracer（父taskId长度200，六栏合法输入，不默认双份研究）。唯一作者确认开始RED→GREEN。必要具体schema/DDL跟随首片diff供Root审查，不再以额外文书审批阻止已批准切片；无Docker/真实模型调用，旧兼容目标不变。
+
+## 首条产品RED
+
+作者`data/v1-14-slices/01-t1-red`因缺少zod依赖失败，只算环境前提失败并保留；按锁文件离线ignore-scripts安装7包后，`02-t1-red-dependencies-ready`真实0/1、0skip、exit1。UTC2026-09-07 22:27:13.837Z–22:27:14.263Z，原错误`Observer.produce: invalid-request`，尚未支持Request10；日志SHA `6d82bf3c51291b0ae60d815f988ce249fa1be0a7d09795b7a4b82468736febd9`由Root重算吻合。Root亲读测试与日志，确认是批准的公开出版路径，而非私有路由单测；此为开发期RED，不是候选验收。
+
+首片有六栏研究输入与结果，但没有实际社交/GitHub采集；这两栏按已有严格规则保留Gap，不伪造合格采集。后续跨模块专项仍必须覆盖真实Owned社会样本和GitHub历史/事件契约；首片不能替代全部六项AC。作者开始最小GREEN接线。已向[#14回写启动范围](https://github.com/yiwer/Observer/issues/14#issuecomment-5576203411)，票保持OPEN。
