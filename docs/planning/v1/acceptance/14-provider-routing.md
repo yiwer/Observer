@@ -163,3 +163,11 @@ Root批准作者沿既定方案增加可信AgentRunOptions dispatch control：br
 Root亲读59–61测试与当前接线，核完整before/after一致和实际日志SHA。60 exit0、19/19、0skip，日志SHA `443bf23bb564f8a3a47067d67a68644bd5d7fcfd8228e73b6b35e197e36a56cd`；61类型检查exit0，59 RED保留。Owned主结果在总时限后返回，不采纳、不启动另一Provider，六栏Gap和独立采集可用状态可读；仅1次attempt，total-deadline原因及已知usage保留，无Provider配置重启readRun相同。
 
 此为研究阶段时限切片，不能外推为queue/review/Gate/Editor/提交前都已受控。作者须继续覆盖已有故事时后续阶段跨deadline、非settling任务的有界收尾，并区分收尾审计/安全降级与正常发表。当前100ms为Owned快速测试参数，原批准生产total下界1000ms；若变更需明确版本/测试注入，不无记录放宽。#14未冻结、未整票验收。
+
+## 非返回Runner与同装配熔断62–67
+
+Root核62–67完整before/after一致及实际日志SHA，亲读公开produce/readRun测试。62是cleanupTimeoutMs配置尚不支持的RED；63为真正不返回Runner导致测试4000ms超时，19pass、1cancelled、exit1，日志SHA `d8488d5884c8e30f8e1d707023bf329315820f90d17f54a1b830a56b961b5200`。64虽目录名green，实际19/20、exit1，第一次收尾已完成但第二次同日produce撞到既有version-already-exists，原失败保留。
+
+66改用第二次失败携runId的鉴权readRun作为业务oracle，不改产品同日唯一版本契约：20/20、0skip、0cancelled、exit0，日志SHA `cb26b33c63ec75adf5ae83f57d1f546641ea5ff20a99221a15f298c55c9ee34b`；65/67类型检查exit0。100ms attempt加100ms cleanup等待后，不返回Owned Runner记cleanup-unverified、未知usage仍null；报告六栏Gap，随后同routing装配的新run零attempt且明确熔断，原run原因不变。没有真实进程/容器，不声称进程已被杀死。
+
+Root要求继续覆盖及时返回但execution.cleanup=unverified/failure=cleanup-failed的Runner，以及前一栏成功、后一栏清理不明后不能再启动Verifier；所有派发需统一安全门。另需主动resolve/reject已超cleanup grace的deferred Runner后重新读冻结run/report，证明迟到写被拒绝；永久不返回例不能替代该证据。真实固定CLI cleanup/readback、宿主请求Promise及跨run共享预算仍未验收。
