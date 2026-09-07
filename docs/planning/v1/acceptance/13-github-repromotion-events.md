@@ -1324,6 +1324,20 @@ Root核282–285完整before/after、原生日志SHA、测试正文和新增stat
 
 有限针对性P0至此具备作者切片与Root正文/证据核对，尚非最终验收。已准作者冻结src/tests运行290完整`npm run check`（原typecheck/build/全部tests/*.test.ts，含capacity），再运行291完整smoke；当前290 native session35400运行中，不并行大型Root探针或筛减测试。全量结果、候选提交、双轴review、Root独立及detached/master门仍未完成，#13保持OPEN。
 
+### 290完整check失败保留与同源整次重跑
+
+290-full-check原始命令`cmd.exe /d /c npm run check`实际完成typecheck、build及全部tests/*.test.ts，含capacity。UTC2026-09-07 20:54:41.006Z–20:57:51.087Z，402总/401pass/1fail/0skip，exit1，日志SHA `a661f7e08495f813d162a884d6777b4e76341c4b2b8116e5d0111ff9db056311`；Root核完整before/after稳定、实际SHA及唯一失败。失败为既有Claude实体隔离测试的docker image inspect返回NoSuchImage，不能将401项通过称整套通过。
+
+Root在运行期间及290终结后只读inspect固定Claude标签均成功，实际ID为`sha256:0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269`；Codex/Python固定ID亦匹配。未重建/改tag/重启/prune或删除容器。当前存在并不能抹去原daemon错误，确切成因未认定。按既有受限重试约定，已授权291-full-check-retry在相同冻结src/tests/配置/镜像、相同全套命令和原并发下新目录整次重跑；native session21521当前运行中。若再现不无限循环retry，先诊断；smoke尚未开始。
+
+### pending修复后独立探针新版本准备
+
+Root全文审读bank V2-NOTE与metadata V3-NOTE，精确文本比较确认bank-v2及metadata-rows-v3均仅更新storage pin到已审`55d5bebc13269d36755892da41ee174ddc4caae622238b5e6b0816f41a5b3ea1`。原fixture、规模/容量前提/业务oracle及其他source pins不变。新增pending LIMIT1属metadata而非payload路线；原metadata catalog已有momentum_pending.slot，实际35字节正常UTC投影受原动态<=1000字节前提覆盖，无需扩大catalog或猜刷新次数。原成功/失败文件均未修改。
+
+准备文件SHA：bank-v2 probe `8719f20e0dfa0120f07da9ba2938120fd69f01279535cc70c3f08d6216625c39`，V2-NOTE `41fc1b57909769d2145e64b71c399ad4b2c610012e589a07bfbe8f4951f28f09`；metadata-rows-v3 probe `680f0c66e2fbfa4550d7b21385cc05f6f3669e9047785c0bb844519e67fa0bb7`，V3-NOTE `6a61d7c594605db31da063e3afa705a29693e47793239f0b8bf5fa72d1be075a`。仅node --check通过，尚无新业务结果。
+
+Root新增独立捕获器`capture-momentum-bank-v2.mjs` SHA `b4691bbd1c446f4fe20d85937ffa7ee40e9140e7a686ca75f81619501650e257`及`capture-metadata-rows-v3.mjs` SHA `9c7e91020171218a20a70ce3e11ac60ab2c2aff0575eef4a22aae07b239be364`，均静态语法检查通过。调用参数为绝对workspace、新label、完整候选SHA；必须HEAD匹配且干净（仅Root允许无关.idea），冻结所有TS模块、全部原新探针/说明及自身，原生单fd/fsync，分别120/240秒硬超时。未改旧捕获器、未与完整check并行业务运行。将在合格候选提交后分别首跑，准备文件/指纹更新不算旧PASS自动延伸。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
