@@ -1,6 +1,6 @@
 # V1-13 执行与待验收记录
 
-状态：in-progress；正式research已完成，Root已审阅完整提案并批准最小共享契约及首条Release纵向TDD；GHSA完整修订规则和动量参数/episode证明尚未冻结。GitHub #13 OPEN。
+状态：in-progress；唯一产品作者为`implement_v1_13_resume`。当前已完成80局部冻结诊断，Root原10个独立测试及5份旧刊回放通过；GHSA实质修订精确收据已批准分片实现，纯文字缓解的有界证据方案仍在协调，动量参数/episode语义已批准但产品全链路未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13 OPEN。以下起点及逐段记录按实际发生顺序保留，末段为最新进度。
 
 ## 固定任务与依赖
 
@@ -366,6 +366,67 @@ Root独立重核九组全部metadata完整before/after与log摘要。cutoff首�
 独立设计者随后指出更窄的顺序风险，Root亲读当前loader确认：`snapshotRun/verify`进入`original()`后可先依typed header解析raw，`ready()`却在稍后的`readNodes`才检查。单边UPDATE缩掉已撤权dependency身份时，trigger虽已置invalid，最终闭包不符拒绝发生在raw解码之后。Root已要求统一入口先核固定guards与本操作可读阶段，再信任header/raw；public snapshot/archive拒绝既有invalid/dirty，维护允许初始合法building及同短事务自有变更，不能一律ready使补建永久停。另要求一次操作记录失败origin为unknown，不重复读取/扣占同slot；实际已读取的失败bytes仍计费，不能免计IO。这些是现有完整性/预算约束细化，不增加外部绕过flag。当前10个独立测试及5旧刊不覆盖raw解码前时序，尚不能称其通过。
 
 独立设计者完成新增`data/v1-13-momentum-design/dependency-header-review.md`，Root全文亲读并核SHA **F0F670A05B39AB0A2EC833DFFCD8BBF182BA9000B2DA79A9F16CFDC63A845273**。它明确保存初次/补读WIP各文件hash，不是原子冻结或已执行探针；已接线的dependency闭包不误报成当前缺失。Root认可其三项最小修正/回归方向并交唯一作者，不改变旧冻结材料或扩展框架：guard/操作阶段先验，old-only与双用途完整身份闭包，以及失败origin操作内unknown缓存。第三场景选择单边损坏旧父`runs`行，避免development mutation guard先遮蔽共享缓存问题；必须证明实际公开observe路径能到达，不可私有直调冒充。第一个场景的最终throws不能证明原文未曾解码，需把公开失败行为与读取前源码核验分别记录；不为观察实现细节增加私有mock或额外产品Interface。保守预留字节若采用，称为上界而非已发生IO；缓存不得跨操作形成永久失效。整体容量/权限饱和和最终整票验收仍未完成。
+
+### 失败origin缓存：先验证反例真正到达目标
+
+本轮goal接续核Root`6b75638`仅无关`.idea/`，作者仍`ticket/v1-13`/`ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3`未提交WIP且代理live。上一goal turn有实际修复、独立执行和本地证据提交，分类progress。本轮继续原目标，不把小片通过当整票完成。
+
+Root解析66–73全部metadata、重算原`output.log`摘要、核完整源码/状态before=after，并读66/67/69/71实际失败及当前公开测试（未读helper）。66错slot导致取不到注入行；67父JSON不满足旧GitHubRun Schema、在普通history入口就失败；69实际只构造300而非期待490条投影。68/70均exit0，不是产品RED；作者说明分别是有效大输入前提不足、健康origin仍能容纳，不能从文件名`red`推断复现成功。71才在有效输入及父schema可达情况下出现期望zHealthy却实际为空，72修复后保留原业务期待通过。
+
+| 作者切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 66-shared-failed-origin-red | 0/1，exit1，341.7659ms；夹具slot错误 | 02:18:07.778Z→02:18:08.196Z | `e4e2ed8b6579508c427894e1143ca9c6081e1c29cfc9b223584bc9bade17af13` |
+| 67-shared-failed-origin-red | 0/1，exit1，355.7379ms；前置schema失败 | 02:18:30.852Z→02:18:31.284Z | `56a67aac87d3b7c3e3172c8d1016f239c700ca338c2c4811ff6cd68776319147` |
+| 68-shared-failed-origin-red | 1/1，exit0，367.5038ms；未触发目标故障 | 02:18:45.916Z→02:18:46.364Z | `14f0a4d2d7fd7cfceeed1212e201e3e210f78582516bb5963be63d0554010c05` |
+| 69-shared-failed-origin-red | 0/1，exit1，413.7107ms；300不等于490前提失败 | 02:19:29.485Z→02:19:29.963Z | `c8eaee96cccba6ea66a7e1e6b3ae3168db4fd5120d5ddc90c4c35849e240cf78` |
+| 70-shared-failed-origin-red | 1/1，exit0，940.7359ms；未触发目标故障 | 02:20:02.793Z→02:20:03.799Z | `3c25694f682044bf0ccc6ed12c4b83eda54cb5868ea5ad596b6ac688ea53f0ea` |
+| 71-shared-failed-origin-red | 0/1，exit1，1059.6867ms；真正预算隔离反例 | 02:20:40.933Z→02:20:42.064Z | `be1fa3488bf2d591a78c3681b47a44962fd938f06fa6bdb56d23c1b145d15307` |
+| 72-shared-failed-origin-green | 21/21，exit0，3672.9449ms | 02:21:00.713Z→02:21:04.460Z | `cc8d4df64c0e5aea900a42b02c7099be2a403c29f6ea4a2b665b9a6211cfa447` |
+| 73-shared-failed-origin-typecheck | exit0，空log | 02:21:05.304Z→02:21:07.404Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+公开场景为29个node共享同坏父run，另有健康origin；原父JSON仍结构合法但id不匹配，SELECT故障目标来自本轮真实公开run，finally恢复该新Owned库的原父行。Root特别核准统计口径：每node的10个Release使用同一change，run中的290是投影条目，只有29个不同node+change材料，不是290个不同context，也不是1000容量PASS。它仍能构造合法大原run以复现重复解码挤占预算。修复将每个已尝试slot先记操作内unknown，失败不退款，后续同slot不重读，下个操作重新检查，未添加永久veto或外部调用方flag。
+
+### 入口guard、旧-only用途和父行字节边界
+
+Root核74–80各metadata/原log/hash/完整前后指纹。74/77/78均为characterization首跑PASS，不能标RED→GREEN或声称已隔离证明全部时序；75前置guard是静态已识别顺序缺口的修复。Root亲读实际`original()`：首次尝试先检查安装对象/状态再读取typed header及raw；只在maintain持BEGIN IMMEDIATE、入口clean合法阶段后保有私有epoch授权，finally清除。没有外部绕过flag；缓存只在该已核同步操作内复用。77政策修改同时使旧digest失效，其公开结果不能单独证明用途AND；AND接线另靠源码核查，后续最终审查仍必需。
+
+| 作者切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 74-invalid-header-characterization | 1/1，exit0，508.8213ms | 02:22:19.156Z→02:22:19.730Z | `54b20ae46bc9ff46ad16be62eb869e1258756a59833ca51c48acaf6b396a2505` |
+| 75-guard-before-raw-green | 22/22，exit0，3883.0055ms | 02:22:39.770Z→02:22:43.722Z | `537f5c020f93829b820e58fa090ad81ac926ba643416339234f2705389dd3f9e` |
+| 76-guard-before-raw-typecheck | exit0，空log | 02:22:44.456Z→02:22:46.440Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 77-old-only-dual-use-characterization | 1/1，exit0，359.6549ms | 02:24:04.638Z→02:24:05.070Z | `260e98705037a0dbce19d780d0d7b9fa29030be1d425fb84838b464f0d4cca76` |
+| 78-current-parent-byte-characterization | 1/1，exit0，515.8073ms | 02:27:17.195Z→02:27:17.786Z | `bc388fe79ba1ab34aa2c6fa1cccd7c9c6347833ae99ed042846254e897aa70e4` |
+| 79-local-post-header-characterizations | 24/24，exit0，4149.5748ms | 02:27:57.016Z→02:28:01.245Z | `451c53867467dd1fa7656ef1c714adc7514c7b241317d5dfcf06c4c7dc5a4d4e` |
+| 80-local-post-header-typecheck | exit0，空log | 02:28:02.001Z→02:28:04.014Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+80短冻结Root原9组重新执行并逐组独立核metadata完整前后与log hash：原10个node:test及原5份Record9检查全PASS。所有既有期待、旧reader/baseline未改，原失败保留。Root已明确解除冻结，作者进入已批准的安全范围扩大首片。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果/总时长 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| wip-index80-release-01 | 1/1，257.3154ms，exit0 | 02:29:26.864Z→02:29:27.357Z | `4e4ca7502bd602f14bbbc381014ea86a29be6d51e35b1aecbaadaf716c65d54b` |
+| wip-index80-long-01 | 1/1，306.5757ms，exit0 | 02:29:27.759Z→02:29:28.287Z | `3a41097ef06269363db44ee61ad29d9a1eefe353d3889b93f236418262ac4125` |
+| wip-index80-integrity-01 | 1/1，266.6305ms，exit0 | 02:29:28.686Z→02:29:29.184Z | `50c90f6207f9520780e0ab8a799a26fa243b61d55553aa7916d057e51907da51` |
+| wip-index80-reissued-01 | 1/1，257.4437ms，exit0 | 02:29:29.517Z→02:29:29.997Z | `6935133c1712197aef20d95ed03a415d9996f784ae8d6d93d06c95c4a3160fca` |
+| wip-index80-no-novel-01 | 1/1，250.8478ms，exit0 | 02:29:30.307Z→02:29:30.784Z | `79887c7e24e483e1841941315a6d430aa61349497a398a39c55cd330525ec2c5` |
+| wip-index80-scope-01 | 2/2，308.8126ms，exit0 | 02:29:31.101Z→02:29:31.622Z | `a49e759b8da8b3f38626da01c3077e14f28b897b4dd5a27c19e66fe787465403` |
+| wip-index80-context-loss-01 | 2/2，611.2856ms，exit0 | 02:29:31.931Z→02:29:32.772Z | `1f54f157f0b9ff032ab1d870252e2d638d7ab7bdad3ac83856539444ae81de77` |
+| wip-index80-cutoff-01 | 1/1，249.7279ms，exit0 | 02:29:33.073Z→02:29:33.536Z | `aa8adb1a406444f8c4f295f482b452225403fb9b1c2ae4ea5d1fb779b94d11eb` |
+| wip-index80-record9-01 | 原5刊字节/鉴权，exit0 | 02:29:33.853Z→02:29:34.245Z | `f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699` |
+
+### GHSA严格修订Schema批准与未缩减的缓解范围
+
+Root全文亲读作者正式§9，批准其`SecurityChange/SecurityDevelopment/SecurityOrigin/SecurityMaterial/AdvisoryHistory/SecurityVerificationInput/SecurityVerification/SecurityReceipt`具体字段及strict/数量/字节限制进入分片实现：initial-risk确定性，四修订类为new-package/range-expansion/severity-escalation/new-remediation；新增包与扩大范围逐原tuple匹配，high→critical，结构化first_patched_version修复字段变更均保留外部语义判断与精确before/after、短摘录、全历史same关联。materials与首次known entries分开，origin补原DevelopmentRun及developmentConfiguration；新history/assessment中全部旧来源须同步纳入typed依赖闭包、原member/freeze完整回核及合并预算，不只是添加Schema。
+
+Root**未批准**将new-remediation最终缩成仅first_patched_version：此前明确包含新修复/缓解。当前缺可比旧证据时revision-unconfirmed正确，但不能将所有有证据的纯文字缓解永远排除后宣告整票完成。独立设计者正提出有界旧/新缓解投影，仍在既有来源权限、短引文、真实run/freeze、共享容量内，不默认保存完整description或添加递归历史/新抓取框架。作者可先直接实现范围扩大等已明确分片，不等待新方案；自然语言缓解与动量、剩余容量验证仍是完整#13要求，不改目标。
+
+### 新独立Release实质修订探针已准备，未首跑
+
+Root新派fresh独立验收作者，仅写`data/root-v1-13-revision-review/`；其使用TDD/codebase-design，未读产品作者helper、未改产品/旧oracle。Root全文审阅两条明确语义字典及一个四期场景：Request8普通R→稳定707原文A→同707重大能力B→双库重启、新708及改名返回A；每期四个新项目避免新颖性配额掩盖结果，必须保留完整A+B及对应previousEvidence，返回A不能再救冷却。公开重算仅为一致性检查，不作为业务期待来源。
+
+首跑前Root发现重算Interface误接裸InterestProfile，已让探针作者仅改为先验证归档profile等于预声明输入，再传真实InterestSnapshot；未运行过业务，故不是产品RED、没有改A/B/历史/配额期待。Root复读修正并核最终SHA：README **77340714D54A5D81308F5DC7C1375B2640342722D4246A4B78F133D2958A7AEA**，`revision-publication-fixture.mjs` **6BA6F43AECB064E83E80130D73650A547C4CBC3D2EA1A6C601790373AF701FA2**，`release-revision-return-probe.mjs` **C7E6F43EB35E575667251FB1E13A978D86C95F2FACCD5B3D126FC1C84DA1BBA8**。原Root fixture/probe不变。
+
+Root另建运行包装`data/root-v1-13-review/release-material-return-probe.mjs`，SHA **368DEEB09E21648EC978FC796F2EA0B2633588B9E465CA6DE06D58C1F5BED7A5**，前后强核上述三文件hash再单fd继承执行一个场景；父capture仍记录实际模块/状态指纹及原日志。当前均仅语法通过，业务未执行，不计PASS，等待下次真实源码冻结。
 
 ## 兼容及安全
 
