@@ -481,6 +481,37 @@ Root全文亲读独立设计`data/v1-13-momentum-design/security-mitigation-proj
 
 该要求揭示现有Release逐assessment限额与新GHSA局部累计不一致，作者将另建公开RED修复；预算故障fixture可新建合法短引文版本并证明原body字节仍达到目标，但保留原71证据及所有Root冻结oracle，不能改旧日志。独立验收作者另在全新`data/root-v1-13-security-revision-review/`准备范围A→B→A公开探针；当前仅任务分配，尚无执行证据。
 
+### 91–95：严重性升级与首次修复版本局部通过
+
+Root再次逐项重核91–95全部原metadata、完整before/after和原log SHA；90的severity真实RED后91安全局部9/9，93的首次披露patched version真实RED仍为publish遗漏repeat，94安全局部10/10。92/95类型检查均exit0。这两类均仍需外部supported语义、精确原字段及合法旧development引用，不把枚举存在或更新时间变动当作事件；这里只记局部实现，不声称Root新增独立GHSA修订探针已经运行。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 91-security-escalation-green | 9/9，exit0，1605.8105ms | 02:45:08.882Z→02:45:10.553Z | `d72164d605d4a0c0356d8f3bf040d1cdf31e7f05948a976ddfd504b3fc1ec00f` |
+| 92-security-escalation-typecheck | exit0，空log | 02:45:11.281Z→02:45:13.323Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 93-security-patched-version-red | 0/1，exit1，469.1052ms | 02:45:53.264Z→02:45:53.809Z | `271f3408664b8312d8b0860b331847dacaf83edab3e51489b92950729dfec100` |
+| 94-security-patched-version-green | 10/10，exit0，1814.5849ms | 02:46:11.711Z→02:46:13.597Z | `18b40362a00d1373942eceda895ee92a69e9704cf006eca3b4e0ac39fa8dbc5c` |
+| 95-security-patched-version-typecheck | exit0，空log | 02:46:14.339Z→02:46:16.352Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+### 正式 §10 精确接线核准
+
+Root随后全文读作者正式§10，批准其三阶段精确计费（observeDue所有旧短证据模型调用、同次永久保留共用预算；produce/read另核实际完整引述）、实际flat ID引用与物理复制的区别、最终四-kind SQL/state/marker v2，以及strict可选`formatVersion:2`及完整展开的mitigation输入摘要。旧段缺失只表示未知，不自动升级为完整空集合。该核准是实施前契约决策，不表示计费/缓解代码已通过。
+
+另批准**新未发布的**`GitHubEventHistory.developments`只保存严格`nodeId/kind/eventId/developmentId/revisionId/observationId`消费身份投影，不为消费重复复制`change/excerpt`。必须从实际旧Report的可见developments逐项导出并核完整集合，保持逐原source权限、真实成员校验及消费未知时fail-closed；不能借这个收窄删当前或语义比较需要的历史短证据，也不改已验收旧Record字节。该有限投影避免长期消费仅因冗余引文副本耗尽额度，不是引文使用豁免。
+
+作者已获直接开始共同引文公开RED→最小GREEN的批准，然后推进真实none baseline→B文本缓解首片；当前仍无整票最终SHA或资格通过。
+
+### 独立GHSA范围修订探针冻结，尚未首跑
+
+独立作者仅在`data/root-v1-13-security-revision-review/`新建三文件，Root已全文亲读README、fixture和probe并逐项重算hash，未读取作者产品helper。四期为普通Request8 R→同一GHSA首次完整high风险A→真正范围扩大B→重启后updated推进但恢复A；后三期各4个novel，正向入选、保留频率、真实旧origin/完整材料及已消费身份、两次重启和公开纯重算均有预先固定期待。只用Owned HTTP/semantic替身与真实SQLite，无SQL业务oracle；不要求精确等价A回归时额外调用模型。两条完整中文短句合计不足120 codepoints，原source限120，不从文本变动或hash判实质性。
+
+- README SHA **651F3666DB0BE616CB9E78605DA5D85EFC3431A58246BE7A82043648AB327E2A**。
+- `security-revision-fixture.mjs` SHA **984650A9A1577D223EF67CF22FDD68D7AAE317AAB216AB585A765E5A8FC20F11**。
+- `security-revision-return-probe.mjs` SHA **DA6A42C5B1FAFD91542A9CDFE49730A8963C160045A50E29BD354BB30648AE63**。
+- Root新包装`data/root-v1-13-review/security-material-return-probe.mjs` SHA **606EF5E43F34307041ADB24E9E096E51EC9A2F7FB45C8524A4433EDD50B61716**，每次在原capture记录模块/状态外，前后强核这三个外部文件hash，单fd继承运行，timeout30秒。只新增包装，不改旧capture/oracle。
+
+两份原probe脚本及包装仅语法检查通过；业务首次运行待作者下一短冻结，不计PASS。精确Interface映射为`assessSecurity`单assessment、完整`SecurityMaterial.origin`、真正归档`InterestSnapshot`，Root已静态对照，不将语法通过升格为运行兼容。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
