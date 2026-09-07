@@ -1358,6 +1358,12 @@ Root核两次完整before/after、54模块、原生日志SHA和manifest；journa
 
 Spec发现P1静态证据：`github-momentum-storage.ts` makePoint把同node全部risks复制进SecurityRiskWitness后直接strict parse，而collector允许同node超过3条合法GHSA，witness每node max3；可能抛错使整个observeDue回滚，违反proposal §12.1完整子集/资源不可用降级与原origin保留要求（另须核256KiB整体上限）。Root已核具体调用与spec，安排唯一作者先用公开observeDue、4条实际Owned有效GHSA形成RED，再作最小修复和GREEN；不得截掉风险伪装完整，也不得丢弃origin或安全隔离。此时尚无该公开复现结果，不能称已修复。固定候选容量PASS保留，但不抵消该阻断发现；#13保持OPEN，未集成、未push、未开启#14。
 
+### 294：四条GHSA公开采集真实RED
+
+作者在原候选产品不变时新增单片公开测试：启用明确momentum/advisories许可，20个真实Owned候选连续0–23小时观察，第24小时同repeat节点收到4个不同、完整reviewed high GHSA及100→200 stars实际双点。294-momentum-risk-witness-overflow-red在observeDue内makePoint的`security.nodes[19].risks`真实抛出Zod maximum3，1fail/exit1；UTC2026-09-07 21:15:03.786Z–21:15:04.894Z，日志SHA `98a679a3357632bc638bba77b9701cd643ad5702f1ddab381054ca015a67a252`。Root全文核测试、实际堆栈、完整before/after稳定及日志SHA；不是预置私有Point或无效上游字段的失败。
+
+原测试期待完整原DevelopmentRun保留4条风险、安全事件可发布，whole witness unavailable/resource-limit且真实origin字段全保留，所有动量unknown且无capsule/development，普通实际增量仍在、Report鉴权重启完整相等。作者已授权做单一私有完整投影：按风险数和实际JSON字节整witness降级，makePoint和实际原件verify一致核验，不裁剪原风险、不宽catch异常、不顺带P3重构。此条仅记录正确RED与修复启动，不预报GREEN。Root独立公开探针正在准备，尚未执行；256KiB是否可由适配器允许的输入触达正在另核，不能把常见ASCII ID假设当严格输入边界证明。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
