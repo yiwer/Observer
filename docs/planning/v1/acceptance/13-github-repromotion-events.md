@@ -802,6 +802,39 @@ Root同意先消除caller null令authority完全不查实际slot的空域漏洞�
 
 160原测试的完整修改前文件保存在`data/v1-13-slices/163-owned-mitigation-preimage/security-tests-before-semantic-v2.ts`，SHA **0a3736d7f43358ea10a943c1f3263090608962334e35597334b3028722474be9**。Root独立核等163.before实际源码SHA，并全文亲读该目录README；副本含完整未改160场景及后来162测试，**不是伪称160运行时冻结的整文件**。实际no-index diff仅新增准确注释和`assertion = first ? 'explicit-only' : 'mentioned'`供B after/draft使用，原两句全文、所有业务期待不变。164因此是准确新注释输入的首跑通过，不是产品RED→GREEN，也不洗去原160不足的排他判断。163外壳hash工具失败独立保留，不冒称复制失败或业务缺陷。
 
+### 166–169：合法配置控制、文本负向与独立冻结承诺审批
+
+Root亲读三个公开场景并独核166–169完整metadata before/after与实际output.log SHA，均零差异。166从同slot已有原事件run出发，真正移除配置callback后produce，得到合法null/空run；恢复callback后旧刊仍可read且原snapshot不变。它证明不能用“发现原slot有run”一概禁止空配置，不是162反例已修复。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 166-disabled-capture-control | characterization 1/1，392.6178ms，exit0 | 04:35:31.350Z→04:35:31.819Z | `bb21c266f144550bd4db965429fcaa4d792fbbf1d0a8a2f00c5acb50df4ae4d2` |
+| 167-mitigation-origin-revocation | characterization 1/1，424.5363ms，exit0 | 04:41:16.402Z→04:41:16.899Z | `80753b84e0f7a881bb8bf21cbf9a8e50e9cb8ee589cb2f852f47a80ddbf2aa88` |
+| 168-typecheck | exit0，空log | 04:46:20.165Z→04:46:22.318Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 169-mentioned-replacement-characterization | characterization 1/1，644.1414ms，exit0 | 04:47:24.121Z→04:47:24.844Z | `5f4c26b713dafc79ee3c7764e088901d7a2b752586b20329700660dcd2de777a` |
+
+167在真实none基线后撤原source的materialEvidenceProjection许可，切新source与配置：旧基线不跨新model调用，节点history unavailable、只有fresh出版且重启一致。169原mentioned-A不支持added-measure，首次B仅保存投影而不消费；随后真实replacement可引用比B首次更早的A，输入完整保留两份首次投影，B出版一次且可重启read。三项均首跑characterization，不虚称产品RED→GREEN。
+
+Root全文亲读作者§11及独立`data/v1-13-momentum-design/publication-configuration-authority-review.md`（SHA **D4134F91AE17B38A6F4021909E2E9A2DFBF4B196A1B434DBFFC511F354326095**），正式批准既有reports的内部普通可NULL TEXT列`development_capture_sha256`。Observer首await前从真实snapshot形成固定字段序摘要字符串，同成功Report INSERT写入；最终Record重导摘要必须等于原冻结字符串，不重算替换。Observation库仅有采集配置/最新authority，不能鉴别真实C2冻结与事后coherent伪造C2；真实行独立承诺补齐这一事实，现有source/prefix/member/history/budget/omission重导全部保留。
+
+所有实际行入口先核SQL行id与payload版本id相等及双向约束：Record10必须64lowerhex非NULL，Record1–9必须NULL；不能在零事件/年龄/非10跳过后才核。安装短BEGIN IMMEDIATE内重读table_xinfo、缺列才ADD并复核ordinary TEXT/hidden0/nonPK/nullable/default无或SQL NULL；拒生成/非NULL default等伪同名列。旧库只加空列，不从既有WIP Record10 payload回填；缺承诺WIP10拒读但原资料保留，旧Record1–9字节不改。承诺绑定刊身份、冻结配置、current parent、原run集合，不承诺抵抗同时恶意重写独立列及整库权威。§12动量DDL另待审查，未随本次批准。
+
+独立配置探针已在`data/root-v1-13-configuration-capture-review/`准备，Root全文亲读三文件并核实际diff/hash：README **C692D4B225382DA19F94B005ADC42F20ED2A5E30B1D2CF820A0B324265B76101**，fixture **E366DD51E7A057278BC863BEE3B7794742F722E25277DF62F079D530CD69747D**，probe **E6751FE60C7F9A9A771301F61546F7B9A898707B20E2D24E2DEAE80D4056F38F**。fixture只在原34字/500额度版本增加配置state、callback、setter三处；语义/原句/来源/配额不改。三个实际双库测试分别要求coherent null伪造拒读、合法非null C2伪造拒读、真正produce前切C2而无新observe的空run刊在恢复C1后仍可read/restart。Owned故障只改精确reports.payload并finally还原，不读写capture列作oracle。Root新包装`configuration-capture-probe.mjs` SHA **5549BC5E1D91CB70B1891765AE85FF78956AE23CBAE7A59A1037E54B26269D08**前后核五件；当前仅syntax通过，业务首次仍待稳定源码窗口，不提前宣称通过。
+
+### 170–171：冻结承诺首片修复及Root独立三个配置场景
+
+170保留162原期待后2/2通过（同时包含166合法禁用），544.0506ms，UTC **2026-09-07T11:52:35.894Z→11:52:36.527Z**，log SHA **45fb0cd54616c8d53e3de784d8beb7e49c345835e011a997b07ca318775f9f65**；171-typecheck exit0，UTC **11:52:37.389Z→11:52:39.793Z**，空log SHA **e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855**。这些是原capture真实UTC，未推测或回填成前段04时段。Root独核两份完整before/after及实际log；亲读`developmentCapture`、统一`reportFromRow`、安装检查、首await前const、最终重导/同INSERT、所有实际Report SELECT接线。首片解决162，尚不替代降版/坏列/缺承诺及最终全集。
+
+作者明确提供源码窗口后，Root顺序执行以下三份独立capture，完成立即解除冻结；各完整before/after相等，50个Module逐项等于作者171原sourceHashes，原log SHA匹配。均为WIP诊断，不是最终固定SHA验收。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| wip-capture171-configuration-first-01 | 新配置探针首次3/3，582.4084ms，exit0 | 11:53:29.379Z→11:53:30.277Z | `78e7c624a9d81da9801b3b1777dbe9c4664e1497c41ede35c9dfa473b9c0ecc3` |
+| wip-capture171-record9-01 | 五份原Record9完整Record/MD/基准hash不变，exit0 | 11:53:30.649Z→11:53:31.125Z | `f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699` |
+| wip-capture171-whole-run-01 | 原整run遗漏1/1，239.5003ms，exit0 | 11:53:31.545Z→11:53:32.093Z | `1312d16dc0c10a7da9cccd3c8101716deececb43afd48b57e14dd3d0d3142470` |
+
+配置probe两场各先真实C1的Release+四novel五席出版，再仅修改payload为null/另一合法C2及正确sha、空run/无projection，公开重算成四席无事件；两者均实际拒读，finally精确恢复、重启原两刊可读且原观察snapshot未变。第三场是真正produce前从C1切C2且不再observe，合法不兼容空run刊可发表；恢复今天C1后仍可read/restart，原C1 slot完整。未读写新capture列作业务oracle。此独立probe首次在修复后即PASS，不声称它曾独立RED；作者162原失败永久保留。配置三场实际临时双库目录为`cUVmU2/GxRSOV/LJPMPh`（均带`root-repromotion-publication-`前缀），旧整run为`Fyw4Qz`，原文件未清理。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
