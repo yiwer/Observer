@@ -1089,6 +1089,14 @@ Root核公开测试、实际frame/step读取源码、所有metadata完整before/
 
 独立head原档位于该capture下`tmp/root-momentum-startup-4TnLVN`，70项manifest实际bytes/SHA逐项匹配，journal completed、无意外HTTP/model；实际read为not-found，snapshot合同通过，原row及guards精确恢复，同进程及重启保存整刊均与原件全等。它是修复后独立首跑，不冒称Root RED→GREEN，也不证明所有结构或资源故障。剩余RiskOrigin/权限、negative reset/legacy/安装事务、资源总门及最终固定SHA等仍须推进，#13不关闭。
 
+### 234–236：RiskOrigin保存输入的slot/policy/cutoff一致性
+
+实际启用advisories的25小时observed风险见证Report为正控，公开pure回放原结果一致。三个独立子用例只修改调用方saved capsule最早点的RiskOrigin.slot、policyVersion或availableAt=cutoff+1ms，重算point/capsule内容ID及其引用，排除单纯旧hash不符。实际DB、Report及独立承诺未改；最后重启读取原整刊一致。234三子用例均Missing expected exception（父子合计0/4）；235补同slot/政策身份/截止校验后原期待4/4、3280.1292ms通过；236 typecheck exit0。
+
+Root全文核测试、validPoint实际分支、完整before/after与原生日志汇总/SHA：234 `95411a776bf8351b003c7ff3e7121d91b2a9b4aff0699d8de0133cd05d74634e`；235 `06a4fb416b5cbf4353476daf3a64711bd70879eb2126e2351e0c4d1868de4c79`；236 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。此为pure输入拒绝，不称DB authority攻击或实际原RiskOrigin所有字段/风险投影已完成核验。Root最新独立源码窗口仍为233，不把它称为236回归。
+
+元数据总行数并行调查仅产出候选：328个48h间隔真实slot、每个50短ASCII node、无historical/episode，需核16,400不同step原行。164×50×2只是当前length与内容分次返回的成本，不是优化无关下界。328候选的64MiB payload、1000 origins、metadata8MiB未先触门、每份snapshot独立授权成功及下一scope恢复均须实际核定；当前仅准备Owned脚本、不执行业务、不声明总cap PASS。真实凭据不读取；合成凭据有效期从初装覆盖654天，不能以过期失败run替代合法候选。作者同时推进真实reset缺样反证；全部既批剩余门槛保持不变。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
