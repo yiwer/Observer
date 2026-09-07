@@ -1214,6 +1214,14 @@ Root已审公开测试并允许按既定§12整组码点分配最小修复。临
 
 覆盖仍为：共享payload超界拒绝与精确恢复后的新scope读取；49真实观察的首次startup/连续高同onset与一次消费；缺实际head拒绝动量但ordinary保留、精确恢复及重启读刊。没有新增或削弱旧oracle，不把三项既有场景称32MiB bank独立边界覆盖，也不是最终固定SHA或生产通过。bank新独立探针仍在准备，作者继续实际Report与其他剩余验收。
 
+### 258–259：bank真实Report发布与读取表征通过
+
+保持254–257原27小时数据及全部容量前提，在第28小时独立取证控制之前，以公开Request9显式window/cutoff调用真实Observer.produce；未注入saved proof。认证读取Record10后，其githubDevelopments.momentum完整等于原27公开snapshot，reportedDevelopments为空、ordinary选取非空，保存输入的纯rank重算与整项githubRepromotion相等。继续第28小时真实观察/第五胶囊取证后，重启原27snapshot及同一整刊读取仍完全相等。
+
+258-momentum-bank-report-public首次表征1/1、34050.483ms总时长、exit0，UTC2026-09-07 20:26:01.100Z–20:26:35.213Z，日志SHA `7332435c3702f37020bddf3f778df1fcdf0446be83b6727a8c9289cbdcf4ea29`。259-momentum-bank-report-typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核实际测试正文、完整before/after相等、原生日志SHA及结果；无新产品修复，不称新的RED→GREEN。独立bank探针仍在准备，本结果不替代独立首跑或最终固定SHA。
+
+下一安装组先以单一Owned缺heads表核工厂构造、既有ordinary snapshot/Record9读取、当前momentum不可用/旧Record10拒绝、精确结构与原行恢复，不准fresh重装。state/pending缺结构时新raw INSERT与固定trigger/guard有真实完整性约束：不得为宣称ordinary采集成功而撤guard/重建authority/旁路存储。既有读取与损坏状态的新提交须分开取证，后者尚未作为已接受降级或通过项；待实际证据再核边界。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
