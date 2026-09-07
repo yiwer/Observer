@@ -999,6 +999,19 @@ Root在208稳定源码窗口批量复跑200–208变更后的原冻结probe，�
 
 下一资源片保留原批准state/marker4KiB、manifest32KiB及phase metadata16,384行/8MiB。公开容量oracle不得依赖猜测的内部查询次数，不削弱既有更严Schema或改写全套承诺以强造RED；应以实际引用依赖的最小字节数及单项合法性证明目标门可达，不能先撞别的cap却称总预算通过。若某读取顺序无法用既有公开Seam隔离，则明确区分既有公开拒绝表征与SQL实际length-before-text的源码检查，禁止把最后拒绝等同读取前有界。上述是验收证据分类，未增减预算或威胁模型。#13仍未整票验收。
 
+### 210–213：状态元数据单行边界
+
+210的Owned故障仅扩大实际`momentum_state.installed_at`字段，保留epoch、phase、generation及其余证明，并在公开读取前恢复原guard。原读取错误放行；211同一期待修复后通过，finally精确恢复字段及guard，重启读取原整刊一致。实现先在SQLite内计算固定字段JSON投影的UTF8字节长度，超过4KiB不取完整state行；此证据只涉及单行边界，不等价于phase metadata总量或SQLite/进程堆内存上界。
+
+| slice | 实际结果 | output.log SHA256 |
+|---|---|---|
+| 210-momentum-state-metadata-red | exit1，缺少预期拒绝 | c53921ebb7d4a9633b69c7b9aafd5023208849738ade53050d45036effa1304e |
+| 211-momentum-state-metadata-green | exit0，1/1 | f0a63e813ea4ca4cd3a1073a5b23014a434b84d14de71db545f462e9aae9e786 |
+| 212-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 213-momentum-regression | exit0，11/11，59199.7139ms | 561f0ae15d004168d0890ef372a8473b964a6736b83063d019ba500300ab4375 |
+
+Root核对四份完整before/after相等、实际日志SHA及213原生测试汇总。213作者主动提供的短冻结窗口未被Root启用，随后已明确撤回；**没有213窗口的Root独立capture，不沿用208结果称为213通过独立回归**。后续作者继续既批16,384行/8MiB实际metadata接线，待新稳定窗口再运行Root探针。最终固定SHA、完整套件及其余§12验收项保持未完成，#13继续OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
