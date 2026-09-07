@@ -209,3 +209,11 @@ Root亲读Owned detached-model输入、实际dispatchControl及三轮公开readR
 现在两外部Promise持续占槽，下一run零外部派发；主动settle后旧run完全不变，第三run可重新派发8次。该Owned Runner返回安全not-created过程收据，同时独立外部Promise不响应abort；此为两类生命周期分离的业务回放，不是网络/容器容量实测。Root要求后续统一dispatch在send前（包括排队醒后）校验run仍running、attempt仍started，不只依赖调用者signal，防止已终态hook新发请求或改冻结计数。
 
 90已进入语义核验不返回矩阵，真实4000ms超时RED：26pass、1cancelled、exit1，日志SHA `e8cc782f51a7d93e493cfb229835b0267a9d888ecef8c811ece8f7c15ee659f1`。作者继续其GREEN，不计入已通过26/26范围；共享槽可配置范围、混合角色/资格/预算及真实CLI全链验收仍待完成。
+
+## 语义超时与发表前deadline91–96
+
+Root核91–96完整before/after一致及实际日志SHA，亲读semanticAttempt和公开失败run/noReport断言。91 exit0、27/27、0skip/0cancelled，日志SHA `9b217ebb8f7eb0e80051f8660a90796e98b9c609b1e0377ef2fb148f01438c5d`；92类型检查exit0。四栏研究完成后首个语义核验永久不返回，100ms attempt加100ms cleanup等待后记cleanup-unverified，run仅五个attempt，无其他Verifier、无发表故事，六栏Gap与只读重启审计相等。
+
+93发表前总时限真实RED后，94 exit0、28/28、0skip/0cancelled，日志SHA `1edd44fb53a12bafec0e53265f817d8525a7ba53595a720bc44eb2c0b81a4fd2`；95类型检查exit0。world已核验成功，AI核验跨1000ms总deadline时，produce返回routing-total-deadline及runId，不正常发表先前故事，目标Report不存在，failed审计可重启读取。这是核验阶段跨时限例，未代替Editor/事务阶段容量回放。
+
+Root提醒Owner在核验或复核期间取消必须在整轮提交前重查：Gate与复核catch可能吸收Verifier异常，不能仅靠semanticAttempt抛错证明取消阻止发表。96保留终态host hook仍能派发的真实RED，28/29、exit1，日志SHA `43bd95284e38ab857f5a1f289083a1d0aaf0ef26674ddcee33721dfee022b463`；作者继续该修正，不计为通过。当前全部为WIP局部证据。
