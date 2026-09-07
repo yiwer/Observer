@@ -908,6 +908,22 @@ Root随后在同一稳定窗口运行以下原冻结探针；每份capture完整
 
 全部native exit0；Root立即释放作者源码窗口，不跨后续编辑沿用指纹。另有独立预算探针正在准备，计划以原Owned公开fixture验证跨材料超额拒绝、精确恢复后同进程下一次读取及重启均可恢复；尚未首跑，不能计为通过。下一产品片为真实连续低段24小时后新高产生新episode的公开RED；全部原件/权限/metadata资源/结构负向及最终整票门槛仍保留，187不是预算全部边界或整票验收通过。
 
+### 188–190：真实reset正向与独立共享预算恢复首跑
+
+188-momentum-reset-red通过真实hour0普通出版、hour24初次高并消费、hour48–72连续25个measured non-extreme小时点（相同20 peers/规则、跨度24h）、hour73新高与hour96再次出版，观察到第二次development缺失，原expectation失败。原UTC2026-09-07 **18:27:01.204Z→18:27:11.210Z**，exit1，log SHA `6b6c2adcb54c57ef5eac98fca7d6544fd5f6af838f3c7f286211aceb39aac29b`。没有SQL生成episode或只移动cutoff；Root全文核对该公开测试及原失败。
+
+189-momentum-reset-green同一原期待1/1 PASS，13064.4ms，UTC **18:28:36.740Z→18:28:50.118Z**，exit0，log SHA `49e3c1b12f68e4f877041142ebd58718e795951d0390d53a2c4bcc34a84d4177`；实际验证新onset/development、26点reset capsule边界48/72/73小时、普通recovery仍0且仅effective恢复1、频率/novel配额、重启旧新两刊完整读取。190-typecheck exit0，18:28:58.380Z→18:29:00.270Z，空log SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root独立确认188–190全部before/after与原生日志hash一致。正向reset通过不是缺样/peer变化/legacy/失权/容量全部通过。
+
+独立作者仅准备 `data/root-v1-13-momentum-budget-review/README.md`（SHA `0ebd8124fd562fd800c5263c3f5b50dcd10ed9f60117a22f92f44166fa664169`）与 `momentum-budget-probe.mjs`（SHA `5c658f3adc7c187a0bfa97c8e78926c1654fb906ff775aa6c7186d7c6f406387`），未读产品作者test/helper/算法，未执行业务；Root完整审阅后首跑。原公开fixture SHA仍 `515c790cf5e895c0e55c3eb2d99db96ac0a5e12df3256f0a12859d990b0daa11`。新Root wrapper `data/root-v1-13-review/momentum-budget-probe.mjs` SHA `a83338dbc1f07df936c59daef4afdef87e4211ddafcdca01aba8fbab5a9f9f9f`，冻结三文件、内30秒/原capture外60秒。
+
+该单场景先实际25小时观察并公开出版，确认Report10/R动量与25点startup引用，SQL目标slot全集严格等于公开capsule、development来自公开current原run。仅在Owned故障短事务内保留/临时移除两条精确guard、追加合法JSON尾空白并同步raw字节/hash、恢复原guard后提交；25frames各1.5MiB+原Development31MiB=68.5MiB，均不触单行上限。公开readReport拒绝；finally事务恢复全部原row字段与guard并逐项核对，**同进程下一次独立read**和双库restart后read均须等于原整刊，不能靠重启掩盖跨phase失败缓存。除实际故障注入/恢复外无SQL业务oracle。
+
+`wip-reset190-budget-first-01`首次后置表征1/1 PASS，6096.7762ms，UTC **2026-09-07T18:29:53.276Z→18:29:59.655Z**，native exit0，log SHA `a0c6fac9d2ea5dba8e1d4ad57473bf9ed9d9522be2943735a5aa4aa041b09915`；实际故障拒绝为`not-found`，完整恢复、同进程/重启成功均有独立结果文件/journal。Root核实`tmp/root-momentum-startup-84voEt`的67份manifest字节/hash与completed=true。此为原184修复后的独立首跑，不伪称Root另有修复前RED；单个拒绝也不独立证明内部拒绝原因、全路由或heap上限。
+
+同190稳定源码窗，`wip-reset190-startup-v2-01`原49小时连续高探针1/1 PASS，13431.7212ms，UTC **18:29:59.968Z→18:30:13.670Z**，log SHA `b01c8514c7155982b39f03bb212de57d2eef727142e4e478519173f26f6e3074`，`tmp/root-momentum-startup-qxD5Zt`的115份manifest逐项通过。两份capture完整before/after相等、54模块逐项匹配190.after，HTTP/model意外调用均0，所有原输入/双库/报告/日志保留。Root在结束后立即释放源码窗口。
+
+后续仍需完成并验证repromotionSnapshot自身同scope原件核验、typed权限先于payload、完整风险/依赖闭包、metadata上限与其余原批准negative/cap/legacy/reset条件，以及固定SHA全套review/验收。作者已确认归档read与snapshot当前核验路径不等价，下一片优先公开snapshot原端点故障/恢复测试；此静态发现尚未计作已执行RED。#13仍OPEN，未推进#14。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
