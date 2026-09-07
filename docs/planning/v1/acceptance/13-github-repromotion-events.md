@@ -1034,6 +1034,12 @@ Root核对全部完整before/after及实际原生日志SHA、215实际堆栈和2
 
 Root同期源码核对发现collection的私有write预算登记了依赖权限，但write退出未finish；作者确认缺失。现有读取scope通过不覆盖写入scope收尾，不能提交后才拒绝。下一片在原事务COMMIT前核对所用依赖及ready结构，保留实际失败或静态修复的证据分类；未取得公开反例前不称漏洞已复现。Root另一次审计命令误猜218目录名失败，发现实际目录后重读成功，未重跑或改写任何测试原档。#13及全部最终门槛仍未完成。
 
+### 219–220：collection提交前权限收尾
+
+Root核对当前调用路径：私有`write`向实际`persist`传递finalize；`persist`在momentum commit之后、SQLite COMMIT之前调用，刷新计费后的state必须ready，然后finish共享权限。异常仍进入原事务ROLLBACK，write finally只清理，不在提交后追加拒绝。此为上述静态检查发现的收口修复，尚无独立的采集末端撤权时序RED。
+
+219-momentum-write-finalize-typecheck exit0（空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`）；220-momentum-write-finalize-controls原startup及状态超限恢复控制2/2、5259.7187ms、exit0，日志SHA `51792364a675ec2dfd26b758844ebae2eef20e14918f779457e3bcc048247569`。Root核对两份完整before/after、实际日志SHA及220原生汇总。没有立即追加Root冻结；下一逻辑窗口再批回归，不把218结果称为219–220源码的独立通过。下一公开片为实际head丢失与精确恢复，全部其余验收保持不变。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
