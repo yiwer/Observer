@@ -1338,6 +1338,26 @@ Root全文审读bank V2-NOTE与metadata V3-NOTE，精确文本比较确认bank-v
 
 Root新增独立捕获器`capture-momentum-bank-v2.mjs` SHA `b4691bbd1c446f4fe20d85937ffa7ee40e9140e7a686ca75f81619501650e257`及`capture-metadata-rows-v3.mjs` SHA `9c7e91020171218a20a70ce3e11ac60ab2c2aff0575eef4a22aae07b239be364`，均静态语法检查通过。调用参数为绝对workspace、新label、完整候选SHA；必须HEAD匹配且干净（仅Root允许无关.idea），冻结所有TS模块、全部原新探针/说明及自身，原生单fd/fsync，分别120/240秒硬超时。未改旧捕获器、未与完整check并行业务运行。将在合格候选提交后分别首跑，准备文件/指纹更新不算旧PASS自动延伸。
 
+### 291–293完整门与首个固定候选
+
+291-full-check-retry原全套命令实际402/402、0skip、exit0，UTC2026-09-07 20:58:28.918Z–21:01:37.652Z，日志SHA `a5c86b5ae43d2e74e4c1458063e377ffd14d75d318dfd2faa366c256ad078aa8`。292-full-smoke实际3/3、0skip、exit0，UTC21:01:52.629Z–21:01:56.602Z，日志SHA `57be8e0f03ef714a42ecbe40c8b1d036f815d2880b826b5b4c00af1c84cc1420`。290失败原档保留，未认定daemon错误成因。
+
+作者提交候选 `2a125fe9c73504f06b17b171ceb2cd3f1367334c`，基线 `ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3`，30个意图文件、6089新增/67删除，工作树干净，无data入提交。293提交后typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root逐项核290–293完整before/after及原生日志SHA，96个src/tests/config文件在各次捕获间及候选提交后均相等；非仅依赖sourceUnchanged标记。
+
+### 固定2a125fe独立容量门
+
+Root串行执行新版本探针，期间候选保持冻结。`candidate-2a125fe-bank-v2-01`实际1/1、0skip、exit0，UTC2026-09-07 21:09:42.791Z–21:10:21.184Z；日志SHA `5e95050942d82bcb67e5302391e90aab0931b069f245e986eccedfe4c0e30363`。真实五capsule bank总36956546字节超过32MiB，原共享payload保守上界53698174低于64MiB；完整码点序分配、排除身份保留、原Report同进程与重启读取均通过。103份manifest文件实际大小/哈希全相符。
+
+`candidate-2a125fe-metadata-v3-01`实际1/1、0skip、exit0，UTC21:10:31.807Z–21:11:38.828Z，日志SHA `bb39517f9ba58e4d4e03664bce5e321e71d3f8bae995774ef3d67949560d4742`；328真实Owned观察及原metadata行数边界oracle通过，664份manifest实际大小/哈希全相符。不将此称8MiB精确运行阈值或生产性能验收。
+
+Root核两次完整before/after、54模块、原生日志SHA和manifest；journal均completed、failureClass=null、unexpected HTTP/model=0。所有进程终结后立即释放作者冻结，未并行大型业务探针或Docker全量。
+
+### 首轮正式双轴审查：候选未接受
+
+固定上述非空three-dot diff，两个fresh-context只读subagent独立审查。Standards未建立文档规范硬违规；两项P3非阻断heuristic：development material存在性清单在developments/context-index/observer重复且字段枚举不一致；Unicode码点比较器在多个模块重复。未证明mitigation字段差异形成权限绕过，不把维护建议升级为安全缺陷。
+
+Spec发现P1静态证据：`github-momentum-storage.ts` makePoint把同node全部risks复制进SecurityRiskWitness后直接strict parse，而collector允许同node超过3条合法GHSA，witness每node max3；可能抛错使整个observeDue回滚，违反proposal §12.1完整子集/资源不可用降级与原origin保留要求（另须核256KiB整体上限）。Root已核具体调用与spec，安排唯一作者先用公开observeDue、4条实际Owned有效GHSA形成RED，再作最小修复和GREEN；不得截掉风险伪装完整，也不得丢弃origin或安全隔离。此时尚无该公开复现结果，不能称已修复。固定候选容量PASS保留，但不抵消该阻断发现；#13保持OPEN，未集成、未push、未开启#14。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
