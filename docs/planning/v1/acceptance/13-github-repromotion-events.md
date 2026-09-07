@@ -1065,6 +1065,30 @@ Root全文核测试与实际checkedHead路径，核完整before/after、原生�
 
 Root独立head丢失探针已全文审读并在首跑前冻结：`data/root-v1-13-momentum-head-review/README.md` SHA `c22378309b6fdcbe3c9ba61717aac88505006a9f5c4d3b4238977b68d50f51bb`、`momentum-head-probe.mjs` SHA `36f19b0f334f3c9b733ff14ba6762685f70018484825490bf9db8d4306e0f330`，复用未改fixture `515c790cf5e895c0e55c3eb2d99db96ac0a5e12df3256f0a12859d990b0daa11`；Root capture wrapper `data/root-v1-13-review/momentum-head-probe.mjs` SHA `03f2c4b1691df60ef0d52303f5abeec1e1338626d1f4b00be999eb50f1adfe25`。只通过node --check，**未执行业务**。它从公开Report定位实际R，单head删除/事务内原guard恢复后分别记录read拒绝及snapshot原20个ordinary全等、无momentum；finally原row/guards精确恢复，同进程再独立read及重启整刊相等。SQL仅故障与恢复，不构造业务oracle；不导入作者测试或私有算法。
 
+### 228–233：真实frame manifest与批回归
+
+228仅在实际当前frame.payload.expected重复一个既有成员，更新该同一行payload实际bytes/SHA；原Point、steps、heads、capsules、Report以及frame独立step_count/digest不动。原公开read错误放行。修复新增strict Frame/Step检查、Point1MiB及manifest32KiB、header count/digest、有序候选与expected全等、每个expected对应node/generation的真实step metadata及fold核验；新提交也在原事务内回核刚写frame。229首次修复运行在合法基线失败：Step parse重排属性影响既存内容digest；之后改为strict验证但保留原已承诺Step对象序。229目录虽名green，**实际exit1，不计GREEN**。
+
+| slice | 实际结果 | output.log SHA256 |
+|---|---|---|
+| 228-momentum-frame-manifest-red | exit1，Missing expected exception | 9f9ee65a9fd5d5651ad80be01d6043cc3228c5859ea51b684ad99dbd55957537 |
+| 229-momentum-frame-manifest-green | exit1，合法采集currentStep失败 | d058a38155c3077b83c3d81de22c5df7f97a9bae1772a0e7d4e4e8cd192a469e |
+| 230-momentum-frame-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 231-momentum-frame-manifest-green | 同原期待1/1，exit0 | be4ef8cbc76abf65c88b4fed2bc0d2990cd8137d3b86532366dcebb1ac1f1395 |
+| 232-momentum-frame-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 233-momentum-head-frame-regression | 19/19，54892.6222ms，exit0 | 439e4f64f7fdd37fb5061089a1275a51ff9a7871e3ce71d61657659db35bc1d6 |
+
+Root核公开测试、实际frame/step读取源码、所有metadata完整before/after及原生日志SHA，并读取229失败/231与233汇总。233新稳定窗口经明确确认，以下四项终结后立即释放；全部完整before/after相等，54模块逐项匹配233.after，实际日志SHA已核：
+
+| capture | 实际范围 | UTC（2026-09-07） | native.log SHA256 |
+|---|---|---|---|
+| wip-frame233-head-first-01 | 独立head丢失/ordinary保留/同进程及重启恢复，首跑1/1 | 19:32:22.861Z–19:32:27.296Z | 2c951e386f8838e1312c22825323e5270d16621a02484ba9039f62e4cf9c4c35 |
+| wip-frame233-budget-01 | 原共同payload预算及恢复1/1 | 19:32:27.603Z–19:32:32.762Z | 7a11b4b8eb7e94d332b31801415a2179d7a8d0ded0421fd24cf82ae4cb8c32df |
+| wip-frame233-startup-v2-01 | 原49小时持续高/身份/消费1/1 | 19:32:33.074Z–19:32:49.419Z | 68abee06ef1148f1c5b29d4f7c98ef920e3c02063194d6053b95ef4be5f6d720 |
+| wip-frame233-record9-01 | 原5份整刊与MD unchanged，未重freeze | 19:32:49.688Z–19:32:50.046Z | f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699 |
+
+独立head原档位于该capture下`tmp/root-momentum-startup-4TnLVN`，70项manifest实际bytes/SHA逐项匹配，journal completed、无意外HTTP/model；实际read为not-found，snapshot合同通过，原row及guards精确恢复，同进程及重启保存整刊均与原件全等。它是修复后独立首跑，不冒称Root RED→GREEN，也不证明所有结构或资源故障。剩余RiskOrigin/权限、negative reset/legacy/安装事务、资源总门及最终固定SHA等仍须推进，#13不关闭。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
