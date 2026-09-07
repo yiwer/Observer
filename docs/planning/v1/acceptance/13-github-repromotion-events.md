@@ -864,6 +864,35 @@ Root亲读新`tests/github-momentum-repromotion.test.ts`完整公开场景，并
 
 Root另派独立探针作者仅准备1条startup→持续高→不重复消费/重启读取的49次小时观察路径，沿既有T1公开Seams和实际双SQLite；不读产品作者helpers、不用SQL生成业务oracle，不修改既有500来源额度。当前准备阶段，未执行业务，首跑前由Root全文核定。产品唯一作者继续177最小GREEN，当前无源码冻结。
 
+## 2026-09-08 接续：动量首次独立场景通过，共享预算仍 RED
+
+Root 恢复时实时 agent 列表中旧作者已不存在，未依据旧 intent 宣称其仍在运行。新 fresh-context `implement_v1_13_continuation` 完整接续 implement/TDD、当前提案与已存 WIP；唯一产品写入者不变。Root 在其只读接续窗口完成下面首跑后立即放行继续 183 的最小 GREEN。未重新创建目标、清理证据、改写旧源码基线或推进 #14。
+
+Root 独立复核以下作者原 metadata 的完整 before/after 相等、实际原生 output.log SHA 一致（UTC 原样保留）：
+
+| Slice | 实际结果 | 原 UTC 起止（2026-09-07） | output.log SHA256 |
+|---|---|---|---|
+| 178-momentum-startup-wiring | 1/1 GREEN | 12:14:05.762Z–12:14:08.353Z | daf7d726a05339b238a50d2010f4eb92d6da4197363cccd352f8a1446ad8c49e |
+| 179-typecheck | exit 0 | 12:14:09.201Z–12:14:11.229Z | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 180-momentum-historical-member-red | expected exception missing, exit 1 | 12:17:00.428Z–12:17:06.767Z | 4d339b48fc30b7c84775c87f3301d2a108e14152a546f3cb126f00e96b625bca |
+| 181-momentum-historical-member-green | startup + historical endpoint 2/2 GREEN | 12:18:31.251Z–12:18:45.543Z | baa457aad59eb31b02eb36699d265e8ed89ee0417ae237e6ed6f0ceb74dfd70e |
+| 182-typecheck | exit 0 | 12:18:41.536Z–12:18:44.067Z | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 183-momentum-development-budget-red | expected exception missing, exit 1 | 12:20:38.841Z–12:20:44.068Z | 5d16e8c080ca02fe11d94dc74b12309d4e0d87c5c0a11b4de4b2cabcf1302e11 |
+
+183 保存的公开 authenticated readReport 场景把单次授权所用 25 个真实 frame 各追加合法 JSON 尾空白至 1.5 MiB，加上 31 MiB 原 DevelopmentRun，共 68.5 MiB；单行仍未越界，但当前不同读取池没有执行共同 64 MiB 总额，旧刊仍被读取。保留其原失败/原期待，不能提高预算或仅局部加总冒充统一同步 scope。原点/原件、权限、缓存失败不退款、按(table,key)计费和 1000 origin 的既有契约继续适用；这不是 heap 上限或压力性能结论。
+
+此前同179源码窗口的 Root `wip-momentum179-configuration-01`（3/3）、`wip-momentum179-record9-01`（5刊全文/MD不变）、`wip-momentum179-lawful-release-01`（8组9测试）全部 native exit0。此次已独立重核各完整 before/after、实际日志及全部53模块与179.sourceHashes逐项相等。原 native.log SHA依次为 `9639e0bd067d65223eb915eea6bdf6d8aad42147de59c6bb015dff6b785432b8`、`f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699`、`eae3cbbbff81c1d6789f4aaf8a1aff093a5ce6ea6ee3dfe8296a170bfa1ff6d8`。
+
+### 独立49小时 startup/持续高：首跑后置表征，不伪称 Root RED→GREEN
+
+Root 首跑前发现原探针把普通 Record9 放入 eventHistory 的期待过强：普通报道参与90日 coverageHistory，但没有消费 Record10 development。原 README/fixture/probe完整保留；新增 `data/root-v1-13-momentum-startup-review/momentum-startup-v2-probe.mjs` 与 `V2-NOTE.md`，只将这一个期待分为两项：事件历史仅首个 momentum Report，普通历史含原普通及首个 momentum Report。所有49小时真实提交、完整20 peers、固定数值/选择、新颖配额、身份、冲突、重启/旧刊及纯回放期待不变。此为首跑前 oracle 修正，不是产品失败或降低一次性消费要求。
+
+新 probe SHA `a4ae8d25c95d3f8aa94579368f5eb889b7bc579562356ba8bb2aae044e51a245`；V2说明 SHA `df0fe81101ba5793f9f64be8f4996bebf18e3e8332189b890524910261346778`；原 fixture SHA `515c790cf5e895c0e55c3eb2d99db96ac0a5e12df3256f0a12859d990b0daa11`。冻结5文件的 Root wrapper `data/root-v1-13-review/momentum-startup-v2-probe.mjs` SHA `046ce992a053de3ad051a66ced15201eb51f25373e9a2f8cc739c876bb2f6323`，内层30秒/原capture外层60秒，不修改既有capture。
+
+`wip-momentum183-startup-v2-first-01`：UTC **2026-09-07T18:21:14.468Z→18:21:27.619Z**，1/1 PASS，原测试总时长12836.7466ms，native exit0，log SHA `966b90a5e7a3182f5f8383c8f90b65500cc6c2b3c303cea51e21990f47052bfe`。Root 独立确认完整 before/after 相等，53模块全部等于183.after；`tmp/root-momentum-startup-Nk5pYX` 的115个manifest文件逐项字节数/hash相等，journal.completed=true，49次实际 observe 完成，意外HTTP/model均0。首刊选择 R+P01…P06、消费1个动量；次刊P07…P13、消费0，事件历史仅2026-09-03-v1，普通历史为2026-09-02/03-v1。完整双SQLite、输入、run、三刊Report/MD与日志保留。
+
+这是 WIP 本地独立公开接口证据，不是固定最终SHA验收、真实GitHub/模型质量或全票通过。reset/re-arm、legacy恢复、缺样/peer或配置变化、完整原件权限与风险闭包、统一预算及metadata/单行/胶囊上限、结构损坏/守卫、竞争与零novel，以及最终全套回归、双轴review、detached/master复验仍未齐备。#13继续OPEN/in-progress。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
