@@ -185,3 +185,19 @@ Root亲读公开测试和统一begin安全门，核68–73各capture完整before
 Root亲读Owned外部容量输入与公开每run审计断言，核74/75完整before/after一致及实际日志SHA。74 exit0、23/23、0skip/0cancelled，日志SHA `edcf006fe08b0920f0afb6a5c42b9ae423f5018f36e6b557d04931e24832c525`；75类型检查exit0。三个并发produce共享双研究槽，各run均四个成功研究attempt，按既有同日唯一版本语义从成功报告或version-already-exists错误取得runId分别鉴权读取。外部容量计数位于Owned研究Runner，不是容器实测，也尚未覆盖研究/主核验/条件复核混合峰值。
 
 Root提出待补边界：获槽后的decide/persist、begin、资格解析、缺Runner等同步失败必须避免泄漏名额，同时不能在实际派发后清理未明时释放；排队Owner取消应保留agent-cancelled，不能改记deadline-exhausted并继续发表Gap。语义调用当前begin早于acquire，获槽后必须再次检查资格/剩余时限和取消，避免排队期间撤销仍派发。作者继续通过公开矩阵统一可信dispatch入口，明确queued与实际started审计语义；当前GREEN不外推上述目标通过。
+
+## 请求额度、排队取消与固定CLI拒绝接线76–86
+
+Root亲读公开配额/取消测试、新CLI测试、两Runner的dispatchControl增量，核76–86各capture完整before/after一致及实际日志SHA。
+
+| GREEN | 真实覆盖 | 日志SHA |
+| --- | --- | --- |
+| 77 | 24/24；两个attempt派发数[4,1]、总数5，attempt配额耗尽失败不退还此前请求数，后续停止，六栏Gap和重启审计可读 | `646036cd4a460919dc90a04d5cd97278ba87f14e2911ba9be897e95e094ff0ff` |
+| 80 | 25/25；两个已占槽任务之外的排队任务被Owner取消，agent-cancelled、零attempt、failed审计，不再误报deadline或发表 | `0505161f04d506273275abf4d952466f126966e5bc3994e1ce01dc3a6e58426f` |
+| 85 | 新CLI文件1/1，内部串行Codex/Claude两例：首respond前宿主拒绝、外部Owned transport零调用、各一次拒绝、cleanup removed | `974fdbe69238ff2c05453fd5902575a1b49ef2b083e22fd70f83323e143ab75e` |
+
+均exit0、0skip/0cancelled；78/81/86类型检查exit0。76具体RED为maxExternalRequests配置尚不支持，79为排队取消却发表的真实行为RED。77的send均返回200，证明失败attempt不退款，尚不证明网络请求自身reject/HTTP失败仍计数；已要求后续补测。
+
+Root实时确认固定镜像存在且无running Observer任务后放行串行Docker窗口，没有build/pull/retag或真实模型请求。82真实Codex CLI未接control，dispatched1/refused0，测试失败；83虽运行通过，84类型exit2暴露测试使用非法ModelBoundaryError类别等问题，均保留。85修正为合法evidence-expired拒绝，未放宽产品枚举：实际Codex 0.153.4容器`0124d60aa2efc38468910d6cdb1a97cbb11da7f8b86105f061d467e683849b1d`、Claude 2.1.252容器`5e5bee1a978414d7e05cdf3d76e178e0a7a04adbe1201bbb9ab7b8e381cca23a`均确认removed；失败运行terminal missing/exitCode null符合中止，不伪称模型成功。
+
+作者归还窗口后Root独查docker ps --all，两个本次ID均不存在，仅保留既有两日以前Exited容器，未删除。此为真实固定CLI+Owned协议的Runner拒绝接线，不是完整Request10 CLI闭环、语义CLI、共享外部槽或Claude live通过；后续矩阵与整票固定候选验收保持未完成。
