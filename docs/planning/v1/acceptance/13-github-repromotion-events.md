@@ -787,6 +787,21 @@ mitigation v2只修测试摘要前提：Root全文亲读`README-v2.md`并核SHA 
 
 作者另指出配置字段与整run同时篡改可能混淆实际原slot不兼容，当前仅静态风险、未有公开RED；Root同意按既有完整权威要求再定位，不取消真实旧slot无run/配置不符/晚可用语义，不擅增配置历史DDL。文字其他必要负向、极端动量公开链路和最终固定SHA双轴/full-suite仍required；#13保持OPEN。
 
+### 162–165：配置一起遗漏的真实反例与Owned注释v2
+
+Root亲读162公开反例并独核162–165原metadata完整before/after、实际log hash。162从真实unknown-GHSA隔离repeat、只发表fresh的报告出发，同时把development.configuration/sha置null、runs清空、reasons改disabled、删除projection，再公开重算coverageGap/ranking/Markdown及两个hash；repeat被重新选中且read未抛期待异常，是真实RED，不再只是此前静态风险。原payload与immutable trigger均在finally恢复，重启原刊可读。
+
+Root同意先消除caller null令authority完全不查实际slot的空域漏洞，但明确不能因此删除合法的真实禁用、旧slot无事件run、冻结配置与原run不兼容、迟到run不倒灌语义。已另派独立只读设计核查：现有持久事实能否辨别真实冻结配置与任意伪造非null配置；缺权威事实时须精确提案，不以今天配置代替旧刊权威、不擅增DDL。当前162修复仍进行中，不提前PASS。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 162-red-empty-configuration | Missing expected exception，exit1 | 04:31:39.025Z→04:31:39.489Z | `a18940cc2a71a148930d62a303fb144beace459d37bd5311ae98f63a95884723` |
+| 163-owned-mitigation-preimage | 复制成功后子PowerShell缺Get-FileHash，exit1 | 04:32:55.562Z→04:32:55.762Z | `3ddce692a6dc149725ab20ec179bb46b4d03b96389b3a6ee05c9d2c63efa28b9` |
+| 164-owned-mitigation-v2 | 准确注释v2首跑1/1，610.4589ms，exit0 | 04:32:56.544Z→04:32:57.228Z | `dfc7449c33771b19ac0eedb6cf986f24e7276709f1e24a318c4e62deb57a7230` |
+| 165-mitigation-preimage-verification | Node只读核副本hash匹配，exit0 | 04:33:16.479Z→04:33:16.555Z | `bc340ab9049bf529097fc897029155dc1bea40a6f5d87d68289e04e07643fbd2` |
+
+160原测试的完整修改前文件保存在`data/v1-13-slices/163-owned-mitigation-preimage/security-tests-before-semantic-v2.ts`，SHA **0a3736d7f43358ea10a943c1f3263090608962334e35597334b3028722474be9**。Root独立核等163.before实际源码SHA，并全文亲读该目录README；副本含完整未改160场景及后来162测试，**不是伪称160运行时冻结的整文件**。实际no-index diff仅新增准确注释和`assertion = first ? 'explicit-only' : 'mentioned'`供B after/draft使用，原两句全文、所有业务期待不变。164因此是准确新注释输入的首跑通过，不是产品RED→GREEN，也不洗去原160不足的排他判断。163外壳hash工具失败独立保留，不冒称复制失败或业务缺陷。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
