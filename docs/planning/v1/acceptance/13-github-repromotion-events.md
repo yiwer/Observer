@@ -1192,6 +1192,16 @@ Root逐项核250–254完整before/after相等、实际output.log SHA及日志�
 
 Root已审公开测试并允许按既定§12整组码点分配最小修复。临时bank Gap不得改持久onset/消费，纯重算与实际授权必须一致，不能接受caller删组自证。当前切片的旧27快照重启相等是待执行回放控制，不能替代后续Report发布/读取路径验收。当前仅目标RED已核，尚无本组GREEN或Root独立复跑，#13保持OPEN。
 
+### 255–257：bank整组分配作者切片通过
+
+实际snapshot沿受信frame已核的严格node码点顺序，以数组括号、每完整胶囊JSON实际UTF8及逗号计费，能容纳才整组加入；超界仅给该node副本加固定资源Gap，不改持久step/onset/capsule身份或数学状态。实际verify重导完整snapshot逐字段核对，并继续读取被确定性省略胶囊的完整原始证明及依赖，以免预算省略绕过原件损坏/撤权；这些原件仍计同阶段payload预算。Root审读上述分配、原件核验及严格顺序入口。
+
+255-momentum-bank-limit-green原生1/1、13342.7169ms、exit0，UTC2026-09-07 20:18:52.321Z–20:19:05.990Z，日志SHA `1d8e8c138b82ab0ab25d8c9d2e33a908d01fe34c4c2554bb8c7f915408d8b06f`。原254目标与全部容量前提不变，前四完整组保留，第五数学extreme/原capsuleId保留且资源Gap、无development、20普通watchItems保留，旧27公开snapshot重启相等。
+
+256-momentum-bank-typecheck exit0、空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。257-momentum-bank-regression原生29/29、97466.8009ms、exit0，UTC2026-09-07 20:19:53.859Z–20:21:31.385Z，日志SHA `23d83e102caa84ad87f2d8aabc9183ca49347ca6c2c93ab282ad37c601808f9f`。Root逐项核完整before/after相等及实际日志SHA/结果。
+
+当前是作者RED→GREEN及Root证据/代码核对，不是bank独立复跑或最终固定SHA验收。已另派独立代理在Root新目录准备相同资源需求的公开探针，尚未业务运行；其准备状态不计PASS。Report发布/认证读取、其他剩余§12项及最终双轴review仍须完成，#13保持OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
