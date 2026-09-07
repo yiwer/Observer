@@ -1166,6 +1166,12 @@ Root全文审读原三文件、v2差异与V2-NOTE。实际合成token为30字节
 
 下一诊断保留原档，输出已公开firstFour各字节/总和、原run+DevelopmentRun累计bytes、唯一Point bytes和nextPool公开Gap；更小后续控制pool若成功，仍须单独证明原27目标完整payload不先撞64MiB，不能用该控制成功替代前提。未先认定undefined原因是bank超界，不改既定cap/原27oracle，不把初始化/取证失败冒称产品缺陷。#13继续推进。
 
+### 249：更小后续pool仍未通过取证控制
+
+249保留原27目标，后续28改为换出前两node、引入两peer，仅留后三个既存capsule；公开取证控制仍momentum unavailable，尚未进入五组bank阈值断言。原生exit1、7836.0047ms，日志SHA `4c47716da9f2549df000443c43e6649eb23dcc78ff9c3e332a4a105e646cd14f`，Root核完整before/after及实际SHA/日志。
+
+已公开前四组实际字节为6,812,798、7,111,931、7,411,064、7,710,197；后续公共原因含github-momentum-point-unavailable。第五组未成功取回，不能把预计大小冒充实测。更小pool仍失败提示需单独核池变化/新node/step或原件路线；不能继续把该现象笼统归为bank超界，或反复减pool绕过潜在真实缺陷。下一隔离可用小topics的同样换池公开控制，保留248/249前提失败，不变更32MiB目标或预算门。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
