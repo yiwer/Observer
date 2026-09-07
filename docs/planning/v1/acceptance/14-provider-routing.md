@@ -259,3 +259,11 @@ Root批准串行单Node本地容量窗口；作者归还后，Root亲读公开pr
 512KiB配置下，world两个语义批次在派发前明确audit-budget-exhausted，零world核验attempt、零虚构review；真实Gate保留1000条Claim终态，另外三普通栏发表。run实际6042 UTF-8字节，capture819.5064ms，测试进程峰值RSS302,048KiB；无Provider配置重启run完整相等。预留覆盖已有/潜在review的实际转义字节、84 attempts、512固定Edition决策、终态字段和来源ID；读写同时执行可信64MiB及低配置界限。
 
 此例不证明全部schema数值/字节极值。Root指出Number.MAX_VALUE的JSON文本不必然覆盖所有合法costUsd序列化长度，后续需保守余量或完整上界证明，不可藉此引入业务成本封顶。初始收据自身超低预算时作者明确报告为派发前capacity错误，不宣称该情形已有完整持久审计。真实语义CLI、资格撤销、全角色/重试/异常用量、六栏历史及票末固定候选验收仍待完成。
+
+## 三角色尝试预算115–117
+
+Root亲读角色计数、begin派发前校验及公开报告断言，核115–117完整before/after一致与实际日志SHA。115为maxResearchAttempts/maxVerificationAttempts/maxReviewAttempts尚不支持的配置RED；116实际完整文件37/37、0skip/0cancelled、exit0，日志SHA `41180e2dc22bcb4a6c0c06193c4ef034f5c5b9f8b7c204f61f1855a8cceb714a`；117类型检查exit0。配置研究2、主核验1、复核0时，实际attempt仅research/research/verification，复核明确review-unavailable、存在attempt-budget-exhausted决策，六栏结构保留且world一条已满足严格Gate的故事发表。实现范围分别0–24、0–30、0–30；该低配置例不代替默认最大组合、retry或异常token验收。
+
+运行范围纠正：作者原用`^(?!Audit)`希望排除容量例，但它匹配Node根suite空名，115/116实际仍包含两容量测试，未重新协调容量窗口。作者主动报告，原capture保留；Root当时无重测试或Docker并行，未发生资源冲突，不把该次写成35项普通回归。116 capture12559.3489ms、实际峰值RSS466,884KiB；新配置字段后容量审计2,818,572字节，低预算审计6119字节。后续排除规则先用小probe实测，含容量的单文件回归按真实范围协调。
+
+数值预留后续证据：Root用本机Node实际确认JSON.stringify(Number.MAX_VALUE)为23字节，而合法非负0.0000012345678901234567为24字节，已交作者作为边界回归输入。作者拟增加每数值64字节保守余量，尚未核验该修正；不将意图记为通过。
