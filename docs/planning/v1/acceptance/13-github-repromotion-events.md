@@ -991,6 +991,14 @@ Root在208稳定源码窗口批量复跑200–208变更后的原冻结probe，�
 
 这些是当前WIP逻辑窗口的兼容回归，不代表所有风险/原件字段、权限、metadata与资源边界已齐，也不是最终SHA整票验收。#13继续OPEN，全部原批准剩余项继续推进。
 
+### 209：实际原DevelopmentRun替换的既有保护表征
+
+209-momentum-original-development-characterization先真实25小时启用advisories并出版observed风险witness的动量Report，随后仅将实际current原DevelopmentRun替换为config版本2，重算该原run自身id/configSHA及typed raw bytes/hash；原frame/step/head/capsule、Report与capture全部保持不变。公开readReport拒绝，repromotionSnapshot动量development为0但ordinary watchItems仍20；finally精确恢复原row及guard，重启后原整刊相等。此单原件Owned故障不涉及宽多承诺重写。
+
+首跑1/1 PASS、4108.5412ms，UTC2026-09-07 **18:49:46.359Z→18:49:50.780Z**，native exit0，log SHA `dd4c20835590c767b5ae1e99a5f83134cc8ac37919853c1d91af05f6980b1341`。Root全文核测试、原run内容ID规则及实际日志/完整before-after/hash。它证明变更后的原件不能被既存提交认领，**不能隔离证明configuration等值检查而排除已有原id/member门的作用**；没有为此改产品，也没有伪称RED→GREEN。
+
+下一资源片保留原批准state/marker4KiB、manifest32KiB及phase metadata16,384行/8MiB。公开容量oracle不得依赖猜测的内部查询次数，不削弱既有更严Schema或改写全套承诺以强造RED；应以实际引用依赖的最小字节数及单项合法性证明目标门可达，不能先撞别的cap却称总预算通过。若某读取顺序无法用既有公开Seam隔离，则明确区分既有公开拒绝表征与SQL实际length-before-text的源码检查，禁止把最后拒绝等同读取前有界。上述是验收证据分类，未增减预算或威胁模型。#13仍未整票验收。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
