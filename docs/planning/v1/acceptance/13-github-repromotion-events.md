@@ -1222,6 +1222,26 @@ Root已审公开测试并允许按既定§12整组码点分配最小修复。临
 
 下一安装组先以单一Owned缺heads表核工厂构造、既有ordinary snapshot/Record9读取、当前momentum不可用/旧Record10拒绝、精确结构与原行恢复，不准fresh重装。state/pending缺结构时新raw INSERT与固定trigger/guard有真实完整性约束：不得为宣称ordinary采集成功而撤guard/重建authority/旁路存储。既有读取与损坏状态的新提交须分开取证，后者尚未作为已接受降级或通过项；待实际证据再核边界。
 
+### 260–263：缺heads表时保留既有ordinary读取
+
+同一Owned真实库先发布Record9，再完成25小时首次momentum及Record10。精确保留heads表DDL、完整原行和该表guards后删除该表，重启观察器并测试：既有rankingSnapshot/Record9完整相等，当前momentum不可用、旧Record10认证读取拒绝；以原CREATE（非IF NOT EXISTS）及原行/guards精确恢复后重启，两刊完整读取恢复。该CREATE也会暴露未经允许的fresh重装，SQL只用于故障/恢复，不作为业务结果oracle。
+
+260首次失败被fixture失败重启后的重复close掩盖为database is not open，日志SHA `5ceb19626b418ccca972c395bc57df0d1397c12300300a4efc50e23f8dbe7767`，不计目标RED。fixture增加明确open生命周期后，261实际构造抛unsupported-momentum-storage，原生exit1，日志SHA `c67be1df6dea7f6e4ff55753c39531190e43f444f01ca1203afcd4f1442b1280`，取得正确目标RED。
+
+262最小修复仅在installer明确检查installed/state不完整分支回滚并返回null，不装配该可选动量能力；其他SQL/预算异常不吞，固定guards不撤、不新建epoch、不旁路写入。原公开期待1/1、3164.5925ms、exit0，UTC2026-09-07 20:29:16.948Z–20:29:20.425Z，日志SHA `cbc0f6aa308e1afb9b9211cc7466e162eea47c07fa5afbe0c14cf78554dcd301`。263类型检查exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核260–263完整before/after、实际日志SHA/正文和该修复分支。该片证明heads缺失的读取降级，不泛化为所有结构/dirty或损坏后的新采集可用。
+
+### 有限剩余P0与统一验收门
+
+独立只读代理以当前proposal§12、实际测试与截至257证据重新映射，Root协调作者按以下既定要求收束，不继续枚举已覆盖身份字段或同一共享helper的所有同义容量场景：
+
+1. 真正zeroNovel时尚未消费的momentum留待后报；security/release/momentum混合优先级与正文可见消费一致。既有Release落选、INSERT失败不消费测试保留复用。
+2. momentum capability缺失/false及已有episode后的实际撤权，计数证明/ordinary边界、旧刊拒绝、恢复不清身份；配置缺失的legacy正控不代替该组。
+3. 新空库startup超过28后未来完整reset恢复，并以一次真实peer/config上下文变化阻断低段；已有120分钟缺样和legacy恢复不用重复搭建。
+4. 代表性结构缺失与dirty/pending不可洗白、既有ordinary可读；262只覆盖其中heads读取片，state/pending新提交边界继续取证。
+5. 从真实momentum Report遗漏整个momentum段而保留独立capture时，认证读取拒绝；不以pure局部字段反例替代。
+
+bank独立探针另行推进，不重复委派。原成员、完整frame/head、RiskOrigin/pool、unknown GHSA隔离、已有reset/legacy、共享payload/metadata行及单capsule代表性场景已有明确局部证据，可收束该范围，但不泛化未测的权限生命周期或metadata8MiB实际字节阈值。完成有限P0及bank后，仍须最终固定SHA full check/typecheck/smoke、完整专项、原旧刊oracle、Standards/Spec双轴review及detached/master集成门；静态结构/预算检查不能写成未执行的运行时PASS。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
