@@ -1115,6 +1115,14 @@ Root核实际公开测试、原生日志及完整before/after/SHA。此为既有
 
 下一单capsule资源片按§12核定：保持完整真实Point与measured，以及数学node.status=extreme；容量不足属于证据可用性Gap，固定resource-limit原因，不授新onset/capsule/development，不回滚独立ordinary观察或丢无关Release/GHSA。旧episode身份/消费保留，但本次资源Gap不得借旧capsule授资格；snapshot/pure须与真实step资源降级一致，实际授权仍全量重现，不能凭caller添加reason任意裁剪。先以合法单run/Point和25真实point的实际字节下界建立超8MiB公开反例；整组预分配，不截points/peers，不把结构或权限失败catch为资源不足。此为既批资源降级的语义落点，不新增上限/Schema，尚不计实现或测试通过。
 
+### 独立metadata行数探针首跑：初始化失败，未进入预算验证
+
+Root全文审读三份准备文件后，在作者明确确认的242稳定窗口首跑328-slot候选。三文件冻结为：README `95666954a7bc12874753961a9997922c6d6ca59a9f464b1cd521f05f213fcfcc`、fixture `3c45a30921f2f357ab0523bf90ae80fb77996075dec2bdcc867e6acf7cc71e43`、probe `fae2bdf74469279f1110aa5165a4b3440eac55ff291be29eeaddf0218ffaa6af`。新增专用`data/root-v1-13-review/capture-metadata-rows.mjs` SHA `e9c4486ec7e7e20678754ea5a2095355ebf298cdafe3211f5b83171ea4326f0a`，预声明240秒有限捕获、单原生fd/fsync、完整source/probe指纹；原60秒捕获器未改，不缩减328规模。
+
+`wip-capsule242-metadata-rows-first-01`于UTC2026-09-07 **19:47:14.324Z–19:47:14.580Z**原生exit1，日志SHA `67eddc014045973a02b79f66c6030286158303b51d17225a802040bc3adf1900`。完整before/after相等，54模块逐项匹配242.after。实际失败是fixture创建Observer时的`invalid-owner-token`：合成token未满足产品构造要求，Root审读也漏掉该连接前提。**尚无任何328采样、预算阈值或恢复结果，不属于产品RED，也不能算row-cap证据**。终结后立即释放作者冻结。
+
+原三文件、capture及`tmp/root-momentum-metadata-rows-tC0E1R`均保留。下一版另存v2，仅修正Owned初始化连接、保留所有业务oracle/规模/容量前提；不覆盖失败原档，不删除初装SQLite，不自动接受漂移的reader源码指纹。仍须重新全文审读/静态catalog核对与独立首跑，#13继续未完成。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
