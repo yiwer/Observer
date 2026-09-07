@@ -239,3 +239,15 @@ Root亲读公开三轮produce/readRun例和研究槽外层try/finally，核101�
 Root亲读真实Collection SQLite/Owned RSS→schema2 storage Bundle测试、authorizeEvidence及dispatchControl接线，核104–106完整before/after一致及实际日志SHA。104真实RED保留；105 exit0、32/32、0skip/0cancelled，日志SHA `6e3d53a59587cea7f976b3afe7b7f45b8a72def569a7ca4eabf8436e5561965d`；106类型检查exit0。
 
 首个Owned send后撤销实际SourcePolicy.model.enabled，后续send在计入派发前被阻止；run外部请求数及首attempt请求数均为1，最终Report不存在。可信callback使用当前checkedPolicy的版本/完整摘要并检查model与expiry，不以初始modelPolicies快照授权整轮；每attempt的证据ID保存在内部映射，begin与实际dispatch均检查。此例不代表资格撤销、来源全部字段/历史/六栏组合或容量已完整验收，原矩阵继续。
+
+## 获槽后同步异常与失败请求回归107–108
+
+Root亲读公开测试，核107/108完整before/after一致及实际日志SHA。107直接GREEN，34/34、0skip/0cancelled、exit0，日志SHA `8a44b723286cba7e3999a136620e0297e422fc8c17bf9ab9b497e8dbcdf0c500`；108类型检查exit0，不伪造新RED。可信资格回调在获槽后的第二次读取抛错，随后两轮并发produce均实际进入研究，证明两个进程名额可用。另一次Owned transport实际抛连接错误，外部派发与attempt请求数仍为1、attempt failed、未知usage仍null，无故事发表。
+
+## 可达千条陈述审计容量109–111
+
+Root批准串行单Node本地容量窗口；作者归还后，Root亲读公开produce/readReport/readRun及无Provider配置重启测试，核109–111完整before/after一致和实际日志SHA。109真实RED：produce已成功，但自身readReport因旧1MiB storedRun上限报routing-integrity-failed，日志SHA `0aff6308b61f812bf7504547d5770a5a6784fac2b9200aeff9f6c148ae706560`。
+
+110限定容量用例1/1、0skip/0cancelled、exit0，日志SHA `4e194d1f67ee6a6475213dc106af77d30f8e8e4e8bc02cfe759b7a66038eb159`；111类型检查exit0。实际审计2,818,470 UTF-8字节，capture耗时1785.2425ms，测试进程resourceUsage.maxRSS为447,164KiB（约437MiB）。world使用20故事×50陈述、两个Owned独立来源及合法转义ID；研究与语义输入/输出均断言小于原1MiB/2MiB限制，1000条review完整可读并在只读重启后保持相等。读写采用可信固定64MiB硬限，不信任收据自声明。
+
+这是可达1000陈述的局部容量证据，不是15000纯schema极值、六栏最大组合、真实CLI或完整性能验收。Root已批准下一112/113低配置审计预算RED→GREEN独占本地窗口，无Docker/联网；要求派发前实际UTF-8最坏投影与终态余量预留、明确audit-budget-exhausted且保留每条Claim的Gate终态，不能通过静默丢弃审计达标。结果尚待核对，#14仍ACTIVE且未冻结候选。
