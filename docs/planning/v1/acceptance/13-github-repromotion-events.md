@@ -893,6 +893,21 @@ Root 首跑前发现原探针把普通 Record9 放入 eventHistory 的期待过�
 
 这是 WIP 本地独立公开接口证据，不是固定最终SHA验收、真实GitHub/模型质量或全票通过。reset/re-arm、legacy恢复、缺样/peer或配置变化、完整原件权限与风险闭包、统一预算及metadata/单行/胶囊上限、结构损坏/守卫、竞争与零novel，以及最终全套回归、双轴review、detached/master复验仍未齐备。#13继续OPEN/in-progress。
 
+### 184–187：共享预算原期待 GREEN 与 Root 同源码回归
+
+183原测试/期待未改，新增内部 `github-read-budget.ts` 接通同一同步scope的payload缓存/实际字节、原origin和许可出场检查；它不是新的公开budget/token或扩大的额度。184-momentum-shared-budget-green 1/1、exit0，UTC2026-09-07 **18:24:22.148Z→18:24:27.250Z**，原log SHA `1d4d82ce37542567680ab73e58fb281d5a0950250bb171c5ca27702f12e52143`。185-typecheck曾因context-index旧committed初始化仍写bytes而TS2353/exit2，原log SHA `f3d3ffc3d0df5c5536803a16cded03024c0549723f629eb4e3e35b2b4defc9f7`，不抹除。修正该初始化后186-typecheck exit0（18:24:52.611Z→18:24:54.438Z，空log SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`）。187-momentum-regression实际整单文件3/3，16971.7ms，18:25:00.058Z→18:25:17.090Z，log SHA `916a28828b89cfb9f359166f9d4cd9ea40cadbe814fdd8353375ec3b4e54a8c5`。Root已独立核4份完整before/after及实际原生日志一致。
+
+Root随后在同一稳定窗口运行以下原冻结探针；每份capture完整before/after相等，实际native.log SHA匹配，**54个TS模块**逐项匹配187.after（新私有预算Module使原53变54）：
+
+| Root capture | 结果 | 原 UTC 起止（2026-09-07） | native.log SHA256 |
+|---|---|---|---|
+| wip-budget187-startup-v2-01 | 49小时单场景1/1 | 18:25:45.593Z–18:25:59.251Z | 0039146322c633c19c030e36016c525a57a08a60fc9592359e5ec1c05f057d83 |
+| wip-budget187-scope-01 | 3/3 生命周期/失效/出场撤权 | 18:25:59.579Z–18:26:00.391Z | 3ff45bf52317464152e2c5fda86423e297a639767427d92276375db809658bc9 |
+| wip-budget187-configuration-01 | 3/3 配置捕获 | 18:26:00.706Z–18:26:01.518Z | 6310ee7a24f5d542d60f050d66295ddb704c46260d5674a5ef7588ff214a0a7e |
+| wip-budget187-record9-01 | 5刊原Report/MD不变 | 18:26:01.783Z–18:26:02.142Z | f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699 |
+
+全部native exit0；Root立即释放作者源码窗口，不跨后续编辑沿用指纹。另有独立预算探针正在准备，计划以原Owned公开fixture验证跨材料超额拒绝、精确恢复后同进程下一次读取及重启均可恢复；尚未首跑，不能计为通过。下一产品片为真实连续低段24小时后新高产生新episode的公开RED；全部原件/权限/metadata资源/结构负向及最终整票门槛仍保留，187不是预算全部边界或整票验收通过。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
