@@ -1412,6 +1412,14 @@ Root新增`claude-first-case-diagnostic-probe.mjs` SHA `562e93e6b1976938da4fdc1b
 
 所有Root诊断进程已terminal，已通知作者释放Root占用。现仅许可一次有界同源完整299-risk-witness-full-check-retry：原命令/测试集合/并发/固定镜像不变，若再失败不自动整次重复；若全部通过再300 smoke、scopecheck和修订候选提交。原单casePASS不替代full-suite，#13仍OPEN。
 
+### 299完整重跑及300 smoke通过
+
+299-risk-witness-full-check-retry已由作者62631真实terminal exit0，403/403、0skip，总185206.8385ms，UTC2026-09-07 21:31:17.413Z–21:34:27.648Z；日志SHA `5403c6d8135761011f4bcb2c83482d7e491bbbbc1f7f6183dcca97ba8ab941cb`。Root逐项核完整before/after、实际log SHA、全套汇总，完整before状态与298失败轮严格相等；未改源码/tests/原并发，不拼接298通过项和单case诊断。
+
+300-full-smoke实际3/3、0skip、exit0，UTC21:34:44.139Z–21:34:48.089Z，总1283.1938ms，日志SHA `45b1d78f56eec5a5f7b9bceb8251b567d116af0581d66aa2e5568091f2ee18c2`。Root核完整before/after及实际日志SHA；待作者两文件scopecheck提交修订候选后固定SHA复审/独立验收。Docker诊断根因仍未知，原失败不删除；全套恢复不等于生产环境已资格通过。
+
+独立最终矩阵须使用已批准lawful-release-family完整8组9测试，原7个基础Release+revision业务oracle由固定manifest证明未变、仅合法引用输入替换；不得再次把原532>500英文positive当合法期待。其余history scope/configuration/whole-run/old-input/安全原件及quota/缓解/Record9、动量budget/head/startup、新四风险与bank/metadata资源探针仍保留，另继承#12/#11和Record7/8基线，不用本次403项代替Root独立门。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
