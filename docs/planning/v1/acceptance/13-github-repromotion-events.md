@@ -743,6 +743,50 @@ Root亲读新公开66刊容量测试、scope/Observer实际三阶段接线，独
 
 scope当前/历史共享上限已有上述作者真实反例修复；生命周期、逃逸/重入、出场撤权仍另准备窄公开独立characterization，不提前计PASS。Root本轮再次live读取GitHub #13仍OPEN，未回写tracker。旧WIP三-kind安装不迁移的明确批准仍有效，不因fresh四-kind测试通过称旧WIP自动可读。
 
+### 152–156：文字缓解首B与独立首跑的测试前提错误
+
+Root亲读新公开none→B测试和实际text投影/引用库存，独核152–156原metadata完整before/after及原log。152真实none基线后结构风险字段不变，新增措施本应使repeat与fresh同时入选，实际仅fresh；153最小GREEN 1/1，154类型通过。公开正向检查新发展为text new-remediation、Markdown展示措施、恢复因子仅回1而历史频率仍小于1、重启read一致。尚未验证所有文字返回/补判/unknown路线。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 152-red-text-mitigation | actual `[fresh]` vs expected `[fresh,repeat]`，exit1 | 04:17:44.775Z→04:17:45.335Z | `4720e5ab9e171e2f1ca04473928c2c6d8910e6cf0f2617193d01a09a9f6f4faa` |
+| 153-green-text-mitigation | 1/1，520.9754ms，exit0 | 04:21:29.067Z→04:21:29.663Z | `948eb879aaa9bdb40081b982c2fc7a940b684b09873c99c319a773ca10a5f4ca` |
+| 154-text-mitigation-types | exit0，空log | 04:21:30.488Z→04:21:32.736Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 155-text-mitigation-regression | 非66刊容量部分45/45，6186.7145ms，exit0 | 04:21:46.200Z→04:21:52.467Z | `bc18e457a5b9bafeb738e9086df8388f8e29810d3457340fc5b40c96fe36eaea` |
+| 156-mitigation-input-sha | 1/1，512.8999ms，exit0 | 04:23:32.273Z→04:23:32.862Z | `5d6f4b44fe05a08e1018b4cbb57e2d6f55fb524684badad0333c8e9969a583a0` |
+
+155明确使用`--test-skip-pattern`排除66刊容量；虽与151都为45项，两者测试集合不同，不能合称同一全量。156只在公开外部输入加入完整v2 InputSHA的独立createHash断言，首跑通过，属characterization而非新产品RED。
+
+独立none→B→none原三文件Root均全文亲读/hash核对：`data/root-v1-13-mitigation-review/README.md` **771B6AD01A55480C0D70F1B08F69C75364FAB94B82844E5FFC9B09ED55B975BD**；fixture **AD4834FD706FBB3389E18628C9104B7C75F68E1065BCF596683E1BD0656E6CE0**；probe **FA2170790286E862CC0DDB9F36E35871D73CDB9A7E3B9BD95C20C1CD21C5F20F**。新Root包装`security-mitigation-probe.mjs` **09DCE48B0169B2CDF471956C9AF9BAC9ABB53CEDD9BF5738731F44849F347FB2**前后核三件及原GHSA fixture、冻结mitigation design，共五件。
+
+155明确冻结后首跑`wip-mitigation155-first-01`为**0/1、exit1、216.9246ms**，UTC **04:22:21.188Z→04:22:21.688Z**，原log **df2b78934c1f01e81354d905225fa6c991d5e06ce615567a675d7dccac0270bb**。Root完成即解除冻结，独核完整before/after、原hash及逐Module与作者155零差异。失败在none-baseline外部替身的body摘要检查，尚未达到accepted baseline或B；不是业务重报失败。
+
+Root初见错误摘要暂称可能InputSHA，随后亲读既有`github-advisories.ts`并独立Node实算后明确纠正：现有`bodySha256=githubDigest(description)`对完整字符串的JSON编码取SHA，none对应 **ec1bd6560238ac59c6e0800477837c4b8f677e3f33b56e12deed5dfb7b4cf656**；新Root fixture错误按未编码字符串取SHA得到 **c138ff19a82300448a3dec5c87267ac385d5372ab367d2ce85d118fb35acdf12**。正式契约没有要求改旧body编码，产品不为此改字段/身份。原三件及原日志原样保留，独立作者另准备v2仅纠正bodyDigest这一既有编码假设及probe import，所有语义/五期配额/首次origin/全文输入期待保持；未运行v2，不把原首跑记成产品RED或通过。
+
+### 157–161与两项新独立公开回放
+
+Root亲读157公开对照并独核157–161原metadata完整before/after与log hash。157的真实支持none投影因结构assessment为insufficient/unknown/null而被丢弃，后轮完整history为0而期待1，是真实RED。158仅解除可选基线对重复结构same判断的额外依赖，非null旧ID仍须实际完整previous成员；授予文字发展仍需supported/new-material。安全专项21/21，159类型通过。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 157-red-independent-baseline | history 0≠1，exit1 | 04:25:37.001Z→04:25:37.465Z | `3745eba70a59f7fac0d2167c062df580e65b9da2a6751c1f001a588e07eb0ce7` |
+| 158-green-independent-baseline | 21/21，3630.4113ms，exit0 | 04:26:01.545Z→04:26:05.256Z | `aa80fb3ab34c0231ded77cdc2fc44dae2e2e03079cce5c372e18c41d8a735981` |
+| 159-independent-baseline-types | exit0，空log | 04:26:06.047Z→04:26:08.158Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 160-unknown-mitigation-baseline | 首跑characterization 1/1，629.0822ms，见下述语义输入限制 | 04:29:26.949Z→04:29:27.652Z | `414305e0825fb30576ca57a62f9ff6182de1f69561db9923c66d6cf3a6c9601c` |
+| 161-unknown-baseline-types | exit0，空log | 04:29:34.429Z→04:29:36.566Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+160执行检查首次unknown不倒填none、真实only-A首次baseline不成事件、后轮新增B可发表及重启；没有产品变更。但Root亲读发现新增句`关闭查询之外，还可隔离入口。`只支持mentioned，不支持Owned输出的explicit-only穷尽断言。故不把此原输入通过计为准确的排他语义证据。Root已要求作者保存160完整原test/原日志，准备准确注释v2：旧A仍explicit-only，当前A+B全文不截、after/draft改为mentioned，或改完整句明确仅两措施；初始不回填/A不成事件/B入选与重启期待不变。当前尚待后续记录。
+
+独立scope生命周期已在`data/root-v1-13-history-scope-review/`完成准备，Root全文親读README/probe并核SHA：README **04341C273172A73521FB2A0F7EBBF4838042B20AA5047107B97AD0D536541A3F**，probe **B3D64B06B626B859316A7E82BEAC4F43C3140F1C089B67554A9F80DA0113FB5C**。直接import未改的原合法Release fixture，三个独立实际两库先正常出版含完整Release短引文的刊物，不用空刊遮蔽授权前提。Root包装`history-scope-lifecycle-probe.mjs` SHA **8BE9ACD9FB6C0229A91A99057C35E3EACC2058DA3236632F9890FA97A1DD167F**前后核四件，未改原capture。
+
+159明确冻结首跑`wip-scope159-lifecycle-first-01` **3/3、exit0、584.8616ms**，UTC **04:27:46.258Z→04:27:47.151Z**，log **54eb3ca9e90935159d76cb9bae5ac6dd3d17998fc73734db5deed8827c032ab9**。覆盖关闭后两种逃逸授权拒绝、callback异常后新scope/旧刊恢复、known async未进入、无副作用thenable与外部重入被拒、最后成功授权后撤原source且不再次调用授权仍在出场拒绝/旧刊拒读。各三场景落地25/27/21个证据文件，Root重算全部manifest bytes/hash零差异、journal均completed。撤权setter同时改变policy版本，故不把它称为只隔离model开关的因果证明；不声称thenable检查是异步沙箱。Root完成即解除冻结，逐Module核等159原metadata，完整before/after/log匹配。
+
+mitigation v2只修测试摘要前提：Root全文亲读`README-v2.md`并核SHA **0E10BE69F3EFE8D899F7169190B77BB92A04888873E7C4C33895BDE9DB86BCDA**；新fixture **298F900BAFE8EB1C9D20705F13A18A6125FA72F13951FBD63C801DCAC537BDAD**；新probe **1C6728E655CFBDA69B9770E31B41C5BBE5DA50480A2FF4E140B191FCCCE3C364**。实际`git diff --no-index`仅bodyDigest一行及probe import一行，原三件hash不变。Root新包装`security-mitigation-v2-probe.mjs` **E7D5C4755760FE7D9659472CD2833D05EDEE2D5603866E5EFDC7C0D95BC54923**前后核八件并断言这两处精确替换，不重写原包装/原失败。
+
+161明确冻结首跑v2 `wip-mitigation161-v2-first-01` **1/1、exit0、802.6574ms**，UTC **04:30:03.423Z→04:30:04.540Z**，log **1910bf4aa5507b59da98cc3fae412b321a7c2d9377e8f31ab9669f013e62c7a1**。完整原业务期待通过：ordinary→initial→none基线→文字B→重启返回none，1/5/4/5/4席；初始不调模型，后续真实v2输入及完整flat原件/receipt SHA/原freeze/first origins可回核，返回none实际1次模型；initial/B各只被真实成功刊消费一次，完整五刊重启及公开pure排名回放一致。当前text路径新增Markdown effect/excerpt是真实用途，仍适用同原source500共同库存；不沿用早期无text时的GHSA Markdown零引文假设。Root立即解除冻结，后逐Module核等161原metadata、完整before/after与log零差异。这是纠正测试前提后的独立业务PASS，不是原155首跑PASS，也不替代unknown/only-A/replacement或剩余完整ticket的验收。
+
+作者另指出配置字段与整run同时篡改可能混淆实际原slot不兼容，当前仅静态风险、未有公开RED；Root同意按既有完整权威要求再定位，不取消真实旧slot无run/配置不符/晚可用语义，不擅增配置历史DDL。文字其他必要负向、极端动量公开链路和最终固定SHA双轴/full-suite仍required；#13保持OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
