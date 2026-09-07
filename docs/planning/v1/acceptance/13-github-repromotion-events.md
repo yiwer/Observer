@@ -1298,6 +1298,14 @@ Root核两份实际日志、完整before/after稳定及SHA，核测试正文与�
 
 277-momentum-startup-peer-reset-typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核274–277实际结果/SHA、完整before/after稳定与最终正文；另比对276与271全部src指纹无差异，没有产品修复，按公开表征收束该范围，不假称RED→GREEN。混合优先级、dirty/pending不能洗白及整段momentum遗漏三项继续，最终统一门不删。
 
+### 278–281：实际三类进展混合优先级与一次消费
+
+公开Record9先覆盖security/release/momentum三仓库，真实25小时完整观察后同时取得明确关联reviewed high GHSA、重大稳定Release和首次极端动量。实际Record10前三选取依次security→release→momentum，7席/4novel；三者ordinaryScore/recovery为0、仅effectiveRecovery恢复1，频率仍<1，Markdown保留风险更新和动量规则。后续24小时实际观察及再次出版，三者already-reported且无新消费；永久身份历史与本次成功刊物的六身份字段逐项相等，三刊重启完整相等。
+
+278首次在最后历史比较处失败：误将永久身份投影与包含正文/change/capsule等字段的完整development对象直接deepEqual；前面的混合排序/配额/消费均已通过。保留日志SHA `0684abdf2a07d4daff1a350e910c614378a0365355a502c57ef925a3a3c65b55`，不计产品RED，不为满足错误期待扩展身份历史schema。279只校准为已批准六字段身份投影，原业务1/1、7929.907ms总时长、exit0，UTC2026-09-07 20:47:32.004Z–20:47:39.995Z；日志SHA `4a82d4a408eb440b9584531c98c910237fd848a0e8eb7acb07bf21cc9a4cb05b`。
+
+280 typecheck实际exit2，测试candidate局部推断TS7022，日志SHA `2642d38ac17dfb29b5eeab012341f77371bfc5f057a0502a5e5fb004afd26a7e`。以实际Record10 candidate元素类型显式标注，未用any/跳过检查，281 typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核278–281完整before/after、实际日志SHA与最终测试正文；本组表征收束，dirty/pending和整段momentum遗漏继续，最终全量/固定SHA门仍未执行。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
