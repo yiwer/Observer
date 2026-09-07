@@ -1380,6 +1380,12 @@ Root新增固定输入包装器`data/root-v1-13-review/risk-witness-overflow-pro
 
 297-momentum-risk-witness-regression完整单文件实际运行中；作者原生handle53142已poll确认active，无terminal。Root跨会话尝试poll该handle得到Unknownprocess，不据此认定退出或重启；作者持有原句柄继续观察。最新冻结storage SHA `d87e43a7114e7d5ca8e73a48b0ba1e75c58af79bcdf0d7c3d73dbd2fb5d3b9e4`；之后原全量check/smoke和新候选提交仍待真实终态。
 
+### 297完整动量回归通过，298全量在途
+
+作者原生53142随后真实terminal exit0；297完整momentum单文件43/43、0skip，总161711.1546ms，UTC2026-09-07 21:18:26.634Z–21:21:08.405Z，日志SHA `9e544e2fa8602aa8dba1234b879a677197c26aff328355900de58adf05fb1129`。Root核完整before/after稳定、实际日志SHA及43/43汇总；新四GHSA用例及既有unknown GHSA隔离/历史与权限/容量回归均保留。该单文件不是完整check或最终独立验收。
+
+298原全量`npm run check`已由作者持有native94360实际启动，source/tests继续冻结，原脚本/测试集合/并发不变；后续299 smoke仍待真实check终态。Root不并行大型业务探针或Docker测试，不因跨会话句柄不可见重启作者进程。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
