@@ -69,3 +69,18 @@ Root读取新增公开测试并核各capture完整before/after一致、实际log
 | 18 failed-run identity GREEN | 4/4、0skip；invalid-bundle-identity失败携安全runId，无Report，鉴权读取和重启一致 | `f0b927ee26223232f3e459c136d945f65e15a0ebfe0968cddc9d5c7117c75721` |
 
 12 typecheck exit0。局部异常例为AI栏两Provider都抛错，世界/财经/前沿科技保留，两个失败原因与Provider记录且不留异常原文；不是全部Provider失败或真实服务故障验收。18只证明其具体无Report失败路径，不外推至未测试的全部失败类别。14虽目录含green，实际exit1明确保留，不计PASS。作者继续冻结receipt/独立终态关联、DDL和有界读；Root补充Owner不启用Provider的只读重启也应可查历史安全审计，资格撤销不能遮蔽审计。
+
+## 审计切片19–29
+
+Root核下列完整before/after一致、实际日志SHA，亲读公开readRun/readReport与Owned SQLite故障注入测试。SQL仅注入并还原，不以SQL结果代替业务oracle。
+
+| RED → GREEN | 具体行为与真实结果 | GREEN日志SHA |
+| --- | --- | --- |
+| 19 → 20 | Report冻结ready收据，独立run终态published；5/5、0skip | `7f6e5185494c6023fce0314bd379480785fd0e623e1796db22b12378a6e02187` |
+| 21 → 22 | 无Provider装配的只读重启仍可鉴权读取；6/6、0skip | `d0f3ce7f584956d2e64acaf982f047554e4f3232e8fdbdaa5931ddae5f2894c7` |
+| 23 → 24 | 实际runId被替换时审计和关联报告都拒绝；7/7、0skip | `ef2f28091393adaa27d53d5642f0612cfbb015bcd229e9400019d90177576bea` |
+| 26 → 28 | 已安装routing表丢失不得静默重建；8/8、0skip | `6200e2131d9c79903f9e78925a3a392e42a7ca956618400228e6c8c0f807a6d1` |
+
+25与29 typecheck均exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。27仍exit1、7/8，失败为测试收尾重复关闭已关闭数据库；原日志SHA `a087eab0735576a0d3f234cdda25f9e1f4dbf0daf07a3ac173e47a94fad25a01`保留，不计GREEN。上述只是局部开发证据，非完整资格/预算/仲裁验收。
+
+Root发现DDL开始新增`reports.routing_capture_sha256`，要求纠正提案“不改变reports行格式”的宽泛描述。批准必要的nullable附加列用于真实出版capture关联，旧payload/Record字节及旧行NULL不backfill、user_version不变；若实际只作安装marker，须明确用途而非预留误导列。作者须随既定关联切片交付具体校验，不能从存在列推导完整性通过。Root未暂停已批准TDD，并要求完成必要审计片后继续资格、全部失败采集可用性、条件复核和共享预算等核心AC。
