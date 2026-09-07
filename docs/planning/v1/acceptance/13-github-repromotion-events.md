@@ -1,6 +1,6 @@
 # V1-13 执行与待验收记录
 
-状态：in-progress；唯一产品作者为`implement_v1_13_resume`。117稳定源码窗口Root新合法短证据Release 9项、原安全3项与旧引文反例1项，共13个独立测试通过，另5份旧刊内容不变；不将新输入冒称原长引文输入继续通过。作者共同引文局部34/34；出版/read计费、纯文字缓解、再次增长产品全链路仍未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13最近实时readback为OPEN，本段不作新tracker写入。以下逐段记录按实际发生顺序保留，末段为最新进度。
+状态：in-progress；唯一产品作者为`implement_v1_13_resume`。117稳定源码窗口Root新合法短证据Release 9项、原安全3项与旧引文反例1项，共13个独立测试通过，另5份旧刊内容不变；不将新输入冒称原长引文输入继续通过。作者127窗口局部39/39，128类型通过；出版/read计费、纯文字缓解、再次增长产品全链路仍未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13最近实时readback为OPEN，本段不作新tracker写入。以下逐段记录按实际发生顺序保留，末段为最新进度。
 
 ## 固定任务与依赖
 
@@ -607,6 +607,42 @@ Root另亲读合法v2全部说明/manifest/两个静态引文账，并由新包�
 | wip-quote117-old-input-01 | 1/1，220.9960ms，exit0 | 03:29:53.832Z→03:29:54.338Z | `60280f5da34ba8d866e415f733eb892f43d52f663126ad2862d109cb0c59af39` |
 
 另已派独立作者准备固定policy69、四node分别合法取得23字material后同轮完整history至少92的整node缺额反例；不预定哪node先耗尽、不把内部Release/security先后顺序当规范，仅准备未运行。Root也静态指出Release单条仍有UTF16 `.length` 边界，与总pool codepoint修复不同，要求后续独立非BMP用途覆盖，不把250emoji双副本测试视为所有Unicode边界已通过。
+
+### 118–128：整节点降级、原来源exact复用与Unicode/消费投影
+
+Root亲读公开新增测试、当前Schema和renderer，逐份核118–128完整before/after及原log SHA。118是在当前Release先占50后，security旧23字无法完整保留的characterization：该节点隔离、独立fresh出版及重启读取通过；随后Owned篡改真实旧GHSA父run仍拒原刊，恢复原字节后可读。该测试不是预算先后顺序的普遍规范。119为exact GHSA旧23字来自source100，新source仅1且当前description已换文字；历史发展身份/旧摘录仍正确归原来源，出版/重启read通过，首跑characterization。
+
+120/123各有一份完整非BMP短句，codepoints<500而UTF16>500，分别在routine Release与insufficient GHSA收据缺失处真实RED；不授重大事件资格。121修复后合并37/37，124安全16/16，122/125类型通过。126真实RED为消费history仍复制change/excerpt；127改为已批准严格六字段身份、保留原发展及初刊全部可读，合并39/39，128类型通过。没有原地改变已验收Record1–9。
+
+| 作者目录（`data/v1-13-slices/`） | 结果/时长ms | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 118-security-quote-unavailable-characterization | 1/1，464.8754，exit0 | 03:31:13.322Z→03:31:13.868Z | `3a66c77a84cc89e00644ff54d8e5181fe537a72a9c98282e4e87145f14e76b11` |
+| 119-security-exact-source-characterization | 1/1，454.0672，exit0 | 03:31:59.782Z→03:32:00.310Z | `ceaeba6d9d88946c3b2c6aa63fe6132e2f7c07960115f58a04ccd6a4f86f440d` |
+| 120-single-codepoint-quote-red | 0/1，329.6342，exit1 | 03:32:26.728Z→03:32:27.129Z | `a25fc3eec5111e4f2f3577df915e06e9958c229ec44bc3ae247c3a951ae63957` |
+| 121-single-codepoint-quote-green | 37/37，4866.0769，exit0 | 03:32:45.233Z→03:32:50.174Z | `bc7cbc6b68e27a834326a7f11555f769e2289405725828a8a0b5148f7ba34231` |
+| 122-single-codepoint-quote-typecheck | exit0，空log | 03:32:50.919Z→03:32:52.933Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 123-security-codepoint-quote-red | 0/1，353.2575，exit1 | 03:33:29.723Z→03:33:30.145Z | `16044ec66deed23611896ce787e38f2abbec0b1fe102fbc50af865ea603cf863` |
+| 124-security-codepoint-quote-green | 16/16，2587.2859，exit0 | 03:33:30.959Z→03:33:33.614Z | `fc7c6e6a95871696ad8232666dc69be6b99f17fdf61f0540172e2c8e80a8c65d` |
+| 125-security-codepoint-typecheck | exit0，空log | 03:34:14.023Z→03:34:16.043Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 126-event-identity-projection-red | exit1，冗余引用实际存在 | 03:34:16.833Z→03:34:17.414Z | `a26cd71dea12025a7bb3cf1f90f32a8ae305f4861f10b6d4108a24a3e2b7bdf1` |
+| 127-event-identity-projection-green | 39/39，5110.7465，exit0 | 03:34:41.540Z→03:34:46.723Z | `c43b9cf90132fef71678d7327b16f1eac94e5477d96b19f025426253f188c049` |
+| 128-event-identity-projection-typecheck | exit0，空log | 03:34:47.572Z→03:34:49.633Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+### 出版计费域澄清与有界投影实施前批准
+
+独立只读核查指出，现produce没有将repromotion送给editionRunner；GHSA当前Markdown只显示结构化影响范围和来源，不显示evidenceExcerpt。Root亲读实际路径后立即纠正此前给作者119的161预判：不能机械加GHSA并未展示的23字，也不能把纯内部freeze当一次外发用途。119实际Record明示引用92、Markdown0，source100仍可合法，不据错误预判强改样本。
+
+§10在此精确化：完整冻结输入仍需完整验权、原成员和预算，但纯JSON parse/clone/rank/重渲染校验/重复authorize读取同一逻辑库存不另收费。未向模型或editionRunner发送的内部freeze不与最终Record再重复叠一份。一次produce/read核最终实际留存或返回的Record所有不同引文字段，加实际Markdown展示；run/history/receipt/current development、候选（包括未选fresh）及reported等不同复制字段仍累计，不能text-dedup。额外实际模型调用/转发/输出用途另计。原合法v2第二静态账是明示库存而非最终规则，其多列内部freeze的原文件/日志保持不改，不能升格为规范或产品计费总数。
+
+Root批准在**新未发布**`DevelopmentSnapshot`加strict可选`publicationProjection:{schemaVersion:1,origins:[{slot,runId}],omissions:[{nodeId,kind:'release'|'security'}]}`，origins最多1且恰等实际原run全集，omissions最多100、唯一固定序、仅真实有效node-kind，无默认段。只由produce构造；观察原run、旧Record1–9及DDL不改。投影run重新digest但完整contextFreezes保留。Release整组移除其assessment/previous/verification/developments，保留不含引文的Release evidence元数据（Root随后亲读§10.4明确前述删除evidence的表述过宽）；security整组移除其历史引用/assessments/developments，保留本轮metadata/risks且明确node unknown，不能洗成安全或初次；其他kind/普通元数据不变。最终ranking、quota、Markdown和实际消费从最终完整投影重算，省略事件不消费。
+
+不能只按caller自报omissions重导后相等就接受。Root批准确定性有限算法：Release先剔除、security后剔除（保留安全优先），kind内node Unicode码点升序，最多100步；每轮重算最终排名及实际库存，仅剔除对任一实际超额source有引用的首个完整node-kind，再重算。出版最终事务/read必须以真实原run重导完整omissions并逐字段比较；原run的所有prefix/member/origin/逐原policy权限和共享读取cap在投影前完整通过，损坏或撤权不准冒充合法缺额。
+
+为上述重导，批准唯一窄Interface增量：`authorizeDevelopmentHistory?(snapshot, publication?: {interestProfile:InterestSnapshot;coverageHistory:GitHubCoverageHistory;eventHistory:GitHubEventHistory;algorithmVersion:'observer-github-repromotion-v1'}):GitHubReason|null`。投影段存在而publication缺失拒绝；Observer对实际Record10的最终出版、read及用于长期消费导出/复核的旧刊授权均传该刊自己的已核上下文，**没有projection段也重导**，防止删段恢复原run后绕额。单参数仍可作非出版历史核验，不冒充完整publication授权。新参数不授历史或来源权威，Report库仍独立验证真实前刊完整集合；用原刊Interest，不用今天兴趣。此为实施前精确审批，未声称相关产品代码或最终验收已通过。
+
+Root已全文亲读独立`data/v1-13-momentum-design/publication-quotation-review.md`并重核SHA **8EAD670E0C5E0141C52391B10B281940AE3EEE8440FA66A914DEC30C4885BD9E**。该note列实际字段→原source库存及五项接线风险，明确其WIP阅读期间代码变动、没有业务运行；只新增note，原v2账/mitigation note hash不变。风险为GHSA exact/same旧来源、真实候选/收据/显示漏计、身份优化误伤语义历史、内部校验重复计费、跨kind投影洗白。Root确认与现已批契约一致，非五个已证实产品失败，也不构成等待新审批的门槛。
+
+新的四node69额度独立探针三文件已准备在`data/root-v1-13-security-history-quota-review/`，Root全文亲读README/fixture/probe，尚无业务运行。准备版SHA分别为README **951D4C739FE8449ACDD814C1C28C9A52075B56D7489392DF1BFD075678038C12**、fixture **94E159D4E85F8C3ECB39D3A65E8B686536CB8869241CBB6E0C8CE9374B1833D8**、probe **B95F82641112F2332A9033E8ED61863B816079FA2983EB6DA38CE5184D39D8C1**。首跑前Root发现probe额外要求`risks[].status=unknown`过强：已批允许当前GHSA事实完整/high-risk而其安全历史unknown，隔离由history标志及ranking说明。原三文件保留，另准备v2仅将该附加风险数组期待改为实际候选`eventReason=security-risk-unconfirmed`，保持整node历史缺失、全部原freeze、46字正向账、四node有效、未选/未消费及独立novel出版重启等原业务期待；这不是运行失败后降期待。v2及首跑尚待后续记录。
 
 ## 兼容及安全
 
