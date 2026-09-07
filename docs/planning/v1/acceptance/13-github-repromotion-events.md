@@ -176,6 +176,23 @@ Root重算各loghash并比较完整before/after（模块、Root脚本、HEAD/sta
 
 这是合成设计偏好比较，不是31条产品tests或真实满意度校准。p99/min30多数生命周期差异来自根本无首次资格，不能误称状态机错误。场景09多门同时关闭，场景17返回A时部分peer缺样，二者不能分别孤立证明所有filter或reset可比性；原输入不改，真实产品后续独立对照应补。Root正在等待完整有界onset/reset证明建议；反对仅靠自报checkpoint hash，但认可真实DB权威与局部可重算证明分层。2,160小时/26点旧提案仍未批准。
 
+### 动量参数与局部证明语义已批准
+
+Root亲读独立`README.md`及`episode-proof-design.md`全文后，批准推荐`.975 / min20 / stars100或forks20 / 24h`进入后续公开TDD。采纳是编辑/工程取舍，不把合成零差异当作统计最优。具体新增决定：
+
+- 同一信号同时达绝对日均增量与分位门槛，language+age→age→全部measured回退；普通Heat保持不变。
+- 完整measured的零/负增量可以支持non-extreme；unknown、来源/风险不可用、缺样、截断、样本不足不能。退出用实际观察UTC，连续至少24h、相邻不超过90min，不因移动cutoff或重复使用同一观察而推进。
+- reset全段与紧邻首次新extreme固定规则、采样语义、目标cohort语义及精确peer集合；显示版本/改名不生成身份。满24h后缺样也丢弃待用reset，保留旧episode及消费。无须与多年前原onset池永远相同，但不能切池制造新高。承认严格peer稳定性可能降低现实召回。
+- 采用局部原始onset/reset证据纯重算，加实际观察/Report成员与完整性复核；不递归复制全部历史，也不把自报checkpoint变成权威。首次startup超界仍可在未来完整reset后建立有证资格，不能因任意2,160小时上限永久锁死。
+- 允许实施并实测的资源cap：reset最多28评估点再加1 onset；初始startup最多28点含onset；每点评估最多50候选双点；每capsule最多8MiB；每次momentum共享proof bank最多32MiB/50个capsule。按opaque node Unicode码点顺序分配，超界对应动量Gap，不能先赋资格后删证据。它们是显式资源界限，不声称已证明调度恒足够或容量性能通过。其他事件/普通Heat依其独立证据继续。
+- 本票保留必要证据，不执行#22清理。实际持久DDL、完整性索引和输入Schema仍由唯一作者给精确方案后协调，尚未批准动量DDL。
+
+设计作者在上述全文初读后又追加实际Seam澄清及批准记录并冻结。Root亲读所有追加内容、独立核最终SHA：`README.md` **79BE11CE18BE5ADD89C366267E07C277362D5288D164C685D01B65E3ADC08F75**；`episode-proof-design.md` **B9F591F751944831B35198A5F03FC96336A9F93BA4C989D80EFFFB9C8D85D70D**。reset加onset的原观察引用上限为29×50×2=2900，原2800仅指reset本段。原固定输入/期待/比较器/run-01保持不变。允许实施作者将必要固定输入、比较脚本、解释文档及摘要manifest纳入正式参数目录，原100MB完整轨迹在data保留、可确定性再生，不必须全部纳入git；不能改期待或丢失provenance。另给同设计agent一个独立有界索引反证任务，只可新增scratch审阅文件，不修改上述冻结材料或产品，不自授DDL批准。
+
+Root另独立准备`novelty-withheld-consumption-probe.mjs`，SHA **38CAE871B18E8960E29B51595F332C10C725EEC7AF553418E7EEE19C0333A0E8**，场景为已采重大Release因0 novel未入选，下一期出现novel才真正消费，空刊不增加频率。当前仅`node --check`通过，未执行业务，不计PASS。
+
+作者后续日志由Root实读并核29–32 metadata/hash与完整before/after：29类型检查exit2是新增quota测试闭包类型收窄遗漏，SHA **4d149fb8d84a57d342eb31fd46f0fb69dd231016f8c7b191c84002d0410e6f7f**，原失败保留；30 typecheck于00:58:10.035Z→00:58:11.930Z exit0；31 Release于00:58:12.688Z→00:58:14.528Z、11/11、1762.3147ms、exit0，SHA **b21e61157ab5eafe3f801c9ecd8e355b708aa3f1d31133571eaff209d3d49ece**。32首GHSA tracer于01:01:07.682Z→01:01:08.012Z、0/1、253.808ms、exit1，未实现的DevelopmentConfiguration严格拒绝`advisories`，SHA **33b10dfd6f3b3f398913221e63933ff9a3cce364d3972b5ed307038ce22629ad**。这是实际新能力RED，不是已完成安全公告验收。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
