@@ -1282,6 +1282,14 @@ Root核全部公开测试正文、完整before/after与实际日志SHA：
 
 Root再次gh只读核#13仍OPEN，原三类进展、可重算衰减/绕过/配额、成功出版才消费、安全隔离及scope未变。下一继续新空库startup>28与一次实际context中断/完整reset恢复，mixed priority、dirty不可洗白与整段momentum遗漏仍待验；不提前关闭或推进#14。
 
+### 272–273：startup/context场景的两处控制前提
+
+272真实新空库小时29首次高已证明30个startup观察不能截成28点胶囊，64低点及65实际new-peer cold-start/旧peer quarantined导致target unknown均通过；失败发生于66预期恢复non-extreme却仍unknown。测试在65验证新身份后不再提供其详情，但既有观察器会继续刷新该身份，因此后续池并不完整。原生exit1，日志SHA `f671ba9b39a35304a0e03e2b33a478121a539f0ab3426a8baee7733503673128`；不是startup/reset目标RED。
+
+273仅补全>65的新peer实际HTTP响应，保留全部原20peer及新身份，未来实际21-node池。原>28拒绝、65中断、78拒绝均通过；后续102–126低段+127高点形成实际reset capsule，26点、21个exact peer IDs逐点完整measured/current/historical、原onset相符。末尾失败在最终Report找不到repeat的reportedDevelopment，尚待公开quota/选取/reasons诊断，不将该出版控制失败归为reset没恢复。原生exit1，日志SHA `e675414aad9d6205865233c1608c896d917c8f9251c02a07402bad4ec1d184e1`。
+
+Root核两份实际日志、完整before/after稳定及SHA，核测试正文与具体失败位置；无产品修改。需继续查明并建立最终Report实际可选/novel前提，保留原127胶囊的时间/完整peer及此前拒绝断言，不放宽新颖性配额。当前不是该组完整PASS，原档保留。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
