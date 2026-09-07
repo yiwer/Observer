@@ -835,6 +835,27 @@ Root全文亲读作者§11及独立`data/v1-13-momentum-design/publication-confi
 
 配置probe两场各先真实C1的Release+四novel五席出版，再仅修改payload为null/另一合法C2及正确sha、空run/无projection，公开重算成四席无事件；两者均实际拒读，finally精确恢复、重启原两刊可读且原观察snapshot未变。第三场是真正produce前从C1切C2且不再observe，合法不兼容空run刊可发表；恢复今天C1后仍可read/restart，原C1 slot完整。未读写新capture列作业务oracle。此独立probe首次在修复后即PASS，不声称它曾独立RED；作者162原失败永久保留。配置三场实际临时双库目录为`cUVmU2/GxRSOV/LJPMPh`（均带`root-repromotion-publication-`前缀），旧整run为`Fyw4Qz`，原文件未清理。
 
+### 172–175与动量持久方案正式批准
+
+Root亲读172两个公开边界，并独核172–175完整metadata before/after与实际log SHA一致。172首跑2/2（498.5656ms）验证零事件Record10缺/坏承诺拒读、局部完全自洽降版Record9仍拒读且普通/事件历史皆unknown；五种畸形列拒安装，普通TEXT DEFAULT NULL可安装。173 typecheck0；174明确skip66刊容量，两专项53/53（6202.4465ms）；175七个既有文件137/137（3993.0767ms）。它们均非全check/smoke，不替代最终固定SHA验收。
+
+| 作者目录（`data/v1-13-slices/`） | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- |
+| 172-capture-negative-characterization | 11:55:25.473Z→11:55:26.047Z | `e40b3e0f44323d2d41e522bb9e8a17bb59a6d046f5646dd4e80d24e62ad63b13` |
+| 173-typecheck | 11:55:38.601Z→11:55:40.560Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 174-repromotion-regression | 11:55:41.306Z→11:55:47.582Z | `a6044460c9867dc94e6fce136cd51a48f4dc2b56297c23ef4ba4c2a709ec8b9d` |
+| 175-legacy-regression | 11:56:34.081Z→11:56:38.150Z | `808c96e6de2e2be3816538292bf5dfa4b80a60751c3f78ba8cc864da7c638ea5` |
+
+Root全文亲读独立`data/v1-13-momentum-design/momentum-storage-proposal-review.md`（SHA **C4A1AB15D4E0DE58C899DAFAC7489C8E68B1BBDBB1114CAABF92447DDCD13F44**），将其四项必要修订与历史风险witness交唯一作者；随后全文亲读修订§12（当时整文SHA **A20B7C07C5BB2986592D8A3FDAF4FFE19A406EABB609F0C49A867C86408C7DD4**），正式批准严格momentum可选配置/来源显式能力、Point/Capsule/Snapshot/RiskWitness及六表持久路径。旧配置无默认、原Heat/旧Record1–9字节不改，参数/episode规则沿此前批准值，未做新参数比较。
+
+批准范围要点：既有authorities保存`momentum-storage` v1固定DDL见证，六表/state缺失或残留不能fresh重装；实际run/frame/≤50steps/heads/capsule同短事务，受信expected清单与原generation索引定位，不COUNT全历史、不递归previousStep。缺席不遍历全历史node补行，实际slot连续性用于unknown判定。只由新真实观察推进；正常disabled/缺样可提交有原run的unknown frame，不与结构损坏dirty/pending混淆。SecurityRiskWitness完整绑定同slot实际DevelopmentRun风险/历史unknown投影，使用既有typed全依赖与原freeze核验，不带正文、不递归嵌入安全run；每个历史reset点评估风险，不能只在最终当前排名隔离。§11 capture同时绑定momentum原freeze/point身份，禁止删除整段自证空。
+
+Root明确批准旧库`legacy_unknown`工程降级：无法在现有有界/许可门内证明系统无更早node观察时，startup保守unknown，不是所有node实际已有旧episode的断言。之后仅基于新获许可的完整reset+紧邻onset即可恢复，不需不可用legacy/旧capsule、不清旧identity/消费、不洗dirty。新空库≤28点完整startup仍可首次授资格。披露升级低召回，不声称无损首次发现，也不把损坏当正常升级。
+
+资源批准：每Point1MiB、完整frame2MiB（含Point+expected）、manifest32KiB、step64KiB、head1KiB、state/安装见证4KiB、RiskWitness256KiB、typed依赖256KiB/1001身份；每phase非payload定位/header metadata另限16,384行/8MiB，SQL实际字节先验。原GitHub1MiB/Development32MiB不变。phase共用64MiB实际payload预算明确包括GitHubRun、DevelopmentRun、frame、step、capsule，按(table,key)缓存同原行；同slot另一表仍计费，失败不退款，manifest若单独读取也计实际用途。不声称整个操作堆内存64MiB。单capsule8MiB、50capsules/32MiB frozen bank、node码点整组准入、reset28点+onset1/startup28含onset不变。全局持久事实随真实run/episode增长，本票不执行#22删除。批准已发给作者开始首RED，不等于任何动量业务测试已通过。
+
+用户随后询问issue是否漏关，Root实时`gh issue list --state all`确认#1–#12全部CLOSED、#13–#28仍OPEN；#13缺动量实现和整票验收，未提前关闭、未写tracker。用户另要求插入sandcastle+Docker独立研究，已派background research agent，仅写单一研究文档，不安装/跑外部代码、不改本票/Runner/PRD/ADR、不自动采纳。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
