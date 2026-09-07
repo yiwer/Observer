@@ -309,6 +309,32 @@ Root随后按原6份已执行脚本和首跑前固定的新`context-index-loss-p
 
 Root批准作者提出的单列权限路由细化：`development_runs.material_kinds INTEGER`对legacy nullable；新行0=真实无Release/GHSA材料的元数据空/失败run，1=Release，2=GHSA，3=两者。按真实提交payload计算，并在后续复核与schema、固定guards、原SHA/字节及实际kind一致绑定；null/未知bit/headerless不能猜0。0仍需原source metadata许可，不借此读取含事件材料的旧run。该列是已有typed路由内部实现细化，不扩展Request或Research Agent权限。作者更新正式§8审批/已实现/待验证状态并继续TDD；Root不并行修改产品。
 
+### 原索引丢失反例闭合，普通历史校验未放宽
+
+作者58公开反例先证明普通history未缺失、真实已发布节点完整，再复现selected=[]。定位为`repromotionSnapshot`将`developments.reasons`与原run数组别名共享，追加index Gap污染原不可变run内容，组合authorize因此拒绝整栏；59只复制reasons并避免重复追加，不修改普通历史权威逻辑。Root亲读58原失败及实际`[...run.reasons]`修复，并核58–60完整metadata/源码前后指纹/原日志hash：
+
+| 切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 58-index-gap-ordinary-red | 14/15，exit1，2921.4231ms | 02:01:10.113Z→02:01:13.114Z | `ee1ef8222551fe6d7cf357a58ce335911045594dc3700a62df02ac05419758db` |
+| 59-index-gap-ordinary-green | 19/19，exit0，3066.5911ms | 02:01:29.513Z→02:01:32.660Z | `dbebec1872a6226f76778cbe1a80dc2168649ca3d897d9938e4655b3da222d81` |
+| 60-index-gap-typecheck | exit0，空log | 02:01:33.391Z→02:01:35.376Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+60冻结期间Root原样重跑7组9测试全部PASS，包括原context-loss两例现在完整到达普通D/E、可见Gap、restart及旧依赖拒读。所有metadata完整前后及日志hash独立复核，所有原脚本期待不改；Root已明确解除冻结。仍不是clean SHA/整票容量或生产验收。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果/总时长 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| wip-index60-release-01 | 1/1，246.9667ms，exit0 | 02:03:22.243Z→02:03:22.716Z | `c2f52fd966bb2ee911661c67dfb73de224f1050d046a1aba70154a090c6def53` |
+| wip-index60-long-01 | 1/1，287.068ms，exit0 | 02:03:23.101Z→02:03:23.612Z | `d75c8232ee77efe4d2dd95187abf2202d5a03377a8068b1bf23cc8c775d9d6e0` |
+| wip-index60-integrity-01 | 1/1，253.2972ms，exit0 | 02:03:23.953Z→02:03:24.433Z | `132aa9f9b07d128bfc278c08b3edb05ec2db4472782dbeed12cf4d3b8d1aca47` |
+| wip-index60-reissued-01 | 1/1，241.2267ms，exit0 | 02:03:24.756Z→02:03:25.238Z | `8d6f38ea8aa451a31d89ee1601dcc230aa22bf1e9bc9a9ea8d4d87e8740e756c` |
+| wip-index60-no-novel-01 | 1/1，232.3672ms，exit0 | 02:03:25.539Z→02:03:25.992Z | `b9d6fddc5e5106c3be12aa881c203c33209b38a1e20d0731a5813123f02966cb` |
+| wip-index60-scope-01 | 2/2，295.0214ms，exit0 | 02:03:26.295Z→02:03:26.802Z | `a20bf598775066b8edeffa4f09977f5bf0164272e0c6c6e7ad87ad6a2bab4d3d` |
+| wip-index60-context-loss-01 | 2/2，574.8598ms，exit0 | 02:03:27.098Z→02:03:27.891Z | `31f955bd60696b272e3a6e404b0deb931f26e59b28d65b69db312a091f7bff22` |
+
+作者指出原DevelopmentRun内嵌previous可能来自其他source，仅own source typed header不足以在整段解析前逐旧source授权。Root批准同一内部路由增加`dependency_policies TEXT`：严格身份/用途数组`sourceId/policyVersion/policySha256/materialKinds(0..3)`，同身份合并用途，固定Unicode码点总序、无重复未知字段、无材料。先SQL实际UTF-8字节不超过256KiB，再解析最多1001不同身份（current加既有1000 origin预算），逐原source按用途授权后才读原payload；超过cap明确Gap，不截短。新提交从全部实际材料及嵌入previous/previousEvidence/security history引用计算，后与原payload、原SHA/bytes、kind完整核对。legacy null、缺失或不规范不能猜空数组，纯metadata空run也不能避开自己source。该增量不改旧刊/原run字节、不暴露新调用方状态。另派原独立设计agent仅复核这项路由/预算设计，最多3个公开Seam反例，不能改冻结材料或产品、不替代最终双轴review。
+
+Root新增单场景`release-cutoff-probe.mjs`首跑前SHA **43F3DAA3A3E6DB811752ED7C3D7FCD98E9F8ABABF63EE8E58C1E175B2666B780**：只在Owned Release HTTP已开始、仓库元数据已取得后推进注入时钟，保持两分钟deadline内，检查完整可用时刻跨cutoff不能借早published_at入本期、也不提前消费后期资格。只语法检查通过，尚未执行业务，不计PASS。没有修改原fixture、原9个独立期待或任何旧档。实时gh再次确认#13仍OPEN/yiwer，继续唯一作者实施，不关闭。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
