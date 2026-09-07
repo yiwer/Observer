@@ -179,3 +179,9 @@ Root亲读公开测试和统一begin安全门，核68–73各capture完整before
 71将totalTimeoutMs恢复批准的1000ms下界并更新快速例，21/21通过；这不是新的故障修复RED。72新增迟到resolve/reject回归直接22/22通过，0skip/0cancelled，日志SHA `0dab7f9e52f74124914376021db10e905a60883cf313fdf9b4a1f003f5c56d4f`：先超cleanup grace冻结run/report，再主动settle原deferred并排空一轮事件队列，鉴权readRun/readReport保持完整相等；无Provider配置重启run也相同。没有为已有正确行为伪造RED。
 
 73跨produce共享进程槽真实RED，22/23、exit1，日志SHA `77cf1bd6453f9747a694c881ef7276c44b1753a326f90d15ed6c5b733e07d02f`，作者继续最小GREEN。该并发矩阵仍未通过，不计入已有22/22范围；所有证据仍为未冻结WIP局部测试。
+
+## 共享研究进程槽74–75及排队边界
+
+Root亲读Owned外部容量输入与公开每run审计断言，核74/75完整before/after一致及实际日志SHA。74 exit0、23/23、0skip/0cancelled，日志SHA `edcf006fe08b0920f0afb6a5c42b9ae423f5018f36e6b557d04931e24832c525`；75类型检查exit0。三个并发produce共享双研究槽，各run均四个成功研究attempt，按既有同日唯一版本语义从成功报告或version-already-exists错误取得runId分别鉴权读取。外部容量计数位于Owned研究Runner，不是容器实测，也尚未覆盖研究/主核验/条件复核混合峰值。
+
+Root提出待补边界：获槽后的decide/persist、begin、资格解析、缺Runner等同步失败必须避免泄漏名额，同时不能在实际派发后清理未明时释放；排队Owner取消应保留agent-cancelled，不能改记deadline-exhausted并继续发表Gap。语义调用当前begin早于acquire，获槽后必须再次检查资格/剩余时限和取消，避免排队期间撤销仍派发。作者继续通过公开矩阵统一可信dispatch入口，明确queued与实际started审计语义；当前GREEN不外推上述目标通过。
