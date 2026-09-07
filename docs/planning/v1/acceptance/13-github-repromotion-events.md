@@ -365,6 +365,8 @@ Root独立重核九组全部metadata完整before/after与log摘要。cutoff首�
 
 独立设计者随后指出更窄的顺序风险，Root亲读当前loader确认：`snapshotRun/verify`进入`original()`后可先依typed header解析raw，`ready()`却在稍后的`readNodes`才检查。单边UPDATE缩掉已撤权dependency身份时，trigger虽已置invalid，最终闭包不符拒绝发生在raw解码之后。Root已要求统一入口先核固定guards与本操作可读阶段，再信任header/raw；public snapshot/archive拒绝既有invalid/dirty，维护允许初始合法building及同短事务自有变更，不能一律ready使补建永久停。另要求一次操作记录失败origin为unknown，不重复读取/扣占同slot；实际已读取的失败bytes仍计费，不能免计IO。这些是现有完整性/预算约束细化，不增加外部绕过flag。当前10个独立测试及5旧刊不覆盖raw解码前时序，尚不能称其通过。
 
+独立设计者完成新增`data/v1-13-momentum-design/dependency-header-review.md`，Root全文亲读并核SHA **F0F670A05B39AB0A2EC833DFFCD8BBF182BA9000B2DA79A9F16CFDC63A845273**。它明确保存初次/补读WIP各文件hash，不是原子冻结或已执行探针；已接线的dependency闭包不误报成当前缺失。Root认可其三项最小修正/回归方向并交唯一作者，不改变旧冻结材料或扩展框架：guard/操作阶段先验，old-only与双用途完整身份闭包，以及失败origin操作内unknown缓存。第三场景选择单边损坏旧父`runs`行，避免development mutation guard先遮蔽共享缓存问题；必须证明实际公开observe路径能到达，不可私有直调冒充。第一个场景的最终throws不能证明原文未曾解码，需把公开失败行为与读取前源码核验分别记录；不为观察实现细节增加私有mock或额外产品Interface。保守预留字节若采用，称为上界而非已发生IO；缓存不得跨操作形成永久失效。整体容量/权限饱和和最终整票验收仍未完成。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
