@@ -1109,6 +1109,12 @@ Root核实际公开测试、原生日志及完整before/after/SHA。此为既有
 
 239首跑1/1、8269.3571ms、exit0，UTC2026-09-07 19:40:39.860Z–19:40:48.192Z，日志SHA `219864b94c624d7a415971417d250de7ff525946369694e99cf9eeb15168c6b0`；240 typecheck exit0，19:41:06.136Z–19:41:08.059Z，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root全文核公开测试、日志结果、完整before/after及实际SHA。既有实现首跑表征，无product修复，不称RED→GREEN；不覆盖dirty/invalid洗白、全部startup超界或reset中断。整组回归与独立总行数探针仍分别推进，#13不关闭。
 
+### 241：风险来源/reset/legacy整组回归
+
+241-momentum-origin-reset-regression原生25/25通过，74343.8851ms、exit0，UTC2026-09-07 19:41:08.705Z–19:42:23.109Z，日志SHA `5db9de48079c19c4584febcc72a123c9851b306827587c340e6cb466c07ed41b`。Root核完整before/after、实际SHA及原生汇总。未主动长冻结，也没有241 Root独立capture；总行数探针尚待全文审读及首次运行，不以其准备完成替代执行。
+
+下一单capsule资源片按§12核定：保持完整真实Point与measured，以及数学node.status=extreme；容量不足属于证据可用性Gap，固定resource-limit原因，不授新onset/capsule/development，不回滚独立ordinary观察或丢无关Release/GHSA。旧episode身份/消费保留，但本次资源Gap不得借旧capsule授资格；snapshot/pure须与真实step资源降级一致，实际授权仍全量重现，不能凭caller添加reason任意裁剪。先以合法单run/Point和25真实point的实际字节下界建立超8MiB公开反例；整组预分配，不截points/peers，不把结构或权限失败catch为资源不足。此为既批资源降级的语义落点，不新增上限/Schema，尚不计实现或测试通过。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
