@@ -1364,6 +1364,14 @@ Spec发现P1静态证据：`github-momentum-storage.ts` makePoint把同node全�
 
 原测试期待完整原DevelopmentRun保留4条风险、安全事件可发布，whole witness unavailable/resource-limit且真实origin字段全保留，所有动量unknown且无capsule/development，普通实际增量仍在、Report鉴权重启完整相等。作者已授权做单一私有完整投影：按风险数和实际JSON字节整witness降级，makePoint和实际原件verify一致核验，不裁剪原风险、不宽catch异常、不顺带P3重构。此条仅记录正确RED与修复启动，不预报GREEN。Root独立公开探针正在准备，尚未执行；256KiB是否可由适配器允许的输入触达正在另核，不能把常见ASCII ID假设当严格输入边界证明。
 
+### 295–296：原四风险反例GREEN，最终门待重跑
+
+最小修复增加私有riskWitness投影，完整真实风险数>3或完整JSON字节>256KiB时整witness unavailable/resource-limit，实际origin保留；正常路径仍完整observed，不修改原DevelopmentRun。makePoint复用该投影，verify在原typed授权/原件loader之后，从实际GitHubRun、冻结配置及原DevelopmentRun重导整个witness并全等比较，不只比较observed子数组；未顺带改P3结构。
+
+295-momentum-risk-witness-overflow-green原公开测试实际1/1、0skip、exit0，UTC2026-09-07 21:17:05.662Z–21:17:07.075Z，日志SHA `c49eabe8f7b766b38ecc88fbcaadea8eb5e4141cc53839a528854988aa936229`。296-momentum-risk-witness-typecheck exit0，UTC21:17:07.723Z–21:17:09.622Z，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核两次完整before/after稳定、实际日志SHA、原测试正文及完整源diff；四风险原件、安全发布和重启整刊均通过，不代表严格字节阈值已实际触达。
+
+Root已安排作者完整momentum单文件，之后冻结原全量check→smoke再提交修订候选；期间不并行Root大型业务/Docker门。独立4GHSA公开探针准备中，尚未执行；新source指纹不得自动继承首候选容量PASS。正式复审、最终固定SHA独立/兼容及实际master验收仍未完成，#13不关闭。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
