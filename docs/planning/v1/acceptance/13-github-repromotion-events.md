@@ -1123,6 +1123,33 @@ Root全文审读三份准备文件后，在作者明确确认的242稳定窗口�
 
 原三文件、capture及`tmp/root-momentum-metadata-rows-tC0E1R`均保留。下一版另存v2，仅修正Owned初始化连接、保留所有业务oracle/规模/容量前提；不覆盖失败原档，不删除初装SQLite，不自动接受漂移的reader源码指纹。仍须重新全文审读/静态catalog核对与独立首跑，#13继续未完成。
 
+### 242–245：单capsule超界保留ordinary
+
+Owned HTTP在产品既有strict响应Schema内给20个node各100条200ASCII topics（不声称真实GitHub支持此规模）。公开前24次run及完整Point分别小于1MiB，且24个真实Point实际JSON字节之和已大于8MiB；第25次高点所需完整startup必然超单capsule限额。242该真实observe抛proof-invalid并回滚，未保留ordinary。243在全部原件/typed依赖核验之后，以envelope加全部完整point JSON及逗号的精确字节预分配，仅明确超8MiB分支记录资源Gap、不建超大胶囊、不截peer/point；保留数学status与原身份，关闭该次资格，未来完整合法proof可恢复。公开同原期待通过：20普通观察/Point保留，无新capsule/development，普通Heat仍可选repeat，整刊重启相等。
+
+Root全文核测试、资源预分配及pure重导分支，并核242–245全部完整before/after、实际日志SHA/汇总：
+
+| slice | 实际结果 | output.log SHA256 |
+|---|---|---|
+| 242-momentum-capsule-limit-red | exit1 | d853444764f65414019958415810773225128f74c1c9252a3ff995f594fa431b |
+| 243-momentum-capsule-limit-green | 同原期待1/1，4121.8384ms，exit0 | 422c5f61119c42e2a97044433725e64456f69087bb1928e5c8d45be83da23dbf |
+| 244-momentum-capsule-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 245-momentum-capsule-regression | 26/26，79076.6363ms，exit0 | e4f3fca5770bca4484f9798241872e14b4e508114d4ebdbae8b06066824e6eed |
+
+单capsule场景不证明整个50capsule/32MiB bank分配、旧episode在资源Gap后的所有恢复或其他资源门，剩余项不删。
+
+### 245窗口：独立metadata行数v2实际通过
+
+Root全文审读原三文件、v2差异与V2-NOTE。实际合成token为30字节，v2改为42字节；先前协调消息的29字节说法是口误，以实际UTF8检查为准。作者capsule修复后Root重核metadata所有query/projection及byte分支，无新增metadata路线，显式将v2 storage pin更新至 `4868e113d010c5934e46b35a5ebe69d2aca7593c7a8627008b601ac17c8a7bc5`，另两pin未变；未自动接受源码漂移、未改oracle或规模。
+
+首跑前冻结：fixture-v2 `26f9b89d4540543d3a45a80768040c3a4feb5ae2a319aa451ca0ad3804b9e565`，metadata-rows-v2-probe `6280257b00f5fd16b4aeb0980a877084f07663d4bafdc74467224e4c2ab29302`，V2-NOTE `8647cfa6c511242b668f41d06a14dda336d222f2cb767b49e6b0ce9e03548588`。新`capture-metadata-rows-v2.mjs` SHA `b77341268e8a3dc9694984984244ddefe6e0176ada48137e05714ff67de013e2`冻结原三文件及v2三文件，预声明240秒。原探针/捕获器/失败目录未改。
+
+明确245冻结窗口的`wip-capsule245-metadata-rows-v2-01`原生1/1、0skip、exit0，UTC2026-09-07 **19:52:12.114Z–19:53:18.580Z**，native.log SHA `edc33f1a52192ee20cb922bc0114caf81d5958bde645d6f66934ebd4d6f9a55c`。终结立即释放；Root核完整before/after相等、54模块逐项匹配245.after及实际日志SHA。
+
+实际328次48h观察，合法656搜索分页/16,400详情，50node每frame；末态328份原snapshot分别独立授权成功。容量前提无失败：16,400不同step原行，328来源slot，全部相关payload保守超集 **38,994,772 bytes <64MiB**；metadata完整投影catalog最大内容行 **701 bytes ≤1000**。按已审length行20字节/内容行配对，metadata8MiB不会在16,384行门之前触发，单项及其他来源容量亦已核定。合批328次中50次返回null、其余拒绝，scope退出抛`github-momentum-metadata-limit`；不把第几次拒绝设为业务oracle。随后新scope原快照恢复且不重启。
+
+原档`tmp/root-momentum-metadata-rows-FY4TlV`的664项manifest实际bytes/SHA全等，journal completed、无意外HTTP/model；恢复结果已核。这是当前已审实现的公开行数限制与scope恢复证据，不是8MiB字节阈值实测、heap/performance承诺或全部操作阶段/最终固定SHA通过。#13及其余验收继续。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
