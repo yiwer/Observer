@@ -1306,6 +1306,24 @@ Root核两份实际日志、完整before/after稳定及SHA，核测试正文与�
 
 280 typecheck实际exit2，测试candidate局部推断TS7022，日志SHA `2642d38ac17dfb29b5eeab012341f77371bfc5f057a0502a5e5fb004afd26a7e`。以实际Record10 candidate元素类型显式标注，未用any/跳过检查，281 typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核278–281完整before/after、实际日志SHA与最终测试正文；本组表征收束，dirty/pending和整段momentum遗漏继续，最终全量/固定SHA门仍未执行。
 
+### 282–285：残留pending真实RED→GREEN与dirty恢复
+
+实际25小时已出版momentum的库保持ready及所有原frame/step/head/capsule/Report不变，仅在准确已存在观察slot插入此前不存在的pending行，并恢复原insert guard，再走公开读取。282实际momentum仍被接受，取得目标RED；exit1，日志SHA `58e9b5048e46debdacb8fdd1e67dcf78557b5bf316067185493e5b632a21d6c3`。精确恢复仅移除该Owned新行、恢复原delete guard，不删除任何真实观察。
+
+修复在state经现有metadata预算执行`SELECT slot FROM momentum_pending LIMIT 1`：获取私有lease前及fresh最终检查必须无pending；中间真实事务仍只删除本次point.slot，不遍历清除旧pending，不改变公开接口/固定guards。283原公开测试1/1、exit0，日志SHA `330c96dcabc1023fa887166658f6381d826fe64b210772ec0d446eb0f909e6b9`；284 typecheck exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。
+
+285在该组继续精确修改实际state.phase为dirty并恢复guard，既有ordinary snapshot/Record9完整不变，旧momentum Report拒绝、新采集拒绝且公开末run未推进；仅恢复原phase/guard后，原Report和正常下一slot采集恢复，同slot幂等返回原run。原pending拒绝/恢复亦保留。原生1/1、4884.1804ms总时长、exit0，日志SHA `a8c9be053954cb76a68f05c12838015fdabcc5cc469587b0816e174d08be44d1`。
+
+Root核282–285完整before/after、原生日志SHA、测试正文和新增state查询；storage本版本SHA `55d5bebc13269d36755892da41ee174ddc4caae622238b5e6b0816f41a5b3ea1`。新增仅metadata读取，payload闭包未变，但旧bank/metadata-row硬pin不得静默替换或称已复跑；已安排独立新版本准备，原成功/失败探针均保留。
+
+### 286–289：整段momentum遗漏被独立capture拒绝
+
+真实启用momentum并提交20候选首Point，生成尚无event的Record10；删除整个record.githubDevelopments.momentum后，公开pure ranking仍与原记录相同。286初次读取拒绝/恢复1/1通过，日志SHA `33834a844935518ac28f3a4ce3098c73349bc1b7ec9acb09aadb1c6bf4430c0d`；287 typecheck exit0。
+
+288进一步显式证明修改后的PublishedReport strict解析通过、修复record自哈希、公开githubRepromotionMarkdown仍与原完整正文相等且原正文SHA相符。仅改准确Report row payload，独立development_capture_sha256/row key/观察authority不动，原update guard恢复后即时及重启认证读均拒绝；精确恢复原payload/guard后重启整刊相等。原生1/1、593.6384ms总时长、exit0，UTC2026-09-07 20:53:10.929Z–20:53:11.586Z，日志SHA `492de47e0365284173db714aa7d22847c6086b50a6879ba06eb335e24d813e7d`。289 typecheck exit0；287/289空日志SHA均`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root核完整before/after、实际日志SHA及最终正文，并静态核reportFromRow先做独立capture检查，不以语法失败或正文不一致替代该证据。
+
+有限针对性P0至此具备作者切片与Root正文/证据核对，尚非最终验收。已准作者冻结src/tests运行290完整`npm run check`（原typecheck/build/全部tests/*.test.ts，含capacity），再运行291完整smoke；当前290 native session35400运行中，不并行大型Root探针或筛减测试。全量结果、候选提交、双轴review、Root独立及detached/master门仍未完成，#13保持OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
