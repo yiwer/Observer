@@ -856,6 +856,14 @@ Root明确批准旧库`legacy_unknown`工程降级：无法在现有有界/许�
 
 用户随后询问issue是否漏关，Root实时`gh issue list --state all`确认#1–#12全部CLOSED、#13–#28仍OPEN；#13缺动量实现和整票验收，未提前关闭、未写tracker。用户另要求插入sandcastle+Docker独立研究，已派background research agent，仅写单一研究文档，不安装/跑外部代码、不改本票/Runner/PRD/ADR、不自动采纳。
 
+### 176–177：动量首条公开RED
+
+Root亲读新`tests/github-momentum-repromotion.test.ts`完整公开场景，并独核176/177原metadata before/after与实际log SHA一致。176-momentum-first-red先在SourcePolicy strict解析拒绝已批准新字段allowMomentumEvidence，exit1，UTC **2026-09-07T12:04:09.920Z→12:04:10.279Z**，log SHA **56e9ae3643f3b60d747c10e6bac82a299f15762fc3ca0d00d87a44e195471098**；属于新能力契约RED，未到业务。
+
+仅增加两项无默认可选配置/许可字段后，177-momentum-ranking-red进入真实业务：20个同池候选，hour0普通Request8/Record9确实仅报道repeat，随后24个真实小时提交，repeat增长100 stars/20 forks、19 peers各增长1 star。应满足20样本及top midrank19.5/20=.975，当前新Report10却未选择冷却中的repeat，期待失败，exit1、811.7711ms。原UTC **12:04:26.008Z→12:04:26.895Z**，log SHA **f8095ebb0b827f2ad26ce1d26e9e5e4cadfda23c66687a84ade3d6014e45a705**。这不是模型判断或只改cutoff的模拟低段；尚未证明startup/重启/后续reset通过。
+
+Root另派独立探针作者仅准备1条startup→持续高→不重复消费/重启读取的49次小时观察路径，沿既有T1公开Seams和实际双SQLite；不读产品作者helpers、不用SQL生成业务oracle，不修改既有500来源额度。当前准备阶段，未执行业务，首跑前由Root全文核定。产品唯一作者继续177最小GREEN，当前无源码冻结。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
