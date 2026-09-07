@@ -233,3 +233,9 @@ Root亲读公开测试、dispatchControl和发表前authorize，核97–100完�
 Root亲读公开三轮produce/readRun例和研究槽外层try/finally，核101–103完整before/after一致及实际日志SHA。101真实RED保留；102 exit0、31/31、0skip/0cancelled，日志SHA `d9c69d32150531c67c228d681dd3b2ee54be6a081a30c1607588e53ed371dac9`；103类型检查exit0。world两Provider均无Adapter时先明确runner-unavailable，其他三普通栏成功；三轮run各三次研究、所有实际attempt成功，未因重复缺Adapter耗尽共享名额。
 
 该修正把Adapter存在性检查移至acquire之前，因此测试不能直接证明获槽后的同步异常释放。Root要求后续以获槽后可信资格回调throw等公开故障例，再正常运行验证槽仍可用；不以当前缺Adapter绿色替代。作者继续实际SourcePolicy在每次broker派发前复查的切片，尚未计为通过。#14仍未提交固定候选或整票验收。
+
+## 每次broker请求的来源复查104–106
+
+Root亲读真实Collection SQLite/Owned RSS→schema2 storage Bundle测试、authorizeEvidence及dispatchControl接线，核104–106完整before/after一致及实际日志SHA。104真实RED保留；105 exit0、32/32、0skip/0cancelled，日志SHA `6e3d53a59587cea7f976b3afe7b7f45b8a72def569a7ca4eabf8436e5561965d`；106类型检查exit0。
+
+首个Owned send后撤销实际SourcePolicy.model.enabled，后续send在计入派发前被阻止；run外部请求数及首attempt请求数均为1，最终Report不存在。可信callback使用当前checkedPolicy的版本/完整摘要并检查model与expiry，不以初始modelPolicies快照授权整轮；每attempt的证据ID保存在内部映射，begin与实际dispatch均检查。此例不代表资格撤销、来源全部字段/历史/六栏组合或容量已完整验收，原矩阵继续。
