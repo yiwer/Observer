@@ -104,3 +104,19 @@ Root核39–45完整before/after一致和实际日志SHA，亲读实际Gate接�
 39/43真实RED保留。41类型检查exit2，测试risk.categories推断never；42修正后exit0，45也exit0。不能将41视为通过。
 
 Root的开发期检查要求继续补有效证据数组顺序置换例，以及复核方unsafe/irrelevant的隔离优先级。当前整assessment哈希比较可能把顺序变化误报为分歧，且普通disputed不能代替quarantined。最初对主unsafe被回调降级的怀疑，经亲读domain-evidence.ts纠正：Request10的domainRules前置检查已隔离主unsafe/irrelevant，应作回归保护验证，不能记作已复现缺陷或伪造RED。Assessment.reason是封闭枚举而非自由文本；不得放宽conclusion/reason一致性来解决等价比较。上述均未完成整票验收，#14保持OPEN。
+
+## 单Provider范围及复核安全修正46–52
+
+Root亲读公开测试、正文生成和实际Gate修改，核46–52完整before/after一致及实际日志SHA：
+
+| GREEN | 结果与范围 | 日志SHA |
+| --- | --- | --- |
+| 47 | 14/14；缺第二Provider但满足原严格证据门可发布，正文明确single-provider/review-unavailable，零review attempt | `a4d311450290cee671361038fcdb78e5bf2e33de78f1a0dda35056f8e7c3f792` |
+| 49 | 15/15；证据顺序置换不再误报分歧，保留不同原始assessment摘要 | `d0d218f65e7472880b5133da8cecdd7e204752781b91954e1310114893e12ddd` |
+| 51 | 16/16；主unsafe原保护仍在；复核unsafe即使主缺独立佐证也优先quarantine，不进入unconfirmedItems或故事正文 | `7418872ef004570dc8c6c624fb139e21cd936e609d6fb6e81d413db34619792d` |
+
+各GREEN均exit0、0skip，52类型检查exit0。46/48/50真实RED保留；50实际unconfirmed而期望quarantined，原日志SHA `d24368e2f80fbc9ede00f13ce980b0b55b90d44009aea764a81cd2de3e13e485`。Root另要求新排序使用精确code-unit比较，不能依赖localeCompare对不同Unicode ID的相等排序；不顺手改旧模块。
+
+预算片新增必须验证的组合：15000个review条目与当前1MiB审计读取限制不相容，不能成功发表后readRun/readReport自拒。批准32MiB作为版本化安全审计工程初值进入TDD，写前/读前同限，不影响原模型输出等限制，也不声称总内存上限。需按实际UTF-8和最坏收据预留，默认最大合法批次及低配置前置降级分别覆盖；只读重启不得信任任意receipt自报无限上限。此容量目标尚未验证。
+
+本轮实时`gh issue list`确认#1–#13 CLOSED、#14–#28 OPEN，无漏关已验收票。Root另派独立fresh-context子代理从固定#13源码准备旧Record10基线，只在独立data目录工作，不动作者WIP，不用新源码生成旧证据；在Root核完前不声称基线已验收或#14兼容通过。
