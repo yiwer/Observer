@@ -112,6 +112,70 @@ Root批准未发布Development assessment receipt增加`previousEvidence`，同�
 
 Root已提示两个解释局限：场景09同时标记总体不完整，不能单独证明零/负/cold等每个过滤器；min20与midrank p0.975有数学耦合，最小样本的独立影响还在cohort fallback，不能冒称独立统计校准。普通takeSnapshot只保留当期双点且按当前config/policy筛历史，不能直接担当长期episode证明。reset证书及新onset必须保持可比规则/采样语义/peer输入；仅切换查询使分位降低再切回不能造新episode，严格peer可比性可能抑制真实发现的取舍需明确。全部阈值/证明仍待比较后Root批准。
 
+### 2026-09-07 UTC：Release跨修订WIP与GHSA批准
+
+Root实核作者15–28各目录的原始log SHA和完整before/after状态、源码/测试指纹，均一致；仍在作者基线`ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3`的未提交WIP。以下为新增局部证据，不替代完整票验收：
+
+| 作者切片（`data/v1-13-slices/`） | 实际结果 | 原始log SHA |
+| --- | --- | --- |
+| 15-legacy-policy-red | 4/5，exit1；旧metadata-only政策错误阻断普通Heat | `1f8da9f9250691af2dc028f519621a19c28e5f3d1f012bedb00da1acb0f9c4ac` |
+| 16-legacy-policy-green | 5/5，exit0 | `e67bba3ac17dce9434dcc20420857fb9d5b364f582f125a89b1c4f07c9ec8d13` |
+| 17-local-regression | 147/147，exit0；受影响旧局部组 | `a8f1d96ac040509f9acc95c0b78e3f8c46b755729fdea0d974382820e15785d7` |
+| 18-rephrased-release-red | 5/6，exit1；新Release ID加改写错误新增发展 | `a4a3ea63b7a8b7052a0e3504c2b9e0e26e5db4142e6415f3aa31157a5a576b1a` |
+| 19-rephrased-release-green | 6/6，exit0 | `0bcf928177086a6c814e071b9e588d7c0865801dd6bbf2eaebf5b3d6a10e3f2e` |
+| 20-context-typecheck | exit2；SQL slot联合类型错误，保留 | `f4d786dc1a2ca519717501166f3d40f1bd7828b381fc22b92e79e42e39aa4e54` |
+| 21-context-typecheck | exit0，空log | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 22-context-regression | 6/6，exit0 | `2d35dc61bbd499b25f311d14645bb24a4be5421f721b7ccc31f979029c4adec0` |
+| 23-release-revisions-characterization | 7/7，exit0；实质B可报道，A→B→A抑制，首次GREEN | `ff923b3a589e2e13c5b0fead4d4956640f4591cc38f2ebb551bd7ec3c4c76f21` |
+| 24-routine-release-red | 7/8，exit1；未错误入选，但正文遗漏非重大性说明 | `f642991477a9a91e6a451d566958bc2952a817268392cb8c7ed09941912d9862` |
+| 25-routine-release-green | 8/8，exit0 | `3d72cd7ed9b6e3bce1923b3abae55ff27e7c55c74365e69bb44d8b6b2442fd5e` |
+| 26-old-source-rights-characterization | 9/9，exit0；旧source撤model权，首次GREEN | `9863da8d2b7da80d99412b79ba6ea0613f94966916b63b0f25fc2724dda09c44` |
+| 27-event-quota-characterization | 10/10，exit0；3 novel最多6位，仅实际3个Release消费 | `73fb1622660635698fa4df1d08e576a22670b1dbe5ffccf96057a6335012f923` |
+| 28-insert-failure-characterization | 11/11，exit0；INSERT失败可重试，同日冲突不改已刊 | `0f3738e5dcba3bfc1806d75fedc2e741fa2a7c24041af79d61e69394c0dc6962` |
+
+各次真实UTC完整保存在相应metadata。关键跨修订RED18于00:47:56.285Z→00:47:57.504Z，1120.0789ms；GREEN19于00:50:05.890Z→00:50:06.913Z，946.5735ms。Root亲读新增`previousEvidence`契约和实际历史loader：保留父run定位、原配置/来源与证据ID，生产从真实两表核对，但当时仍遍历历史run，长期容量未解决。
+
+Root全文读取更新的实施提案后，批准GHSA增量进入逐片TDD：可选且无默认的`allowAdvisoryBodyProcessing`与`advisories`配置；仅global表示；初次完整风险、新增包、范围实质扩大、high→critical、新修复/缓解五类；security→release→momentum竞争；保留频率、新颖、质量门。附带条件已发作者并由作者回写方案：
+
+1. 真正初次不要求不存在的previous；已知但不可用不能变空并冒充初次。
+2. 列表/详情冲突不能吞掉；两个明确映射线索须实际落到stable node，改名但同node不算冲突，无法核查不任选。
+3. 历史GHSA补查集合有可核原来源和完整性，不仅看最近run；超50或补查失败的已关联node风险不确认，隔离并显示Gap，不能沿用旧good。
+4. 漏洞条目、投影、收据各维设有限完整性上限；超界整条风险fail-closed，不截断成完整。
+5. 中途配置/正文/旧投影撤权、cutoff、降级/撤回、表示切换和映射冲突需分别公开验证；不是批准生产来源或真实语义质量。
+
+作者随后提出`development_contexts`首次发展索引及`context_index_state`分批补建，Root认可有界定位方向，**尚未批准DDL**：每node LIMIT1001/最多1000唯一发展、row64KiB、总proof16MiB、每轮旧slot100的工程cap可继续细化；必须补索引漏行/部分丢失、state丢失、并发/较早slot插入和完整上下文遗漏检测，原run载入也先验字节上限。实际观察DB提交可承担已知历史权威，纯输入局部重算不冒称证明全部历史不存在，不要求抵御任意恶意整体重写DB的虚假常数加密证明。索引不承担成功出版消费，原记录/身份不删除。
+
+### Root独立跨修订回放
+
+作者Release稳定点短冻结后，Root原3脚本和原fixture均未改，新增`release-reissued-id-probe.mjs` SHA **6843FA06DB575FFDEF89913E54DAA0356D15EC9DBAD001B239BCED933679D48E**，不读取作者helper。新增场景真实发表707，再改名并以708重发同一正文，要求verifier收到707原发展及原证据，708不能再救冷却候选，双库重启后新旧刊均可读。只用了Owned响应和真实SQLite。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果/时长 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| wip-revisions-release-01 | 1/1，201.3828ms，exit0 | 00:58:39.072Z→00:58:39.502Z | `f3a2e45f4590f1bc24ff0e93e73ea67fdf6de16ea92109088af424b850bf3d2e` |
+| wip-revisions-long-01 | 1/1，248.8588ms，exit0 | 00:58:39.864Z→00:58:40.327Z | `72b34719e634224120e4f3a35cb6ef1dfdfde3998077efafc0a59f75a89808ec` |
+| wip-revisions-integrity-01 | 1/1，220.0054ms，exit0 | 00:58:40.660Z→00:58:41.090Z | `c5acd2298f68f6d687f99a4b1dd155db24b6945527eef28e061e6247aaf5117b` |
+| wip-revisions-reissued-01 | 1/1，206.4749ms，exit0 | 00:58:41.406Z→00:58:41.822Z | `191384b2177aea86d6a8055740d3c0c38e3c7bbbc2da86ebe0d56920e7f78792` |
+
+Root重算各loghash并比较完整before/after（模块、Root脚本、HEAD/status）一致，已解除冻结。四项仍明确`wip-diagnostic-not-closing-evidence`；不掩盖第一次真实历史漏洞，也不替代最终clean SHA与实际master验收。
+
+### 动量比较初读（参数与证明仍待最终批准）
+
+`compare.mjs` SHA **32b96a96f4408c808938f037500755655055cc2403cd5fa7e846736b10a9c533**、`run-01/manifest.json`记录实际完成00:54:08.078Z。Root全文读比较器，重核原输入/期待SHA未改，程序完整解析9份结果、各5459候选行，独立核真实间隔折算、midrank及同信号组合，并核各31项偏好与summary逐项一致。baseline文件SHA **372897aba254dc617604df68014b385645bd8180dd3ebe9af3514b54f00b5b72**。
+
+| 候选 | 偏好差异项数/场景数 |
+| --- | --- |
+| p0.975/min20/100stars或20forks/24h | 0/0 |
+| p0.95 | 2/1 |
+| p0.99 | 16/13 |
+| min10 | 1/1 |
+| min30 | 12/10 |
+| 50stars或10forks | 3/3 |
+| 200stars或40forks | 7/6 |
+| 12h重新武装 | 2/2 |
+| 48h重新武装 | 1/1 |
+
+这是合成设计偏好比较，不是31条产品tests或真实满意度校准。p99/min30多数生命周期差异来自根本无首次资格，不能误称状态机错误。场景09多门同时关闭，场景17返回A时部分peer缺样，二者不能分别孤立证明所有filter或reset可比性；原输入不改，真实产品后续独立对照应补。Root正在等待完整有界onset/reset证明建议；反对仅靠自报checkpoint hash，但认可真实DB权威与局部可重算证明分层。2,160小时/26点旧提案仍未批准。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
