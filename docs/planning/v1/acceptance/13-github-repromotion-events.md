@@ -1202,6 +1202,18 @@ Root已审公开测试并允许按既定§12整组码点分配最小修复。临
 
 当前是作者RED→GREEN及Root证据/代码核对，不是bank独立复跑或最终固定SHA验收。已另派独立代理在Root新目录准备相同资源需求的公开探针，尚未业务运行；其准备状态不计PASS。Report发布/认证读取、其他剩余§12项及最终双轴review仍须完成，#13保持OPEN。
 
+### 257冻结窗口：三项既有Root独立探针复跑通过
+
+作者明确确认257 source/tests冻结后，Root以未改的capture-probe及既有冻结探针串行执行；三个原生进程均exit0、各1/1，终结立即释放作者。Root逐项核完整before/after相等、54模块全部匹配257.after、实际native.log SHA相等：
+
+| capture | UTC2026-09-07起止 | native.log SHA256 |
+|---|---|---|
+| wip-bank257-budget-01 | 20:24:13.136Z–20:24:18.540Z | 00d5f6383afa3deff94b305806c4f0f901e3a9240a00445785f432b08110157b |
+| wip-bank257-startup-v2-01 | 20:24:19.149Z–20:24:36.391Z | 016a43877c140072585e9340e497194147fe42a18309c3c9f86af829be1d4c58 |
+| wip-bank257-head-01 | 20:24:43.296Z–20:24:47.910Z | cbb3ec80ddef15485d4aa64676ff41d7f1029cfe9a3009cd08200cee3ad51933 |
+
+覆盖仍为：共享payload超界拒绝与精确恢复后的新scope读取；49真实观察的首次startup/连续高同onset与一次消费；缺实际head拒绝动量但ordinary保留、精确恢复及重启读刊。没有新增或削弱旧oracle，不把三项既有场景称32MiB bank独立边界覆盖，也不是最终固定SHA或生产通过。bank新独立探针仍在准备，作者继续实际Report与其他剩余验收。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
