@@ -1521,6 +1521,10 @@ Root重新核上述完整before/after、每份日志实际SHA和退出终态；�
 
 最终Standards：0硬违规、原2项非阻断P3维护建议；Spec：0开放阻断，原4-GHSA P1已用不改变原断言的RED→GREEN关闭，最终镜像pin delta两轴0新增。**接受#13开发实现，允许按流程关闭Issue并推进#14**。此结论只涵盖固定Owned输入、真实本地SQLite/隔离CLI协议和独立回放；不覆盖真实GitHub来源许可/语义质量、Claude live、部署、产品邮件/PDF或连续14天人工核验。代码未push，生产未启用。
 
+### GitHub关闭读回
+
+[验收回写](https://github.com/yiwer/Observer/issues/13#issuecomment-5576134261)已提交；GitHub实际读回#13 **CLOSED**，closedAt `2026-09-07T22:15:47Z`。本地验收文档提交 `42d551c`；关闭不表示代码已push或生产上线。#14实际OPEN，可进入下一票。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
