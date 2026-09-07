@@ -1386,6 +1386,20 @@ Root新增固定输入包装器`data/root-v1-13-review/risk-witness-overflow-pro
 
 298原全量`npm run check`已由作者持有native94360实际启动，source/tests继续冻结，原脚本/测试集合/并发不变；后续299 smoke仍待真实check终态。Root不并行大型业务探针或Docker测试，不因跨会话句柄不可见重启作者进程。
 
+### 修复后bank/metadata版本与捕获器准备
+
+Root全文审读新V3/V4说明，并独立精确文本比较确认bank-v3和metadata-rows-v4仅把storage pin `55d5…`更新为`d87e…`，所有旧版本/原fixture/oracle保持。两个实际fixture均advisories=false；新增riskWitness在disabled分支返回原完整origin对象，actual verify的全投影重导是实质验证强化，但不新增SQL、payload依赖或metadata投影。原容量前提仍须实际重跑，不能从该分析继承旧PASS。
+
+新bank probe SHA `9b66dd774195a2ec3b255f96c59a1b1c924335805cdb46d5ca54ef6764789c1d`、V3-NOTE `d65acd4c7cadb4def24647b1699942bfa144783f65803c5746ce5130b5f5b3a5`；新metadata probe SHA `4322d286a7c5611765e642011eef61ca0c15a84a7e4fe58e5627be23654b8843`、V4-NOTE `01a4629e3168aa2b608ebe7cacc5dcd29def3069e68fee9f72b93d5f3e17cfed`。Root复制新增固定SHA捕获器并保留旧输入pins：capture-momentum-bank-v3.mjs SHA `9c73d35b60f63e4ffebcfa11005a0278eb5e16253800b02cd1e8ccfd9af707ce`（120秒），capture-metadata-rows-v4.mjs SHA `eedf5d68c5fa7274f8be72578943c4245d616179be28cba989112f7916958c50`（240秒）。仅syntax通过，未业务执行。
+
+### 298完整check再次失败保留，先诊断不自动retry
+
+298-risk-witness-full-check实际403总/402pass/1fail/0skip、exit1，UTC2026-09-07 21:21:23.724Z–21:24:35.418Z，186665.7333ms；日志SHA `5202d1e509ae5cf9c4f37e46292504b0de7dc73afb5c77938946bc79b66941fe`。Root核完整before/after稳定、原生日志SHA及唯一失败：tests/claude-runner.test.ts首个真实隔离fixture的无--host image inspect再次NoSuchImage（173ms）。不能称全量通过，未启动smoke、未提交修订。原290/291及本298各自保留，不沿用“瞬态已证”结论。
+
+Root按diagnosing-bugs先建立更小只读反馈：`docker-image-inspect-diagnostic.mjs` SHA `462e25d7ea16c4d474819136710f63b2f00a4b2ba563a27afd16d7cdbbf21948`，原相同docker argv连续10次、每次5秒上限，不记任何环境值/凭证。`docker-inspect-298-ambient-01`实际10/10均返回固定Claude image ID；Root绝对路径inspect及当前desktop-linux context亦正常。此结果不能排除失败瞬间的环境/daemon差异。源码显示测试inspect使用ambient环境，而产品容器运行固定Linux pipe/受限环境；未证为根因。未发现测试执行镜像删除/改tag，prepare脚本本轮未调用。
+
+作者已收回94360实际terminal，当前无Root大型业务进程。已安排作者会话相同只读10次inspect及原Claude首个case单独诊断捕获，先不全量retry；单case结果不得替代全量，未rebuild/retag/restart/prune或改tests/并发。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
