@@ -155,3 +155,11 @@ Root核完整before/after一致与实际日志SHA，亲读公开预取消测试�
 Root核完整before/after一致、实际日志SHA并亲读公开测试。56 exit1、17/18，具体RED是RoutingConfiguration尚不支持limits（unrecognized_keys），不能表述为已复现迟到发表。57 exit0、18/18、0skip，日志SHA `8bdd1904becd4f1e77e10fbe3a0f87a3f48d6ff83c4dccd004cbf69433c9beb9`；58类型检查exit0。固定Owned主Provider等待130ms、attempt上限100ms，四栏主结果不被采用，均记timeout，input10/output20已知用量保留，备Provider实际完成四栏。
 
 此片只证明有限迟到结果处理，不证明永不settle的Runner或transport有界终止。Root亲读既有agent-container及两Runner：容器返回前有身份cleanup/readback，但宿主broker.respond Promise独立，容器removed不能证明外部请求已结束。已要求进程池和外部请求池分别保持名额释放与取消证据，迟到响应不得回写；共享预算和完整终止仍为待实现/验收目标。作者仍在运行，Root不重复启动实现或抢先运行整票测试。
+
+## 宿主dispatch控制Seam与研究阶段总时限59–61
+
+Root批准作者沿既定方案增加可信AgentRunOptions dispatch control：broker实际respond前申请请求额度/槽，只有真实Promise settle后释放；进程槽独立以Runner cleanup/readback为依据，未确认清理熔断同routing装配实例。模型输入不能授予许可/额度，run账本仍隔离。队列等待计入总deadline，获槽后实际dispatch前复查取消、资格和来源；未派发不能算已请求，已派发失败不退款。旧调用方不传control保持旧契约，具体typed实现和真实固定CLI协议仍待验证。
+
+Root亲读59–61测试与当前接线，核完整before/after一致和实际日志SHA。60 exit0、19/19、0skip，日志SHA `443bf23bb564f8a3a47067d67a68644bd5d7fcfd8228e73b6b35e197e36a56cd`；61类型检查exit0，59 RED保留。Owned主结果在总时限后返回，不采纳、不启动另一Provider，六栏Gap和独立采集可用状态可读；仅1次attempt，total-deadline原因及已知usage保留，无Provider配置重启readRun相同。
+
+此为研究阶段时限切片，不能外推为queue/review/Gate/Editor/提交前都已受控。作者须继续覆盖已有故事时后续阶段跨deadline、非settling任务的有界收尾，并区分收尾审计/安全降级与正常发表。当前100ms为Owned快速测试参数，原批准生产total下界1000ms；若变更需明确版本/测试注入，不无记录放宽。#14未冻结、未整票验收。
