@@ -45,3 +45,11 @@ Root完整读取作者`docs/implementation/v1-14.md`，并对照当前Edition分
 作者`data/v1-14-slices/01-t1-red`因缺少zod依赖失败，只算环境前提失败并保留；按锁文件离线ignore-scripts安装7包后，`02-t1-red-dependencies-ready`真实0/1、0skip、exit1。UTC2026-09-07 22:27:13.837Z–22:27:14.263Z，原错误`Observer.produce: invalid-request`，尚未支持Request10；日志SHA `6d82bf3c51291b0ae60d815f988ce249fa1be0a7d09795b7a4b82468736febd9`由Root重算吻合。Root亲读测试与日志，确认是批准的公开出版路径，而非私有路由单测；此为开发期RED，不是候选验收。
 
 首片有六栏研究输入与结果，但没有实际社交/GitHub采集；这两栏按已有严格规则保留Gap，不伪造合格采集。后续跨模块专项仍必须覆盖真实Owned社会样本和GitHub历史/事件契约；首片不能替代全部六项AC。作者开始最小GREEN接线。已向[#14回写启动范围](https://github.com/yiwer/Observer/issues/14#issuecomment-5576203411)，票保持OPEN。
+
+## 首片合法输入GREEN及继续放行
+
+原fixture把同一evidence-1分给全部六栏，触发既有GitHub输入过滤而删除该证据；不能放宽产品过滤以凑通过。作者改为四个普通研究栏分配合法证据，社会/GitHub两专用栏no-evidence并保留Gap，实际研究attempt=4。Root批准此输入修正和准确切片范围，不替代整票六Edition的各自契约。原6attempt测试事后重建至`data/v1-14-slices/initial-six-attempt.test.ts`，SHA `023cc83e02cc93cd89ace0e7b7cbf6f5662aa4e62159cfb21533ab4e075d9724`与06记录当时测试hash相同；不是声称当时自动保存过源码快照。
+
+`08-t1-valid-edition-assignment`真实1/1、0skip、exit0，UTC2026-09-07 22:32:21.810Z–22:32:22.351Z，log SHA `076e80871d3660fa6ad5f75f12b7c9afdc7c4b3177236e58fc690178685f5eab`；`09-t1-typecheck`exit0，空log SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root重算日志并核完整before/after相等，亲读测试、schema/DDL与新路由/FinalEditor接线；真实produce/Gate、Report与GitHub SQLite、Owner鉴权readReport/readRun、重启读取通过。旧01/03/04/06失败全部保留。
+
+Root释放源码短冻结，允许下一条主失败备成功RED→GREEN，不要求每条GREEN停等审批。后续审计片仍须完成：冻结出版receipt和独立终态的明确关联、readRun行身份和有界解析、全失败时调用方可获得runId、安装/丢失/重启abandoned与终态覆盖规则。当前仅主成功切片，fallback/仲裁/有界运行尚未完成；未做票末双轴或整票验收，不集成产品、不关闭#14。
