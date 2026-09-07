@@ -960,6 +960,21 @@ Root独立确认3份完整before/after相等、54模块与195.after逐项一致�
 
 下一片是启用advisories后的observed RiskWitness及完整候选池/disabled矛盾验证。纯saved-input反证与实际DB原件/权限核验的证据种类必须区分，不能以其中一类替代另一类；剩余§12预算、权限、风险、storage、negative/legacy及最终固定SHA门槛不变。上述局部回归不关闭#13、不启动#14。
 
+### 200–205：保存输入的安全witness一致性反证
+
+以下两片均先通过真实25小时observeDue与Report10出版取得启用advisories、实际observed安全witness的合法输入，并确认公开`rankGitHubRepromotions`原样回放。随后只修改调用方持有的saved snapshot、同步相关内容ID，排除单纯hash不符；**没有修改实际DB原件/Report，不声称攻破过存储授权**。最后原刊重启读取控制保留。Root全文核对两个公开测试、实际失败/通过日志，以下全部metadata完整before/after相等及实际原生日志SHA一致。
+
+| slice | 实际行为/结果 | UTC（2026-09-07） | output.log SHA256 |
+|---|---|---|---|
+| 200-momentum-disabled-witness-red | 配置advisories=true，却将startup早期point的observed改称disabled；纯回放错误放行，exit1 | 18:41:34.166Z–18:41:37.795Z | 7d213d052c06aeb39116d4413d1211a94e859e3cb02b276221eea2465663fe2c |
+| 201-momentum-disabled-witness-green | 同原期待1/1 GREEN，4018.1ms | 18:42:03.479Z–18:42:07.792Z | 22b4f2a7b9d87e4acaaf3edc38d0e54364c2ce70361034c81f12929d1e267a70 |
+| 202-typecheck | exit0 | 18:42:12.805Z–18:42:14.666Z | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 203-momentum-risk-pool-red | 从20个observed安全node记录删去无已知公告的peer-0；纯回放错误放行，exit1 | 18:43:05.954Z–18:43:09.569Z | edf5b3699a538ae442dfafc86581f1e2f7e02d8a434253b1b19268aa06e68c0b |
+| 204-momentum-risk-pool-green | 同原期待1/1 GREEN，4034.3597ms | 18:43:21.844Z–18:43:26.164Z | 0c35b9228248d4e8aa9976e295bc747ed2d223e81e3cdf4b06f54c925dbf68bc |
+| 205-typecheck | exit0 | 18:43:26.804Z–18:43:28.655Z | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+
+这些证据补齐了上述两种纯数据矛盾的必要拒绝，不等价于实际origin配置/策略/parent/cutoff、逐源许可、完整风险内容与historyUnavailable闭包全部通过。Root未为每个短pure片重复冻结；原独立probe最近的固定源码窗口仍为199，不能把其结果沿用称205已独立回归。作者继续下一条原件关联边界；待下一逻辑完整GREEN/type窗口再批量复跑原冻结Root回归。无新Schema/上限/威胁模型，#13与全部最终门槛继续保留。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
