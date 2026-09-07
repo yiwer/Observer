@@ -975,6 +975,22 @@ Root独立确认3份完整before/after相等、54模块与195.after逐项一致�
 
 这些证据补齐了上述两种纯数据矛盾的必要拒绝，不等价于实际origin配置/策略/parent/cutoff、逐源许可、完整风险内容与historyUnavailable闭包全部通过。Root未为每个短pure片重复冻结；原独立probe最近的固定源码窗口仍为199，不能把其结果沿用称205已独立回归。作者继续下一条原件关联边界；待下一逻辑完整GREEN/type窗口再批量复跑原冻结Root回归。无新Schema/上限/威胁模型，#13与全部最终门槛继续保留。
 
+### 206–208：风险origin冻结配置一致性与批量回归
+
+206-momentum-risk-configuration-red沿真实启用advisories的25小时Report基线，将调用方saved capsule早期point的RiskOrigin.configuration.version从1改2，实际point.developmentConfiguration仍1，重算point/capsule及引用内容ID；纯公开回放错误放行。原UTC2026-09-07 **18:45:51.213Z→18:45:54.915Z**，exit1，log SHA `4be65bd15427572fbef180dbedb54412e4109b4b858aa53150dc9c655061e54c`。207同一原期待1/1 GREEN，18:46:39.895Z→18:46:44.166Z，log SHA `3767fc4a9f55765fd92729a2c0b3514b856ce6a039586a0877bdeb1482c14acb`。208-typecheck exit0，18:46:44.867Z→18:46:46.721Z，空log SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root全文核测试并核3份完整before/after及原生日志SHA；该纯反证不称为真实DB授权绕过。实际verify补有原DevelopmentRun.configuration逐字段等值检查，但其独立故障验证尚未计完成。
+
+Root没有采用需要同时重写point/frame/step/head/manifest/Report capture的宽故障来强造RED；下一实际原件case限定只改一个原DevelopmentRun、保持其余承诺不动，若现有identity检查已拒绝则如实记录characterization，不能宣称新修复或隔离证明某一字段检查。
+
+Root在208稳定源码窗口批量复跑200–208变更后的原冻结probe，全部native exit0；完整before/after相等、54模块逐项匹配208.after，原生日志SHA逐份核实，结束后立即释放源码：
+
+| capture | 实际范围 | UTC（2026-09-07） | native.log SHA256 |
+|---|---|---|---|
+| wip-risk208-budget-01 | 1/1 common预算/同进程及重启恢复 | 18:47:49.467Z–18:47:56.066Z | 8505f0827e634e6bf64980525856e790e14bcec830a23b623fe0e97dc4cb9e96 |
+| wip-risk208-startup-v2-01 | 1/1 合法disabled配置的49小时/持续高/消费 | 18:47:56.381Z–18:48:19.059Z | 698b6631674fecbc0f06c4cb42efc8fc156705e915ee95ca68f374270a2990b4 |
+| wip-risk208-security-return-01 | 1/1 GHSA A→B→A | 18:48:19.372Z–18:48:20.117Z | 8d3a024015920861f4147d6055b77e0ed9dd3ecba3773ecfb43bd720ee534038 |
+
+这些是当前WIP逻辑窗口的兼容回归，不代表所有风险/原件字段、权限、metadata与资源边界已齐，也不是最终SHA整票验收。#13继续OPEN，全部原批准剩余项继续推进。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
