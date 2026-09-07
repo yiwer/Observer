@@ -1460,6 +1460,16 @@ Root新增`claude-first-case-diagnostic-probe.mjs` SHA `562e93e6b1976938da4fdc1b
 
 所有Root专项目录终结后，干净detached `accept-v1-13-r1`依据锁文件`npm ci --ignore-scripts --no-audit --no-fund`成功安装7包，不运行安装hook。Root随后用原run-frozen-capture在完整固定SHA/空branch下启动`data/root-detached-check-01`，native9385当前运行，原typecheck/build/全部tests集合均保留；未与大型独立/Docker门并行。detached check/smoke、built旧#12/#11/Record7/8等继承门、实际master集成和验收尚未完成，#13不关闭。
 
+### 首个detached完整门失败保留，修正测试镜像解析前提
+
+`accept-v1-13-r1/data/root-detached-check-01`固定8e05440完整check真实exit1，403总/402pass/1fail/0skip，UTC2026-09-07 21:40:36.659Z–21:43:48.348Z，186519.1531ms；日志SHA `6ace9ba08c34bcb3dc71ead89ec705481b019214c39999fc1155f1dd86b82c1d`。Root核clean detached前后身份严格相等、实际logSHA及唯一首Claude tag inspect NoSuchImage，未跳过失败或重写旧验收树。9385已真实terminal；后续不继续用反复重跑取得该前提的偶然通过。
+
+独立Spec只读评估并经Root核实际代码：test fixture默认runtime可从标签解析改为此前已核验的完整immutable ID `sha256:0fce00145d59010131a2efebdcac36dd66ef1c8b388830e275fcdc096d720269`。这与既有protocol fixture的固定ID模式一致，但仍保留kind=claude-cli、原/opt/claude真实可执行、原版本2.1.252、用量/完整清理/私有报告断言及所有runtime overrides。产品agent-container强制SHA256格式、固定Linux host和受限env、pull=never、实际container.Image==runtime.image及不可变身份核验；缺镜像仍失败，不增加fallback/替身/自动pull。因此是消除可变标签查找的测试前提，不改变产品或资格目标，也不声称查明/修复Docker根因。原镜像、tag及容器均未修改。
+
+Root允许唯一作者只改tests/claude-runner.test.ts第21行，Root全文diff确认仅该行、产品src与8e05440无diff。detached终结后明确释放才执行301-claude-immutable-image-green：原首case真实1/1、0skip、exit0，UTC21:45:14.919Z–21:45:16.362Z，日志SHA `73cfbfe85217662c1631e66ae329827e88491d09a3816f3731e0a02bd5fa85f3`。302 typecheck exit0，UTC21:45:21.538Z–21:45:23.453Z，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`；Root核两次完整before/after稳定、实际日志及原断言不变。
+
+303-claude-immutable-image-full-check原全套已由作者持有52004启动，原并发/全部tests无筛选跳过，src54仍8e05440字节。当前只计单case/类型检查通过，最终完整check/smoke、独立test-only提交复审、新detached及actualmaster门仍待完成；r1失败与此前所有失败保留。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
