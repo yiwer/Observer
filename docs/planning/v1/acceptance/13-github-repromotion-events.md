@@ -1097,6 +1097,12 @@ Root全文核测试、validPoint实际分支、完整before/after与原生日志
 
 元数据总行数并行调查仅产出候选：328个48h间隔真实slot、每个50短ASCII node、无historical/episode，需核16,400不同step原行。164×50×2只是当前length与内容分次返回的成本，不是优化无关下界。328候选的64MiB payload、1000 origins、metadata8MiB未先触门、每份snapshot独立授权成功及下一scope恢复均须实际核定；当前仅准备Owned脚本、不执行业务、不声明总cap PASS。真实凭据不读取；合成凭据有效期从初装覆盖654天，不能以过期失败run替代合法候选。作者同时推进真实reset缺样反证；全部既批剩余门槛保持不变。
 
+### 237–238：真实低段缺样不能重置已消费episode
+
+真实hour0普通刊、hour24首个动量刊后继续实际采集，原低段48–72中仅不执行hour60，令实际相邻59→61间隔120分钟；72公开状态仍为non-extreme，但73开始的新高到96出版时必须沿用原development/onset和startup capsule，不重新消费、不选入repeat。原刊与新刊重启后整刊相等。237首跑1/1、9301.7497ms、exit0，UTC2026-09-07 19:38:27.673Z–19:38:37.040Z，日志SHA `a64e8d62a2d052683cf484d16a1ac8323b3e6db2954501f011f782de01226ef7`；238 typecheck exit0、空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。
+
+Root核实际公开测试、原生日志及完整before/after/SHA。此为既有保护的真实缺样表征，没有product改动，不伪称RED→GREEN，也不概括为所有reset中断或legacy通过。下一同组验证真实旧runs先存在、随后显式启用的legacy保守startup与未来完整reset恢复，不靠改legacy标记或清库。#13保持OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
