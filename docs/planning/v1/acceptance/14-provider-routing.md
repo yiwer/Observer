@@ -1,6 +1,6 @@
 # V1-14 双 Provider 路由：执行与验收记录
 
-状态：设计审查中，尚无产品实现或测试通过结论。GitHub [#14](https://github.com/yiwer/Observer/issues/14) OPEN；Root于2026-09-08确认依赖#4/#5/#9均CLOSED。
+状态：2026-09-08 Root已批准设计及首个T1切片，作者开始TDD；尚无产品测试通过结论。GitHub [#14](https://github.com/yiwer/Observer/issues/14) OPEN；Root确认依赖#4/#5/#9均CLOSED。
 
 ## 实施身份与边界
 
@@ -23,3 +23,19 @@
 出版行为通过真实`createObserver.produce → authenticated readReport → SQLite重启读取`；全部失败、取消、预算和运行审计通过路由公开Interface及Owner鉴权运行记录读取。只替换外部Provider/transport、可信时间/资格输入；自有Gate、SQLite与Final Editor不mock，不用私有方法计数或SQL查行充当业务oracle。
 
 最终必须覆盖票内全部六项AC：主备互换和条件复核/仲裁、六栏及Final Editor、资格失效、可配置有界运行与未知用量、局部保留及采集可用性区分、恶意工具/超时取消/失败决策完整终态。尚未批准具体参数和接口；不得把这些预检写成实现或验收PASS。
+
+## 提案ae87fab的批准与首片放行
+
+Root完整读取作者`docs/implementation/v1-14.md`，并对照当前Edition分批Gate、单栏Runner和确定性FinalEditor。批准Request10/Record11/Version10/Canonicalv9，仅新路径增加路由；批准独立`routing_runs`安全审计、鉴权`readRun`、实际出版/读取的完整authority验证。缺第二Provider但主评估满足既有严格证据门时，可明确标注single-provider/review-unavailable；不当作双复核一致。分歧不得用Provider投票解除独立来源要求。
+
+初始版本化上限批准用于实施验证：总deadline900s、进程/外部请求共享并发各2、单attempt模型请求4、研究进程最多24（含可配置retry）、核验30主+30条件复核、总外部请求336、异常累计已观察token200万。均需参数回放；不保证满负荷都能在deadline内完成，不是金额业务预算。未知用量保持未知，后验保护允许明确有界超调说明，不能宣称费用已被事前限制。
+
+批准时收紧的实施约束：
+
+1. 现有Gate按Edition whole-story分批，混合主Provider按该批真实Edition路由，不能为每个Provider另开一套30+30预算。全部尝试/重试/核验消耗统一额度；耗尽明确降级。
+2. 资格撤销以实际检查/通知点为准，不宣称未观察前瞬时取消；每次broker dispatch、结果采纳和发表前复查资格/来源/TTL。
+3. 同装配实例的并发produce共享硬进程/外部请求池，各run身份/账本隔离。清理确认前不释放槽；cleanup-unverified禁止新执行，不以Promise.race完成伪称进程消失。
+4. 首外部dispatch前可靠建立审计；失败无Report也能鉴权读回，审计写失败不能假称完整记录。成功关联与Report INSERT协调，只保留有界安全投影。
+5. FinalEditor局部一致性或哈希不授予来源/历史authority，实际publish/read仍完整校验。
+
+已放行首个实际`produce → authenticated readReport/readRun → SQLite重启`主成功tracer（父taskId长度200，六栏合法输入，不默认双份研究）。唯一作者确认开始RED→GREEN。必要具体schema/DDL跟随首片diff供Root审查，不再以额外文书审批阻止已批准切片；无Docker/真实模型调用，旧兼容目标不变。
