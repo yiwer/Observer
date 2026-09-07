@@ -84,3 +84,15 @@ Root核下列完整before/after一致、实际日志SHA，亲读公开readRun/re
 25与29 typecheck均exit0，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。27仍exit1、7/8，失败为测试收尾重复关闭已关闭数据库；原日志SHA `a087eab0735576a0d3f234cdda25f9e1f4dbf0daf07a3ac173e47a94fad25a01`保留，不计GREEN。上述只是局部开发证据，非完整资格/预算/仲裁验收。
 
 Root发现DDL开始新增`reports.routing_capture_sha256`，要求纠正提案“不改变reports行格式”的宽泛描述。批准必要的nullable附加列用于真实出版capture关联，旧payload/Record字节及旧行NULL不backfill、user_version不变；若实际只作安装marker，须明确用途而非预留误导列。作者须随既定关联切片交付具体校验，不能从存在列推导完整性通过。Root未暂停已批准TDD，并要求完成必要审计片后继续资格、全部失败采集可用性、条件复核和共享预算等核心AC。
+
+## 采集降级与实际capture切片30–38
+
+Root核对30–38各capture完整before/after一致、实际日志SHA吻合，并亲读新增公开produce/readReport测试。31为9/9、34为10/10、37为11/11，均0skip、exit0；32/35/38类型检查exit0。30/33/36原RED日志保留，不算通过。
+
+| GREEN切片 | 已覆盖行为 | 日志SHA |
+| --- | --- | --- |
+| 31 | 两Provider禁用时零attempt，明确区分采集可用性和模型不可用 | `033293e024244f949b471e4f26b47ea6827219666de8ef8f509e9fc7c64459c1` |
+| 34 | SQL仅作Owned故障注入：移除routing并降为自洽Record10，实际readReport仍拒绝；随后还原 | `897952a95e3861188261909907cdc151a0eaf4282cf6026f86f81e1508a89d1b` |
+| 37 | 真实Collection SQLite、Owned RSS、schema2 storage Bundle：model-forbidden但允许分发的链接保留；分发撤销后排除，零attempt且报告不包含禁止原文 | `bc59547d8edbac62c6797b33cf2c04e322f4715a7ebd6748443d13e908138714` |
+
+nullable capture列已进入实际INSERT及read校验，不再仅是安装标记。上述仍为未提交WIP的局部开发证据，不是固定候选验收、真实Provider验证或整票完成。作者继续条件复核和实际Gate裁定；Root提醒保留原Verifier provenance，不能用双Provider同意补足独立来源。Sandcastle仍仅后续隔离PoC候选，不进入V1主依赖。
