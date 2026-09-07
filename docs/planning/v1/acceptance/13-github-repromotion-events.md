@@ -942,6 +942,24 @@ Root独立确认3份完整before/after相等、54模块与195.after逐项一致�
 
 只读fresh-context验收盘点确认应复用已有startup/reset正向、频率/新颖配额、持续高、预算恢复和Release组合测试；不得因无独立测试名重复称它们“未测”。剩余原批准重点为完整canonical依赖与typed权限/observed安全witness、momentum安装见证/六表/guards/pending、metadata及各新增资源边界、reset中断/peer变化/legacy恢复、动量混合竞争与zero-novel/数学反证，再最终全套固定SHA/Standards-Spec/detached/master验证。下一片优先完整依赖/权限原件闭包；不增加威胁模型、性能承诺或新产品功能。#13继续OPEN/in-progress。
 
+### 196–199：依赖清单完整性原失败修复
+
+196-momentum-dependency-closure-red只把实际current momentum_frame的`dependency_policies`改为规范`[]`，全部payload、原bytes/hash、原端点、Report及当前来源许可不变，复装原guard后公开readReport错误放行；finally精确恢复原header/guard并重启控制。原UTC2026-09-07 **18:37:16.710Z→18:37:20.874Z**，exit1，log SHA `5f5ecbc25d890aca52ad68df08d4b0c5ac938b01982917e3e9cc3c4e144fcee9`。Root全文核定该单故障与实际RED，不用“当前来源有权”替代完整依赖路由。
+
+197-momentum-dependency-closure-green原期待1/1 PASS、3970.8ms，18:38:56.311Z→18:39:00.577Z，log SHA `25fd00bedc2f2a9651a7f175e1dc882a3e6a9a00c9e628f1a7809d102edf9f2b`。实现从已核point各实际GitHub origins及原context loader完整核过的DevelopmentRun重导canonical完整身份OR依赖，逐项比较frame/capsule清单。typed header改先独立SQL实际length再取得字符串；此处runtime反例只证明完整性拒绝，不能单独证明所有权限-before-payload顺序、metadata总计费或observed风险闭包。
+
+198-typecheck曾因callback内可空original产生2处TS18047/exit2，log SHA `1d464c22fc7b7ad11eb6d94a2b356aa01977a0afcdfd1c4749f35f4b56f99a45`保留。提取局部const后199-typecheck exit0（18:39:21.749Z→18:39:23.606Z，空log SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`）。Root已独立复核196–199完整before/after、实际日志hash与原退出码。
+
+同199稳定源码窗的原Root冻结回归全部native exit0，完整before/after相等、54模块逐项匹配199.after；Root完成立即释放源码：
+
+| capture | 实际范围 | UTC（2026-09-07） | native.log SHA256 |
+|---|---|---|---|
+| wip-dependency199-budget-01 | 1/1 common budget＋恢复 | 18:40:05.798Z–18:40:12.560Z | d55dbe786d600d7f1eaf96c11a869fc947d007daa3434181becddbfeb98f45f2 |
+| wip-dependency199-startup-v2-01 | 1/1 原49小时/身份/消费/回放 | 18:40:12.870Z–18:40:35.063Z | 6a2e0d86cb1b28abbcaab00ad676cdf535f7c596dbae907258d1a55769bba02b |
+| wip-dependency199-security-return-01 | 1/1 GHSA范围A→B→A | 18:40:35.376Z–18:40:36.109Z | d8093ce7a7c5e075548fb6d3061cdde8845c61f479cef3903d114d45635c7580 |
+
+下一片是启用advisories后的observed RiskWitness及完整候选池/disabled矛盾验证。纯saved-input反证与实际DB原件/权限核验的证据种类必须区分，不能以其中一类替代另一类；剩余§12预算、权限、风险、storage、negative/legacy及最终固定SHA门槛不变。上述局部回归不关闭#13、不启动#14。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
