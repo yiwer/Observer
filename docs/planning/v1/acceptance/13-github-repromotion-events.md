@@ -335,6 +335,36 @@ Root批准作者提出的单列权限路由细化：`development_runs.material_k
 
 Root新增单场景`release-cutoff-probe.mjs`首跑前SHA **43F3DAA3A3E6DB811752ED7C3D7FCD98E9F8ABABF63EE8E58C1E175B2666B780**：只在Owned Release HTTP已开始、仓库元数据已取得后推进注入时钟，保持两分钟deadline内，检查完整可用时刻跨cutoff不能借早published_at入本期、也不提前消费后期资格。只语法检查通过，尚未执行业务，不计PASS。没有修改原fixture、原9个独立期待或任何旧档。实时gh再次确认#13仍OPEN/yiwer，继续唯一作者实施，不关闭。
 
+### 当前父run与统一loader的第一轮验证
+
+Root亲读61原失败：首次Release没有旧previous时，删除其实际当前父GitHubRun后仍能read；62合并当前run/父run与prior origins核验，65把snapshot读取也接统一loader。Root解析61–65全部metadata、核源码/状态前后完整一致与日志hash；63真实类型错误保留，64才是零退出。typed material/dependency路由及累计预算已有接线，不意味着饱和、并发、所有权限时序已验收。
+
+| 作者切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 61-current-parent-missing-red | 15/16，exit1，3058.7308ms | 02:06:06.015Z→02:06:09.155Z | `7f16482c3c6c6844eb55fdce8c58f5beae28f2e421fa05ac7d18bc70a1d7d89b` |
+| 62-current-parent-shared-green | 20/20，exit0，3356.7739ms | 02:09:38.289Z→02:09:41.726Z | `5a788ac9884541d0bbf0d5e7efe32b02b7d1051e88c2802648bf262dfd466c0b` |
+| 63-route-budget-typecheck | exit2，SQLite宽union的位运算类型未收窄 | 02:09:42.544Z→02:09:44.513Z | `b3f91e54b4c3bfad6673523cbb84fb76f1db570fa9de852514a31e20be63b4d0` |
+| 64-route-snapshot-typecheck | exit0，空log | 02:10:49.145Z→02:10:51.165Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 65-route-snapshot-green | 20/20，exit0，3359.1837ms | 02:10:52.040Z→02:10:55.476Z | `20866ee292f81022b12d21636c21b51373dbdd455734d141e0e59433622b09ec` |
+
+Root预先新建`record9-compat-probe.mjs`，SHA **8251B153D1C94AD18638A48D8ACD5A6A569763543E031615D3124C577BFB2444**，只是校验既定原reader和baseline摘要后调用原reader的薄运行包装；原5份Record9、原reader和期待没有改动。65冻结期间原9测试、新cutoff测试、旧5刊原字节/鉴权读检查全部通过；共9个command groups，其中8组10个node:test，另1组5份实际旧刊，不混称15个node:test。
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果/总时长 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| wip-index65-release-01 | 1/1，261.0131ms，exit0 | 02:15:26.652Z→02:15:27.135Z | `d9c1988d6e9ff35cfc9c26ed5ec0ae745440d47eca86f7b4f0c6b9e078269369` |
+| wip-index65-long-01 | 1/1，303.0818ms，exit0 | 02:15:27.530Z→02:15:28.054Z | `2f669ea46e4a8a586195897a877f5a2a7d3ae92e93ae9a1de55bc479850962f9` |
+| wip-index65-integrity-01 | 1/1，257.3054ms，exit0 | 02:15:28.441Z→02:15:28.927Z | `757e7a9d3bc6f683ff8dff0e11ad59a8dadd6f5e382485a284fe42025c1a5bca` |
+| wip-index65-reissued-01 | 1/1，253.9265ms，exit0 | 02:15:29.245Z→02:15:29.724Z | `e23cbaa6ebada0bcd016d07385b1962495ac8f9691ed0790e9014207267331cc` |
+| wip-index65-no-novel-01 | 1/1，250.0485ms，exit0 | 02:15:30.047Z→02:15:30.527Z | `e5c624e1aeee3d1444e8f37bbdb05389f3415962c326e63dbdb4cfb460fc9364` |
+| wip-index65-scope-01 | 2/2，310.4484ms，exit0 | 02:15:30.842Z→02:15:31.370Z | `aaf79500845e397a1899cc20e8dcd60e896a2e4bc9b9b6a52139d851aa6c0c80` |
+| wip-index65-context-loss-01 | 2/2，638.5717ms，exit0 | 02:15:31.681Z→02:15:32.554Z | `2c581f28bd8f548d5e5ad0b002103cb4823f3c9d588c302377ef0f418323a4b4` |
+| wip-index65-cutoff-01 | 1/1，242.3638ms，exit0 | 02:15:32.852Z→02:15:33.311Z | `8e987ea1087dada34a1a053b457db2aea1bfdb01e9c6979dcd710bd531a225c0` |
+| wip-index65-record9-01 | 原5刊wholeReport/Markdown/selectedCount/wrong-owner检查，exit0 | 02:15:33.622Z→02:15:34.013Z | `f23bf9ef61fdbefab3311dac00731bf50267bb3fbc67bebd03c9dbeb68e41699` |
+
+Root独立重核九组全部metadata完整before/after与log摘要。cutoff首跑原期待全通过，明确metadata早于截稿、实际完成run晚1秒、源published_at更早、确有semantic assessment；当前快照不纳入该late run、不消费，下一期能真实报道并重启读取。旧刊baseline SHA仍`e69381dd7517c8d6fd524842f904d82b5f2be3a9bfad27b3782063378e154f88`，没有重freeze。Root明确解除65冻结，作者继续；上述为WIP局部证据，不替代最终固定SHA全套/双轴/实际master集成复验。
+
+独立设计者随后指出更窄的顺序风险，Root亲读当前loader确认：`snapshotRun/verify`进入`original()`后可先依typed header解析raw，`ready()`却在稍后的`readNodes`才检查。单边UPDATE缩掉已撤权dependency身份时，trigger虽已置invalid，最终闭包不符拒绝发生在raw解码之后。Root已要求统一入口先核固定guards与本操作可读阶段，再信任header/raw；public snapshot/archive拒绝既有invalid/dirty，维护允许初始合法building及同短事务自有变更，不能一律ready使补建永久停。另要求一次操作记录失败origin为unknown，不重复读取/扣占同slot；实际已读取的失败bytes仍计费，不能免计IO。这些是现有完整性/预算约束细化，不增加外部绕过flag。当前10个独立测试及5旧刊不覆盖raw解码前时序，尚不能称其通过。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
