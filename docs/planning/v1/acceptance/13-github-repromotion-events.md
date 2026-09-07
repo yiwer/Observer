@@ -239,6 +239,28 @@ Root另批准同一`GitHubDevelopmentVerifier`可选窄`assessSecurity(input)`�
 
 按codebase-design，补建、完整性、权限与容量留在观察Module内部，不将checkpoint或“历史已完整”状态交给Request/Agent。作者继续安全修订与索引具体方案；动量尚未产品实现，无产品提交、整票check/smoke、双轴最终review或master集成。
 
+### 具体索引DDL与预算已批准
+
+本次goal接续实时inventory确认实施作者仍running；Root主树为`77007b6`、仅无关`.idea/`，未把观察超时当终止。上一goal turn有真实产品局部证据、Root独立7测试及记录提交，分类为progress。
+
+Root全文亲读作者正式提案§8后，批准四张新表`development_contexts/context_node_heads/context_pending_runs/context_index_state`、`context_frozen_prefix`索引、原`development_runs`六个nullable typed路由/字节/摘要列及固定触发器协议进入实现；application_id/user_version、原runs JSON和旧刊字节不改。新表精确字段/SQL见作者`docs/implementation/v1-13.md`§8，由唯一作者实施，Root不并行写产品。
+
+批准的硬工程预算为：context单行64KiB、每node三类（Release material、安全material、known-security首次关联）合计1000唯一context；单次全部node投影16MiB；单原DevelopmentRun32MiB、单原GitHubRun1MiB；每批维护最多100不同slot且两类原run合计64MiB；每次freeze/snapshot/authorize/read最多1000不同origin slot且两类原run合计64MiB。按origin复用有界验证缓存，投影与原run预算分别计量；这些不保证任意1000-context集合都能放入、不是JS堆/容量性能已经通过。未来动量布局另提，不默认将32MiB momentum bank再塞入该32MiB run。
+
+执行附带条件已发作者：ALTER之后INSERT显式列名；合法新无policy/空失败run以typed bytes/hash等明确区分无header旧WIP，前者可记录经验证空结果，后者不得无权解码或跳过；既有invalid/building/dirty不能由正常路径洗白。所有字节gate在读取大payload/JSON解析之前生效，16MiB按node码点/ordinal分配、不足node整组历史unknown，不传截断previous；普通Heat按独立证据继续，身份不删除。expected集合从真实run及已核head推导再与实际写入独立比较；冻结收据同时绑定原run成员与manifest。作者可写回已批准状态后直接逐片TDD，不必重复等待Root。
+
+### 映射冲突的两次不同RED
+
+Root读取42/43原log并核42–44完整metadata/hash/前后指纹一致。42新fixture历史点与目标24h点相差65min，超既有±1h择样窗口，actual=[]，不能证明详情node偏选；只将旧点改为合法23:25、删去不必要中间点后，43 actual=[novel,unrelated]、expected始终[unrelated]才直接复现详情指向node错误放行。43→44未改期待/fixture：
+
+| 切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 42-ghsa-node-conflict-red | 3/4，exit1，643.3657ms；fixture前提不满足 | 01:21:33.787Z→01:21:34.505Z | `0e5cd331086f51661af7a91477fe4822dcfec33bf8eddd17caf83683a879afd1` |
+| 43-ghsa-node-conflict-red | 3/4，exit1，652.8662ms；产品映射冲突反例 | 01:21:49.624Z→01:21:50.349Z | `0d5fa3c609035dd60b8c82bbb9ed79f5fc680291373d71e2f7076fc129384c03` |
+| 44-ghsa-node-conflict-green | 15/15，exit0，1866.1734ms | 01:22:17.067Z→01:22:19.004Z | `6f2da2bb7b70da6a5d947eedb264dc9dc66cf6d0bd07e2eba501462f179e6d02` |
+
+Root独立准备`context-index-loss-probe.mjs`，首跑前最终SHA **2B3E9241E0BBC57C485ABD8EB74605B5D417DEB815B581F5FFAFADD246D425FF**。首次业务运行前把场景明确为：先成功报道，再刊登真正依赖该旧context的重复抑制收据；仅在各自新建Owned观察库注入单context/单head丢行，检查依赖旧刊拒读、不把未知历史送模型作空集、下一期普通novel仍可刊、重启不自动洗白。这样不把只发生在原freeze之后的孤立条目误当其旧依赖。SQL仅确定注入对象和实施故障，业务断言都通过公开Interface。现在仅通过语法检查，两个场景尚未运行，不计PASS；原6组已执行oracle没有任何更改。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
