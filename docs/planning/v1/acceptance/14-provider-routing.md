@@ -96,3 +96,11 @@ Root核对30–38各capture完整before/after一致、实际日志SHA吻合，�
 | 37 | 真实Collection SQLite、Owned RSS、schema2 storage Bundle：model-forbidden但允许分发的链接保留；分发撤销后排除，零attempt且报告不包含禁止原文 | `bc59547d8edbac62c6797b33cf2c04e322f4715a7ebd6748443d13e908138714` |
 
 nullable capture列已进入实际INSERT及read校验，不再仅是安装标记。上述仍为未提交WIP的局部开发证据，不是固定候选验收、真实Provider验证或整票完成。作者继续条件复核和实际Gate裁定；Root提醒保留原Verifier provenance，不能用双Provider同意补足独立来源。Sandcastle仍仅后续隔离PoC候选，不进入V1主依赖。
+
+## 条件复核切片39–45及待补边界
+
+Root核39–45完整before/after一致和实际日志SHA，亲读实际Gate接线与公开测试。40为12/12、0skip、exit0，日志SHA `de7faa2f0ac4bcba389f61992738aa56e7c29340c0e3d03facee1e329f82c9ba`：只对高风险Claim触发另一Provider复核，两Provider一致仍因缺独立来源而待确认。44为13/13、0skip、exit0，日志SHA `e2bb64d754ac945919bb8e82c706d6a884bef73484f5f384440151a4c22483f3`：两独立来源且主评估本可发布时，复核冲突令实际Gate返回unconfirmed，正文不作为故事发表，重启读取相同。原核验收据保留，不伪造第三模型或合成research-agent输出。
+
+39/43真实RED保留。41类型检查exit2，测试risk.categories推断never；42修正后exit0，45也exit0。不能将41视为通过。
+
+Root的开发期检查要求继续补有效证据数组顺序置换例，以及复核方unsafe/irrelevant的隔离优先级。当前整assessment哈希比较可能把顺序变化误报为分歧，且普通disputed不能代替quarantined。最初对主unsafe被回调降级的怀疑，经亲读domain-evidence.ts纠正：Request10的domainRules前置检查已隔离主unsafe/irrelevant，应作回归保护验证，不能记作已复现缺陷或伪造RED。Assessment.reason是封闭枚举而非自由文本；不得放宽conclusion/reason一致性来解决等价比较。上述均未完成整票验收，#14保持OPEN。
