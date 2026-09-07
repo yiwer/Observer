@@ -1150,6 +1150,14 @@ Root全文审读原三文件、v2差异与V2-NOTE。实际合成token为30字节
 
 原档`tmp/root-momentum-metadata-rows-FY4TlV`的664项manifest实际bytes/SHA全等，journal completed、无意外HTTP/model；恢复结果已核。这是当前已审实现的公开行数限制与scope恢复证据，不是8MiB字节阈值实测、heap/performance承诺或全部操作阶段/最终固定SHA通过。#13及其余验收继续。
 
+### 246–247：真实unknown GHSA不能借热度入选
+
+实际25小时20node采集，末轮注入明确关联repeat的reviewed high GHSA，affected范围为null。公开Point仍保存repeat stars100→200、forks20→40及完整20候选；observed witness的20node风险池包含该实际unknown风险，并逐项对照公开同slot DevelopmentRun的id、risks和historyUnavailable。repeat动量status为unknown，ranking原因为security-risk-quarantined、不入选、无新development/消费；其他peer仍入选，原整刊重启相等。
+
+246-momentum-unknown-risk-characterization首跑1/1、1341.3972ms、exit0，日志SHA `9df80aad0e97b54aaaebef6dcd2deda2b605f5a0a639f8b9fe66d631328c58ad`；247-momentum-unknown-typecheck exit0、空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root全文核公开测试、原生日志及完整before/after/SHA。无product修改，是既有保护表征，不假称RED→GREEN或所有未知/撤回/失权风险都已覆盖。
+
+后续bank资源组需真实每capsule<8MiB而完整组>32MiB、共享payload不先触64MiB，按node码点整组分配，不改数学状态或丢旧身份；安装/事务组还须分别核缺结构不能重建与ordinary可用性，不能以某处constructor拒绝或blanket catch代替两者。当前这些仅待核问题，不计通过，#13保持OPEN。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
