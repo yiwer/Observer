@@ -527,6 +527,29 @@ Root核96–99各原metadata完整before/after及log SHA，亲读新增两条公
 
 这是独立范围扩大、回A抑制、完整实际origin及消费历史、重启/公开重算的WIP诊断，不能合并成同一固定SHA的12测试最终通过，更不代表未实现的共同引用/自然缓解/动量已通过。Root同期实时读取GitHub #13为OPEN、assignee yiwer，未修改tracker或调用真实来源。
 
+### 100–105：新输出共同引文修复与容量样本版本化
+
+本轮Root先实核master `4de15e1`、唯一作者仍在原base的ticket/v1-13 WIP，三个agent当前状态中产品作者确实running。上一goal轮有独立GHSA首跑及三个正式证据提交，为progress；没有触发阻塞审计。继续沿implement/TDD已批准公开Seam，不变更整票目标。
+
+Root亲读100–105原日志、公开容量测试及当前共同reserve接线，逐项核原metadata完整before/after和log SHA。100只修复同一收集里Release/GHSA**新保留输出**共用额度，安全12/12，101类型检查通过；旧模型输入、完整永久previous、按原source分别核额及produce/read阶段尚未接齐，不能声称§10整体通过。
+
+102合并30/31：原容量样本290个非空短引文材料违反共同500额度，公开snapshot变0，在材料数前提处失败，尚未触发被测原origin故障；不是预算缓存修复回退的证据。作者获准版本化替换容量输入，同时保留原71/102日志与源码指纹。作者确认早期完整fixture没有另存副本，仅保留当时hash、日志与补丁过程；不得声称旧WIP完整源码已冻结可直接复跑。
+
+103新的29-material/其余元数据样本在预估原run>2MiB前提失败，属样本大小不足。104调整合法长UTF-8元数据及>1,400,000前提首跑PASS，但其“迁”摘录从半词截取，Root未接受为完整引用样本，要求改成完整“旧接口已移除。”再跑。105新完整句29×2×7=406 codepoints，1/1 characterization通过；不伪称该样本触发新的产品RED→GREEN。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 100-shared-citation-green-attempt | 12/12，exit0，2082.7974ms | 02:58:53.356Z→02:58:55.514Z | `21019e6f204aeafaf83b75f89a4fa0a3979e499ab23d62775b2681ba3d8ec9d7` |
+| 101-shared-citation-typecheck | exit0，空log | 02:58:56.376Z→02:58:58.401Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 102-shared-citation-affected-local | 30/31，exit1，4270.7435ms | 02:59:32.159Z→02:59:36.513Z | `04c8b25d0111af3b0f710902af5fe460d7e2136a9d6418c7d000fd57cfe89231` |
+| 103-lawful-shared-origin-characterization | 0/1，exit1，436.1027ms；样本前提 | 03:01:12.992Z→03:01:13.505Z | `d259b363f4bc41e888796d231d1d5528d16dd676268715dc497e98cf9f050cca` |
+| 104-lawful-shared-origin-characterization | 1/1，exit0，624.8865ms；引用不完整，未接受 | 03:02:52.335Z→03:02:53.032Z | `07396a5b6b0e2ac4a42f3a3b6c6926c8c8a7345cdb91216705709cb0162d7b02` |
+| 105-lawful-complete-sentence-characterization | 1/1，exit0，627.2829ms | 03:07:13.376Z→03:07:14.079Z | `048dea8ac5e03526934d7d721856f86f0427f908c365b7b172ea1d8ace8f3523` |
+
+105诊断来自公开snapshot的真实DevelopmentRun序列化字节和实际Owned故障父行：损坏/健康DevelopmentRun分别**1,531,082 / 1,530,967**字节，损坏/健康父GitHubRun分别**934,214 / 942,502**字节，均在单行上限内。Root另算重复同坏origin29次为**71,493,584 > 67,108,864**字节，确认它足以定位原64MiB重复计费问题，而操作内单次缓存可留下健康项目的预算。当前每run只有29个不同material，不是290或1000容量验证；源码仍仅模拟HTTP/语义，不作实际模型质量结论。
+
+Root另派独立作者在新`data/root-v1-13-citation-review/`准备旧输入+保留副本共同计费探针，尚未首跑。预声明A完整38字、B完整15字、source额度76：先普通Request8发表R，再collect A不出版（两份A=76），下轮若比较B，旧输入38+永久previous38已满，新B收据30应被拒。不要求B一定调用模型；能预检跳过合理，但不能裁A历史或假消费。此为已批§10的独立检查，不增加产品规则或改旧Root oracle。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
