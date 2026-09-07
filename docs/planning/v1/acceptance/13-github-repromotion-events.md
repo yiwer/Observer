@@ -261,6 +261,19 @@ Root读取42/43原log并核42–44完整metadata/hash/前后指纹一致。42新
 
 Root独立准备`context-index-loss-probe.mjs`，首跑前最终SHA **2B3E9241E0BBC57C485ABD8EB74605B5D417DEB815B581F5FFAFADD246D425FF**。首次业务运行前把场景明确为：先成功报道，再刊登真正依赖该旧context的重复抑制收据；仅在各自新建Owned观察库注入单context/单head丢行，检查依赖旧刊拒读、不把未知历史送模型作空集、下一期普通novel仍可刊、重启不自动洗白。这样不把只发生在原freeze之后的孤立条目误当其旧依赖。SQL仅确定注入对象和实施故障，业务断言都通过公开Interface。现在仅通过语法检查，两个场景尚未运行，不计PASS；原6组已执行oracle没有任何更改。
 
+### 真实观察成员核验的第一条修复
+
+Root实读46原RED并核46–49各metadata/loghash与完整前后源码/状态一致。46在保存刊物中清空assessment的previous/previousEvidence、重算公开哈希后，公开read未抛异常；47接入同步只读`authorizeDevelopmentHistory`回核真实当前DevelopmentRun成员，49保留typed路由header和原payload实际字节/hash复核。Root只读确认新Record10 read实际调用该Interface、缺实现不默许；这还不是完整四表集合证明，索引阶段继续完成。
+
+| 作者切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 46-frozen-context-omission-red | 11/12，exit1，1915.3921ms；Missing expected exception | 01:28:11.211Z→01:28:13.200Z | `9a19581311fc3afe4a5b2b8b26c8bce4770538323160c9ecab0923c1e960f507` |
+| 47-frozen-context-member-green | 16/16，exit0，2321.8857ms | 01:29:09.949Z→01:29:12.345Z | `03e947307cac4f63f2a549885dae10c2d31c18cc1ae8d234e5abc607295e7343` |
+| 48-history-member-typecheck | exit0，空log | 01:29:54.221Z→01:29:56.242Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 49-history-member-green | 16/16，exit0，2323.0833ms | 01:29:57.015Z→01:29:59.403Z | `d46283bef1ec7c55eec76ff597cb43cae07eccea6449ffc22ef1dff767475827` |
+
+45类型检查另已实核UTC01:25:08.557Z→01:25:10.545Z exit0/空log。Root此时重新通过gh读取#13仍OPEN、assignee yiwer，不关闭、无新tracker写入。新四表切片已有`50-index-missing-state-red`，Root读到失去安装状态后仍有外部verifier输入的失败输出，但尚未有其GREEN；不把当前16/16误称索引已验收。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
