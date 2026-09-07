@@ -1103,6 +1103,12 @@ Root全文核测试、validPoint实际分支、完整before/after与原生日志
 
 Root核实际公开测试、原生日志及完整before/after/SHA。此为既有保护的真实缺样表征，没有product改动，不伪称RED→GREEN，也不概括为所有reset中断或legacy通过。下一同组验证真实旧runs先存在、随后显式启用的legacy保守startup与未来完整reset恢复，不靠改legacy标记或清库。#13保持OPEN。
 
+### 239–240：真实legacy库未来reset恢复
+
+公开observe先建立hour0–23真实旧raw、hour0普通Record9；此时momentum配置实际不存在。hour24起配置v2显式启用，至48的实际extreme仍无capsule/development/报告事件，不能把安装当首次onset。随后继续真实采样，72–96的25个低点覆盖24小时，紧邻97新高形成26点reset capsule，120日报成功报道momentum。原普通刊、保守刊、恢复刊重启后完整相等。未SQL伪造legacy位、未清表或重装，也不依赖已有旧onset胶囊。
+
+239首跑1/1、8269.3571ms、exit0，UTC2026-09-07 19:40:39.860Z–19:40:48.192Z，日志SHA `219864b94c624d7a415971417d250de7ff525946369694e99cf9eeb15168c6b0`；240 typecheck exit0，19:41:06.136Z–19:41:08.059Z，空日志SHA `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。Root全文核公开测试、日志结果、完整before/after及实际SHA。既有实现首跑表征，无product修复，不称RED→GREEN；不覆盖dirty/invalid洗白、全部startup超界或reset中断。整组回归与独立总行数探针仍分别推进，#13不关闭。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
