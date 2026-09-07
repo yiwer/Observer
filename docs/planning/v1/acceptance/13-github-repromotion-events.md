@@ -1012,6 +1012,28 @@ Root在208稳定源码窗口批量复跑200–208变更后的原冻结probe，�
 
 Root核对四份完整before/after相等、实际日志SHA及213原生测试汇总。213作者主动提供的短冻结窗口未被Root启用，随后已明确撤回；**没有213窗口的Root独立capture，不沿用208结果称为213通过独立回归**。后续作者继续既批16,384行/8MiB实际metadata接线，待新稳定窗口再运行Root探针。最终固定SHA、完整套件及其余§12验收项保持未完成，#13继续OPEN。
 
+### 214–218：共享metadata接线与Root回归
+
+新增私有metadata预算以SQL固定字段JSON投影为实际UTF8计量对象，先返回固定20 ASCII字节的长度receipt，再预留文本字节/行数；长度查询自身及真实重复读取计费，只有实际免查询的scope缓存命中不重复计费，失败不退款。新增momentum locator/header/marker/state/head等及其原DevelopmentRun typed header使用同一16,384行/8MiB预算；单项原上限另行保留。这是源码接线说明，**尚不是总阈值的公开运行时证明，也不是SQLite临时内存或进程heap上界**。
+
+| slice | 实际结果 | output.log SHA256 |
+|---|---|---|
+| 214-metadata-scope-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 215-metadata-scope-state-control | exit1：新列名校验拒绝payload_sha256，合法基线采集失败 | 5b7f70b2dd92e565dc358f65adc5abe9e4bfeec597b299db2aea969d9b317a31 |
+| 216-metadata-scope-state-control | 修正列名允许数字后，同原控制1/1、exit0 | 07a25e5f68fb5c9fcf2f46d8866976a1621ff7644671afd4ba2374cc3f3bcb58 |
+| 217-metadata-scope-typecheck | exit0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 218-metadata-scope-regression | 11/11、38626.2305ms、exit0 | 139cfb7e06c2cead73b117246e12ebaa68b66b2a197c306e34d64de4a4832eaa |
+
+Root核对全部完整before/after及实际原生日志SHA、215实际堆栈和216/218汇总。215是接线回归失败，不能冒称16,384行/8MiB目标门的RED。随后明确确认新的218稳定窗口，原冻结探针三项完成后立即释放；各capture完整before/after相等，54个模块逐项匹配218.after，实际native.log SHA均核实：
+
+| capture | 结果 | UTC（2026-09-07） | native.log SHA256 |
+|---|---|---|---|
+| wip-metadata218-budget-01 | 1/1，payload跨池预算及同进程/重启恢复 | 19:20:13.208Z–19:20:17.883Z | 5234f259145044946e364f9ddb4f3644f8d65f84b9368069b8ac7d25777b6078 |
+| wip-metadata218-startup-v2-01 | 1/1，49小时首次及持续高/消费 | 19:20:18.194Z–19:20:32.381Z | 3c8f93ecb40f28ab394f1cfd19539df97c7fc61938cc0bade3eb872a1dd57e20 |
+| wip-metadata218-scope-01 | 3/3，读取scope生命周期/撤权收尾 | 19:20:32.670Z–19:20:33.487Z | a5929c3384e1088cc62a70e9366bdd7c20608f9c1ed5e2692e6105f65a166977 |
+
+Root同期源码核对发现collection的私有write预算登记了依赖权限，但write退出未finish；作者确认缺失。现有读取scope通过不覆盖写入scope收尾，不能提交后才拒绝。下一片在原事务COMMIT前核对所用依赖及ready结构，保留实际失败或静态修复的证据分类；未取得公开反例前不称漏洞已复现。Root另一次审计命令误猜218目录名失败，发现实际目录后重读成功，未重跑或改写任何测试原档。#13及全部最终门槛仍未完成。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
