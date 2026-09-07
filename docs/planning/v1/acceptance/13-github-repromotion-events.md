@@ -1,6 +1,6 @@
 # V1-13 执行与待验收记录
 
-状态：in-progress；唯一产品作者为`implement_v1_13_resume`。117稳定源码窗口Root新合法短证据Release 9项、原安全3项与旧引文反例1项，共13个独立测试通过，另5份旧刊内容不变；不将新输入冒称原长引文输入继续通过。作者127窗口局部39/39，128类型通过；出版/read计费、纯文字缓解、再次增长产品全链路仍未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13最近实时readback为OPEN，本段不作新tracker写入。以下逐段记录按实际发生顺序保留，末段为最新进度。
+状态：in-progress；唯一产品作者为`implement_v1_13_resume`。117稳定源码窗口Root十三项及5份旧刊通过，134新四node共享引文反例独立首跑通过（两窗口不能合并成同一最终SHA）。作者136整run遗漏真实RED已在137局部42/42修复，138类型通过；出版/read剩余负向、纯文字缓解、再次增长产品全链路仍未完成。尚无本票产品提交、最终双轴或master集成验收；GitHub #13最近实时readback为OPEN，本段不作新tracker写入。以下逐段记录按实际发生顺序保留，末段为最新进度。
 
 ## 固定任务与依赖
 
@@ -662,6 +662,19 @@ Root亲读129公开反例及新`github-publication-budget.ts`/authority接线，
 作者134提供5秒源码冻结，Root首次业务执行`data/root-v1-13-review/wip-quote134-four-node-history-01`：**1/1、exit0、475.0758ms**，UTC **03:47:05.543Z→03:47:06.320Z**，原log SHA **8bcfe43fa5f75c2296f8b902a37dab32cffbd55c8508002cea2450e34c7e59df**。Root完成即明确解除冻结，后逐模块核等于作者134原metadata、完整before/after与原log匹配。实际八段正向账逐条打印：四次initial各0，四次expansion各verification23+development23=46，同一policy69从未改变；终局四节点有效、历史最低92导致至少一整node unknown，完整剩余历史、四novel出版/原刊及新刊重启可读、四份旧material历史cutoff snapshot不变全部满足。它不是Publication整组剔除的全部攻击验收，亦不能将134此一项与117十三项合并称同一最终SHA通过。
 
 Root随后静态指出新publication authority可能存在空域绕过：只比`origins.length===base.runs.length`，若caller整删runs与projection，两者皆空可能不回查实际原run。作者独立也定位到此点；已准备下一公开安全隔离→删整run→重算ranking/MD/hash反例，Root另派独立作者用合法Release失去已报道事件的输入准备相反路径。不把当前静态推断冒称已执行RED。修复方向仍按真实父current slot、冻结config/原source identity、原cutoff前实际可用性回查完整集合；合法旧slot没有事件run、实际失败、配置不符及晚于cutoff完成必须区分，不因后来的数据倒灌。该方向属于已批实际origins全集校验，无新增外部接口或用户权限。
+
+### 135–138：整run遗漏已真实复现并修复首片
+
+Root亲读公开新增安全反例/actual current slot修复，逐份核135–138完整before/after与原log SHA。135只是删除projection但恢复真实完整run、出版超额仍拒读的characterization。136才是整run遗漏：当前真实GHSA影响范围unknown使repeat隔离，Owned归档同时删runs/projection并公开重算rank/MD/hash后，repeat重新入选且鉴权read未抛错，真实RED为`Missing expected exception`。137按真实父current slot读取兼容、原source身份一致且原cutoff前已可用的原development run，再核完整origins集合，不接受caller两空数组自证；合并42/42，138类型通过。合法实际缺失/不兼容/晚可用仍保留既有边界，非通过新查询倒灌旧时刻。
+
+| 作者目录（`data/v1-13-slices/`） | 实际结果 | UTC（2026-09-07） | 原log SHA |
+| --- | --- | --- | --- |
+| 135-missing-projection-characterization | 1/1，398.9501ms，exit0 | 03:48:26.998Z→03:48:27.470Z | `a032e30f9c4cbedc2994206c7c757db13933e2aab291734be609b288a914c322` |
+| 136-whole-run-omission-red | Missing expected exception，exit1 | 03:50:20.072Z→03:50:20.543Z | `9020702e2729f01f8948f71613d7157661d3127a0c3453c2c0f105424b212a89` |
+| 137-whole-run-omission-green | 42/42，5497.6391ms，exit0 | 03:50:55.613Z→03:51:01.187Z | `fdba1ad29b37de2eecc8861e88a43b01914b46e80e9ac15caa26fffd820b7636` |
+| 138-whole-run-omission-typecheck | exit0，空log | 03:51:01.961Z→03:51:04.042Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+138作者主动提供冻结时，Root独立Release整run遗漏探针尚在首跑前准备，Root立即明确解除，没有让产品作者等待。独立预定输入为合法短证据Request8 R→Release+4novel真实成刊，伪造只整删development run/projection并同步真实派生coverageGap/ranking/MD/hash，保留父GitHub snapshot、普通排名、旧刊历史和全部观察DB；从原5席含已报道事件变为伪4席无事件仍须拒读，恢复原payload后重启可读。当前只批准静态字段范围，未运行、不计独立PASS。作者继续出版负向与后续已批准mitigation，不因准备探针暂停。
 
 ## 兼容及安全
 
