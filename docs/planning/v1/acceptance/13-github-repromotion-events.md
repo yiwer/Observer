@@ -274,6 +274,41 @@ Root实读46原RED并核46–49各metadata/loghash与完整前后源码/状态�
 
 45类型检查另已实核UTC01:25:08.557Z→01:25:10.545Z exit0/空log。Root此时重新通过gh读取#13仍OPEN、assignee yiwer，不关闭、无新tracker写入。新四表切片已有`50-index-missing-state-red`，Root读到失去安装状态后仍有外部verifier输入的失败输出，但尚未有其GREEN；不把当前16/16误称索引已验收。
 
+### 索引第一批接线与57冻结独立反例
+
+本轮接续重新确认Root `2c58b8c`仅无关`.idea/`、作者`ticket/v1-13`仍在`ec9b91c3e8575f7f3f3dc363d1d35ffb6319fce3`的未提交WIP。作者以completed短回合交还等待，不代表整票完成或消失；Root完成57短冻结后已明确解除并通过followup恢复唯一作者。goal继续active，本轮存在实际独立执行及产品失败反例，不是外部阻塞。
+
+Root实读50/51/55失败输出，解析50–57完整metadata、核完整before/after一致并重算各`output.log`摘要。首次复核命令把作者日志误写成Root惯用的`native.log`导致ENOENT，仅为Root定位命令错误；列目录确认作者使用`output.log`后只读复核成功，没有重新执行、覆盖或改写这些原始运行。
+
+| 作者切片 | 实际结果 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| 50-index-missing-state-red | 12/13，exit1，2321.4985ms；缺安装state仍送材料核验 | 01:32:35.926Z→01:32:38.328Z | `f4b96b8c4e4fce02f979f059e05b3fdddcfffce70430a43b1bb158190514ea7a` |
+| 51-index-state-green-attempt | 16/17，exit1，2619.6723ms；旧metadata-only路径因新空run权限路由回归失败 | 01:37:26.667Z→01:37:29.360Z | `9cde293a6c0d7e1eeebf9be2faf4bcac0909c84dad048e58928b1e3371513d87` |
+| 52-index-state-green | 17/17，exit0，2621.7689ms | 01:38:30.843Z→01:38:33.537Z | `93b34df265e7d355e684f8c46a36c6083f8e010c4b4b413f181177d004994039` |
+| 53-index-state-typecheck | exit2，5处新Map回调implicit-any；原失败保留 | 01:38:34.288Z→01:38:36.365Z | `9735dab635f18ff3e274da2d02b135f45b9ca009795f90b8040f6cf8925aa6e1` |
+| 54-index-state-typecheck | exit0，空log | 01:38:57.341Z→01:38:59.278Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 55-index-member-loss-red | 13/14，exit1，2630.0981ms；缺真实context依赖仍可read | 01:40:30.509Z→01:40:33.214Z | `c40f05d184d720f94e7832898a58fe024b4de652f71b3701aa9139262947ec5a` |
+| 56-index-frozen-prefix-green | 18/18，exit0，2891.8337ms | 01:41:34.922Z→01:41:37.887Z | `775cc7e0e1af6ac8757d2911eec3e9c993bc8aadc38830794db922891cc8fab3` |
+| 57-index-frozen-typecheck | exit0，空log | 01:41:46.273Z→01:41:48.268Z | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+
+52以本轮真实已验证原run在同事务构造expected成员闭合51，不意味着旧无header材料可按新source权限读取。56把contextFreezes接入真实run、Release assessment与input摘要，回核原generation前缀及真实origin；尚未证明全部累计预算、并发、容量、GHSA修订或动量。作者明确当前current-run与origin累计预算仍分开，需下一片合并，不能称最终cap合格。
+
+Root随后按原6份已执行脚本和首跑前固定的新`context-index-loss-probe.mjs`原样运行7组/9测试；每组新目录、单fd/fsync、实际UTC/native exit。Root另解析全部metadata、独立核完整before/after及loghash。没有读取作者helper、没有真实网络或Provider。结果为原7测试PASS、新2测试FAIL，均为WIP诊断：
+
+| Root目录（`data/root-v1-13-review/`） | 实际结果/总时长 | UTC（2026-09-07） | 原始log SHA |
+| --- | --- | --- | --- |
+| wip-index57-release-01 | 1/1，243.2865ms，exit0 | 01:59:44.679Z→01:59:45.150Z | `d1c4dd0debce96373664e90260cc3bdc2d7d186daedcddbd52ecb29592cc6889` |
+| wip-index57-long-01 | 1/1，289.8165ms，exit0 | 01:59:45.561Z→01:59:46.078Z | `00f89406f75cb9fded31b176ca80fc1ba5f1233cd51cec2bbf583f7e0644bd58` |
+| wip-index57-integrity-01 | 1/1，249.6599ms，exit0 | 01:59:46.423Z→01:59:46.900Z | `72d9c05286683d7d3e8c7bcc9a6be8538ea414550f484038eb8ac802267016ea` |
+| wip-index57-reissued-01 | 1/1，242.5047ms，exit0 | 01:59:47.213Z→01:59:47.680Z | `64152b56162e42cc3da0e2dd6bf24bc3b365b10dd999236836615ec497e04609` |
+| wip-index57-no-novel-01 | 1/1，234.3594ms，exit0 | 01:59:47.997Z→01:59:48.449Z | `69f2982e144d909eb956d4ccee8e678fd7680d57321977815503aefd3137a5a8` |
+| wip-index57-scope-01 | 2/2，287.8228ms，exit0 | 01:59:48.757Z→01:59:49.267Z | `e9ad3fafbadec2f7a4a5d82243320536c4fef98b01cd2008fd3c0753680c08d3` |
+| wip-index57-context-loss-01 | 0/2，518.3923ms，exit1 | 01:59:49.575Z→01:59:50.313Z | `9c3396594ca2d14ad9244aad9e25b8e5d3e3e50c8ae7722e17479cb1afc3502b` |
+
+两个独立丢行场景分别删除各自新Owned观察库中ROOT_REPEAT的一条context/head：真正依赖该条目的旧刊拒读、后续无verifier输入都已通过，随后普通novel D/E实际selected为空，原期待两者入选，因此在该断言真实失败。后面的Gap及restart断言尚未到达，不能算通过。Root已交作者定位降级范围，要求不放松实际普通报道历史完整性，不修改原oracle；原失败日志、两个故障库及所有旧证据保留。
+
+Root批准作者提出的单列权限路由细化：`development_runs.material_kinds INTEGER`对legacy nullable；新行0=真实无Release/GHSA材料的元数据空/失败run，1=Release，2=GHSA，3=两者。按真实提交payload计算，并在后续复核与schema、固定guards、原SHA/字节及实际kind一致绑定；null/未知bit/headerless不能猜0。0仍需原source metadata许可，不借此读取含事件材料的旧run。该列是已有typed路由内部实现细化，不扩展Request或Research Agent权限。作者更新正式§8审批/已实现/待验证状态并继续TDD；Root不并行修改产品。
+
 ## 兼容及安全
 
 已接受Request1–8/Record1–9/Version1–8/Canonicalv1–v7与`observer-github-heat-v1`旧评分/字节不原地改；Report SQLite v1、GitHub application_id1329746759/v1不擅迁移。新Schema、采集Interface、持久结构或多票契约须Root协调单一写入者。保留50有界候选、当前来源权限、逐跳网络/稳定身份、截止可用时刻与失败不复活旧good规则，不接收Request/Agent自报历史或权限。
