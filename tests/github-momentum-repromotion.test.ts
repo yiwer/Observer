@@ -1255,3 +1255,48 @@ test("A real Report10 cannot discard its entire captured momentum section even w
   fixture.restart();
   assert.deepEqual(fixture.observer.readReport(report.version.id, ownerToken), report);
 });
+
+test("Four actual reviewed advisories retain their complete security run while an overflowing momentum risk witness becomes unavailable", async (t) => {
+  const fixture = await repromotionFixture(t);
+  fixture.state.source = SourcePolicySchema.parse({ ...fixture.state.source,
+    github: { ...fixture.state.source.github!, events: { ...fixture.state.source.github!.events!, allowMomentumEvidence: true,
+      allowAdvisoryMetadata: true, allowAdvisoryBodyProcessing: true } } });
+  Object.assign(fixture.state.developmentConfiguration, { releases: false, momentum: true, advisories: true });
+  const start = Date.parse("2026-09-04T23:25:00.000Z");
+  const nodes = (high: boolean) => [repository("repeat", high ? 200 : 100, high ? 40 : 20),
+    ...Array.from({ length: 19 }, (_, i) => repository(`peer-${i}`, high ? 1 : 0, 0))];
+  for (let hour = 0; hour < 24; hour++) await fixture.observe(new Date(start + hour * 3600000).toISOString(), nodes(false));
+  const ids = ["GHSA-abcd-2345-efgh", "GHSA-bcde-2345-efgh", "GHSA-cdef-2345-efgh", "GHSA-defg-2345-efgh"];
+  fixture.state.advisories = ids.map((ghsaId) => ({ ghsa_id: ghsaId, cve_id: null,
+    url: `https://api.github.com/advisories/${ghsaId}`, html_url: `https://github.com/advisories/${ghsaId}`,
+    repository_advisory_url: `https://api.github.com/repos/example/repeat/security-advisories/${ghsaId}`,
+    source_code_location: "https://github.com/example/repeat", type: "reviewed", severity: "high", summary: "Owned security risk",
+    description: "Affected versions permit unauthorized query access.", identifiers: [{ type: "GHSA", value: ghsaId }], references: [],
+    published_at: "2026-09-05T21:00:00Z", updated_at: "2026-09-05T21:00:00Z", github_reviewed_at: "2026-09-05T21:00:00Z",
+    nvd_published_at: null, withdrawn_at: null, vulnerabilities: [{ package: { ecosystem: "npm", name: "owned-query-package" },
+      vulnerable_version_range: ">=1.0.0 <1.2.0", first_patched_version: "1.2.0", vulnerable_functions: null }], cwes: [], credits: [] }));
+  const run = await fixture.observe(new Date(start + 24 * 3600000).toISOString(), nodes(true));
+  assert.equal(run!.observations.length, 20);
+  const report = await fixture.publish("2026-09-06");
+  if (report.record.schemaVersion !== 10) throw new Error("Record10 required");
+  const original = report.record.githubDevelopments.runs.find((entry) => entry.slot === run!.scheduledAtUtc)!;
+  assert.deepEqual(original.security!.risks.filter((entry) => entry.nodeId === "repeat").map((entry) => entry.ghsaId).sort(), ids);
+  assert.ok(original.security!.risks.every((entry) => entry.status === "high-risk"));
+  const momentum = report.record.githubDevelopments.momentum!, witness = momentum.point!.security;
+  assert.equal(witness.mode, "unavailable");
+  if (witness.mode !== "unavailable") throw new Error("Unavailable risk witness required");
+  assert.equal(witness.reason, "resource-limit");
+  assert.deepEqual(witness.origin, { slot: original.slot, developmentRunId: original.id, availableAtUtc: original.availableAtUtc,
+    configuration: original.configuration, policy: original.policy });
+  assert.ok(Buffer.byteLength(JSON.stringify(witness)) <= 256 * 1024);
+  assert.equal(momentum.point!.candidates.length, 20);
+  assert.ok(momentum.nodes.every((entry) => entry.status === "unknown"));
+  assert.deepEqual(momentum.capsules, []);
+  assert.deepEqual(momentum.developments, []);
+  assert.equal(report.record.github.watchItems.find((entry) => entry.nodeId === "repeat")!.starsDelta, 100);
+  assert.ok(report.record.githubRepromotion.selectedNodeIds.includes("repeat"));
+  assert.ok(report.record.githubRepromotion.selectedNodeIds.some((nodeId) => nodeId.startsWith("peer-")));
+  assert.equal(report.record.githubRepromotion.reportedDevelopments.filter((entry) => entry.kind === "security").length, 4);
+  fixture.restart();
+  assert.deepEqual(fixture.observer.readReport(report.version.id, ownerToken), report);
+});

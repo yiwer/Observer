@@ -55,6 +55,19 @@ function dependencies(point: MomentumPoint, development?: DevelopmentRun|null): 
     ...(development ? developmentDependencies(development).map((entry) => ({ ...entry, momentum: false })) : [])];
   return canonicalDependencies(entries);
 }
+function riskWitness(run: GitHubRun, config: DevelopmentConfiguration|null, development: DevelopmentRun|null): MomentumPoint["security"] {
+  const origin = development ? { slot: development.slot, developmentRunId: development.id, availableAtUtc: development.availableAtUtc,
+    configuration: development.configuration, policy: development.policy } : null;
+  if (!config?.advisories) return { mode: "disabled", origin };
+  if (!development?.security) return { mode: "unavailable", origin, reason: "missing-run" };
+  const observed = { mode: "observed" as const, origin: origin!, nodes: [...run.observations].sort((a, b) => momentumNodeOrder(a.nodeId, b.nodeId))
+    .map((entry) => ({ nodeId: entry.nodeId, risks: development.security!.risks.filter((risk) => risk.nodeId === entry.nodeId),
+      historyUnavailable: development.security!.history.unavailableNodeIds.includes(entry.nodeId) })) };
+  // The permanent security run remains complete. A witness cannot pretend a
+  // truncated node or risk subset is an observed proof of the current pool.
+  return observed.nodes.some((entry) => entry.risks.length > 3) || Buffer.byteLength(JSON.stringify(observed)) > 256 * 1024 ?
+    { mode: "unavailable", origin, reason: "resource-limit" } : observed;
+}
 
 /** Private observation storage. Only actual hourly commits can advance it;
  * neither a snapshot nor an external caller supplies an episode state. */
@@ -213,10 +226,7 @@ export function createMomentumStorage(db: DatabaseSync, authorize: (dependency: 
     const previous = readGitHubMetadata(db, shared, "SELECT slot FROM momentum_frames WHERE slot>=? AND slot<=? ORDER BY slot LIMIT 6", ["slot"],
       [new Date(target - 7200000).toISOString(), new Date(target + 7200000).toISOString()], 6).map((row) => frame(String(row.slot), shared).point);
     const enabled = config?.momentum === true && !!run.policy && authorize({ ...run.policy, materialKinds: 0, momentum: true });
-    const origin = development ? { slot: development.slot, developmentRunId: development.id, availableAtUtc: development.availableAtUtc, configuration: development.configuration, policy: development.policy } : null;
-    const security: MomentumPoint["security"] = !config?.advisories ? { mode: "disabled", origin } : !development?.security ? { mode: "unavailable", origin, reason: "missing-run" } :
-      { mode: "observed", origin: origin!, nodes: [...run.observations].sort((a, b) => momentumNodeOrder(a.nodeId, b.nodeId)).map((entry) => ({ nodeId: entry.nodeId,
-        risks: development.security!.risks.filter((risk) => risk.nodeId === entry.nodeId), historyUnavailable: development.security!.history.unavailableNodeIds.includes(entry.nodeId) })) };
+    const security = riskWitness(run, config, development);
     const metadata = { schemaVersion: 1 as const, slot: run.scheduledAtUtc, cutoffUtc: run.availableAtUtc, availableAtUtc: run.availableAtUtc, githubRunId: run.id,
       configuration: run.configuration, policy: run.policy, developmentConfiguration: config, rulesVersion: momentumRules.version,
       sampling: { observationRules: "observer-github-observations-v1" as const, queries: run.configuration.queries, candidateLimit: run.limits.candidateLimit, currentToleranceMinutes: 15 as const, historicalToleranceMinutes: 60 as const },
@@ -381,9 +391,8 @@ export function createMomentumStorage(db: DatabaseSync, authorize: (dependency: 
             original = loadDevelopment(origin.slot);
             if (!original || original.id !== origin.developmentRunId || original.githubRunId !== point.githubRunId || original.availableAtUtc !== origin.availableAtUtc ||
               githubDigest(original.configuration) !== githubDigest(origin.configuration)) return false;
-            const security = original.security;
-            if (point.security.mode === "observed" && point.security.nodes.some((entry) => githubDigest(entry.risks) !== githubDigest(security?.risks.filter((risk) => risk.nodeId === entry.nodeId)) || entry.historyUnavailable !== security?.history.unavailableNodeIds.includes(entry.nodeId))) return false;
           }
+          if (githubDigest(point.security) !== githubDigest(riskWitness(run, point.developmentConfiguration, original))) return false;
           const required = dependencies(point, original);
           if (githubDigest(required) !== githubDigest(dependencyHeader("momentum_frames", "slot", point.slot, shared))) return false;
           actualDependencies.set(point.id, required);
