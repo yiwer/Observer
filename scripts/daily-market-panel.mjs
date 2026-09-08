@@ -27,9 +27,11 @@ export function renderMarketPanel(snapshot) {
   for (const row of snapshot.rows) {
     const available = row.status === 'ok';
     const quote = available ? `${number(row.price)} ${row.unit} · 涨跌 ${signed(row.change)} · 涨跌幅 ${Number.isFinite(row.changePercent) ? signed(row.changePercent) + '%' : '未取得'}` : '行情未取得';
-    const details = [row.contract, `报价：${time(row.asOf)}`, row.exchangeTimeZone ? `市场时区：${row.exchangeTimeZone}` : '',
+    const details = [row.quoteType === 'FUTURE' ? row.contract : '', `报价：${time(row.asOf)}`,
+      row.quoteDate ? `交易地日期：${row.quoteDate}（${row.exchangeTimeZone}）` : '交易地日期未确认',
       Number.isFinite(row.referencePrice) ? `供应商涨跌参考价：${number(row.referencePrice)} ${row.unit}` : '',
-      row.basisNote, row.freshnessNote, row.reason, row.changeReason].filter(Boolean).join('；');
+      row.freshnessNote?.includes('非今日报价') ? '非今日报价，涨跌对应该交易地日期；可能休市或更新滞后' : '',
+      row.reason, row.changeReason].filter(Boolean).join('；');
     // Only link back to the known provider quote page, not arbitrary payload URLs.
     const sourceUrl = `https://finance.yahoo.com/quote/${encodeURIComponent(row.symbol)}/`;
     cards += `<div style="padding:14px 0;border-bottom:1px solid #e4e6ea"><h4 style="margin:0 0 6px;font-size:16px">${escape(row.label)}</h4><p style="margin:6px 0;font-weight:bold">${escape(quote)}</p><p style="margin:6px 0;font-size:12px;color:#6b7280;line-height:1.7">${escape(details)}</p>${row.insight ? `<p style="margin:6px 0;line-height:1.75"><strong>AI 一句话解读：</strong>${escape(row.insight)}</p>` : ''}<a style="font-size:12px;color:#245b93" href="${escape(sourceUrl)}" rel="noreferrer">来源：Yahoo Finance · ${escape(row.symbol)}</a></div>`;

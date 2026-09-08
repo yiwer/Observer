@@ -19,6 +19,7 @@ const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const log = value => console.log(JSON.stringify(value));
 const publicationPolicy = 'previous-day-midnight-v1';
+const contentPolicy = 'impact-market-v1';
 const shanghaiTime = value => new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 const windowOf = value => ({ date: value.date, windowStart: value.windowStart, cutoff: value.cutoff, timeZone: 'Asia/Shanghai' });
 
@@ -26,6 +27,12 @@ function assertCurrentPolicy(value) {
   if (value.publicationPolicy !== publicationPolicy || !value.windowStart || !value.cutoff) throw new Error('fresh-window-collection-required');
   const expected = createDailyWindow({ date: value.date, now: value.cutoff });
   if (value.windowStart !== expected.windowStart || Date.parse(value.cutoff) > Date.now()) throw new Error('invalid-publication-window');
+}
+
+function assertCurrentContent(report) {
+  if (report.contentPolicy !== contentPolicy || report.editions.some(edition =>
+    edition.stories.some(story => !story.significance?.trim()) ||
+    (edition.edition === 'finance' && !edition.marketSnapshot))) throw new Error('fresh-impact-market-run-required');
 }
 
 function attempted(directory) {
@@ -187,6 +194,7 @@ export function render(report) {
 
 function writeRenditions(report, directory, overwrite = false) {
   assertCurrentPolicy(report);
+  assertCurrentContent(report);
   if (attempted(directory)) throw new Error('sent-or-attempted-artifact-cannot-change');
   const outputs = [['daily', report], ...report.editions.map(edition => [edition.edition, { ...report, editions: [edition],
     sourceWarnings: sourceWarningsForEdition(report, edition.edition) }])];
@@ -209,6 +217,7 @@ function mailStatus(directory, edition, subscriberId) {
 
 async function sendEditions(report, directory, requestedEdition) {
   assertCurrentPolicy(report);
+  assertCurrentContent(report);
   if (existsSync(join(directory, 'smtp-attempt.json'))) throw new Error('legacy-combined-mail-already-attempted');
   if (requestedEdition && !names[requestedEdition]) throw new Error('unknown-edition');
   const config = mailConfiguration();
@@ -278,6 +287,7 @@ async function main() {
     }
     const acquisition = readJson(join(directory, 'acquisition.json'));
     assertCurrentPolicy(acquisition);
+    if (!acquisition.markets) throw new Error('fresh-market-collection-required');
     const editions = [];
     // Two native jobs maximum; a failed column doesn't discard completed work.
     const pending = Object.keys(names);
@@ -292,7 +302,7 @@ async function main() {
     if (failures.length) { log({ phase: 'generation-partial', failures }); throw new Error('generation-incomplete-rerun-generate-to-resume'); }
     editions.sort((a, b) => Object.keys(names).indexOf(a.edition) - Object.keys(names).indexOf(b.edition));
     const cutoff = acquisition.cutoff ?? acquisition.retrievedAt;
-    const report = { date, runId, kind: 'owner-requested-separate-editions', publicationPolicy, windowStart: acquisition.windowStart,
+    const report = { date, runId, kind: 'owner-requested-separate-editions', publicationPolicy, contentPolicy, windowStart: acquisition.windowStart,
       generatedAt: new Date().toISOString(), cutoff,
       observedThrough: acquisition.completedAt ?? acquisition.retrievedAt,
       cutoffShanghai: new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', dateStyle: 'short', timeStyle: 'short' }).format(new Date(cutoff)),
