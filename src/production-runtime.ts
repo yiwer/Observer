@@ -45,6 +45,7 @@ export const ProductionConfigurationSchema = z.strictObject({
   retention: z.strictObject({ restoreContractPath: z.string().min(1).optional() }).default({}),
   discourse: DiscourseConfigurationSchema.optional(),
   github: z.strictObject({ databasePath: z.string(), configuration: GitHubConfigurationSchema, developmentConfiguration: DevelopmentConfigurationSchema.optional(),
+    credentialMode: z.enum(["fine-grained-pat", "anonymous-public"]).default("fine-grained-pat"),
     credentialExpiresAtUtc: z.iso.datetime({ precision: 3, offset: false }).optional() }).optional(),
 });
 function readJson(path: string) {
@@ -115,7 +116,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
     eligibility: () => Object.entries(configuration.providers).flatMap(([name, entry]) => entry ? [{ ...entry.eligibility, provider: name, enabled: entry.enabled && entry.eligibility.enabled }] : []) };
   const github = configuration.github ? createGitHubObserver({ databasePath: path(configuration.github.databasePath),
     configuration: () => configuration.github!.configuration, policies: () => sources().sources.filter((source) => !suppressedSources.has(source.sourceId)),
-    credential: () => configuration.schedule.enabled && configuration.collect && configuration.github?.credentialExpiresAtUtc ? {
+    credential: () => configuration.github?.credentialMode === "anonymous-public" ? { kind: "anonymous-public" } : configuration.schedule.enabled && configuration.collect && configuration.github?.credentialExpiresAtUtc ? {
       kind: "fine-grained-pat", token: availableSecret("OBSERVER_GITHUB_TOKEN"),
       expiresAtUtc: configuration.github.credentialExpiresAtUtc, repositoryAccess: "public-only", permissions: "metadata-read-only",
     } : null, clock,
@@ -143,6 +144,11 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   let lastCollectionAtUtc: string | null = null, failedCollectionComponents = 0;
   return {
     observer, collection, configuration, routing, enabled: configuration.schedule.enabled,
+    async observeGitHub(signal?: AbortSignal) {
+      observer.processRetention();
+      if (!github) throw new Error("github-observation-unavailable");
+      return github.observeDue(signal ? { signal } : {});
+    },
     requiresContainerNode: Object.values(configuration.providers).some((entry) => entry?.enabled && !("kind" in entry)),
     databasePath: path(configuration.databasePath),
     taskRoot: path(configuration.taskRoot),
