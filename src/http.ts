@@ -4,7 +4,7 @@ import { ObserverError, type Observer } from "./observer.ts";
 import { PrivateApiError } from "./private-access.ts";
 
 type Reader = Pick<Observer, "readReport"> & Partial<Pick<Observer, "readScheduledStatus" | "pairDevice" | "archiveHistory" | "syncArchive" |
-  "readArchive" | "readArchiveReport" | "createDownload" | "readDownload" | "readPdf">>;
+  "readArchive" | "readArchiveReport" | "createDownload" | "readDownload" | "readPdf" | "readEmailStatus">>;
 async function jsonBody(request: IncomingMessage): Promise<unknown> {
   if (!request.headers["content-type"]?.startsWith("application/json")) throw new PrivateApiError("json-required", 415);
   const chunks: Buffer[] = []; let bytes = 0;
@@ -27,7 +27,7 @@ export async function startPrivateServer(observer: Reader, port = 0) {
       const url = new URL(request.url ?? "/", "http://observer.local"), path = url.pathname;
       const authorization = request.headers.authorization;
       const credential = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
-      const reportRoute = /^\/v1\/reports\/(\d{4}-\d{2}-\d{2}-v[1-9]\d*)(?:\/(markdown|pdf|download-link))?$/.exec(path);
+      const reportRoute = /^\/v1\/reports\/(\d{4}-\d{2}-\d{2}-v[1-9]\d*)(?:\/(markdown|pdf|download-link|email))?$/.exec(path);
       const statusRoute = /^\/v1\/briefs\/(\d{4}-\d{2}-\d{2})$/.exec(path);
       const archiveRoute = /^\/v1\/archive\/(\d{4}-\d{2}-\d{2})(?:\/(latest|versions)(?:\/([1-9]\d*))?)?$/.exec(path);
       const downloadRoute = /^\/v1\/downloads\/(\d{4}-\d{2}-\d{2}-v[1-9]\d*)\/(markdown|pdf)$/.exec(path);
@@ -69,6 +69,7 @@ export async function startPrivateServer(observer: Reader, port = 0) {
       }
       if (statusRoute && observer.readScheduledStatus) { response.end(JSON.stringify(observer.readScheduledStatus(statusRoute[1]!, credential))); return; }
       if (reportRoute) {
+        if (reportRoute[2] === "email" && observer.readEmailStatus) { response.end(JSON.stringify(observer.readEmailStatus(reportRoute[1]!, credential))); return; }
         if (issueDownload && observer.createDownload) {
           response.end(JSON.stringify(observer.createDownload(reportRoute[1]!, url.searchParams.get("format") ?? "markdown", url.searchParams.get("edition"), credential))); return;
         }

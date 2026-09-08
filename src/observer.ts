@@ -37,6 +37,8 @@ import { editionContent, permittedLinks, recoveryDeadline, recoveryEditions, rev
 import { privateAccess, PrivateApiError } from "./private-access.ts";
 import { privateArchive, checkedDate, editionMarkdown, parseEdition } from "./private-archive.ts";
 import { pdfRenditions, PdfConfigurationSchema } from "./pdf-rendition.ts";
+import { emailDeliveries } from "./email-delivery.ts";
+import { EmailConfigurationSchema, type EmailOptions, type NotificationKind } from "./email-contracts.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -62,6 +64,7 @@ export interface ObserverOptions {
   sourcePolicyReader?: () => unknown;
   routing?: RoutingOptions;
   pdf?: { enabled?: boolean };
+  email?: EmailOptions;
   schedule?: { configuration: unknown; runtimeConfiguration: ScheduledSnapshot["configuration"]; versions: Record<string, string> };
 }
 
@@ -120,6 +123,8 @@ function markdown(record: ReportRecord): string {
 }
 
 export function createObserver(options: ObserverOptions) {
+  // Validate explicit mail configuration before database, transport or secret use.
+  if (options.email) EmailConfigurationSchema.parse(options.email.configuration);
   const interest = interestConfiguration(options.databasePath);
   const policies = (options.sourcePolicies ?? []).map((source) => SourcePolicySchema.parse(source));
   const currentPolicies = () => options.sourcePolicyReader ? SourcePolicySchema.array().parse(options.sourcePolicyReader()) : policies;
@@ -185,6 +190,7 @@ export function createObserver(options: ObserverOptions) {
   const access = privateAccess(database, options.ownerToken, clock);
   const archive = privateArchive(database, access, options.mode);
   const pdf = pdfRenditions(database, clock, options.mode, PdfConfigurationSchema.parse(options.pdf ?? {}).enabled);
+  const email = emailDeliveries(database, clock, options.mode, options.email);
   const activeScheduled = new Map<string, ScheduledSnapshot>();
   function authenticate(credential: string | undefined) {
     try { return access.authenticate(credential); }
@@ -364,6 +370,26 @@ export function createObserver(options: ObserverOptions) {
     async processPdfRenditions(signal?: AbortSignal): Promise<void> {
       await pdf.processNext((versionId) => observer.readReport(versionId, options.ownerToken), signal);
     },
+    async processEmailDeliveries(signal?: AbortSignal): Promise<void> {
+      await email.processNext({ report: (versionId) => observer.readReport(versionId, options.ownerToken), pdf: (report) => pdf.read(report),
+        grant(versionId, format) {
+          const report = observer.readReport(versionId, options.ownerToken);
+          if (format === "pdf") pdf.read(report);
+          const grant = access.signMailDownload(versionId, format, options.ownerToken);
+          return { expiresAtUtc: grant.expiresAtUtc, path: `/v1/downloads/${versionId}/${format}?${new URLSearchParams({ token: grant.token })}` };
+        },
+      }, signal);
+    },
+    readEmailStatus(versionId: string, credential: string | undefined) {
+      authenticate(credential);
+      const version = archive.view(checkedDate(versionId.slice(0, 10))).versions.find((entry) => entry.version.id === versionId);
+      if (!version) throw new PrivateApiError("not-found", 404);
+      return { ...email.status(versionId), publication: { versionId, publishedAtUtc: version.version.publishedAtUtc, status: version.status } };
+    },
+    // Trusted local commands only; #20 can use the exported transaction-aware
+    // enqueueEmailNotification(database, ...) alongside its Report INSERT.
+    enqueueEmailNotification(input: { versionId: string; kind: NotificationKind }) { return email.enqueue(input); },
+    reconcileEmailDelivery(input: unknown) { return email.reconcile(input); },
     importInterestProfile(filePath: string) { return interest.import(filePath); },
     exportInterestProfile(filePath: string) { return interest.export(filePath); },
     freezeScheduled(input: unknown) {
@@ -1008,7 +1034,7 @@ export function createObserver(options: ObserverOptions) {
       }
       return report;
     },
-    close() { pdf.close(); schedule.close(); database.close(); },
+    close() { email.close(); pdf.close(); schedule.close(); database.close(); },
   };
   return observer;
 }

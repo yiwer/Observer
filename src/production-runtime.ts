@@ -19,6 +19,8 @@ import { dailyWindow, ScheduleConfigurationSchema, shanghaiDate } from "./schedu
 import { DiscourseConfigurationSchema } from "./discourse-contracts.ts";
 import { createMastodonAdapter } from "./mastodon-adapter.ts";
 import { PdfConfigurationSchema } from "./pdf-rendition.ts";
+import { EmailConfigurationSchema } from "./email-contracts.ts";
+import { createQqEmailTransport } from "./qq-email-transport.ts";
 
 const provider = z.strictObject({ enabled: z.boolean().default(false), image: z.string().min(1), eligibility: ProviderEligibilitySchema });
 export const ProductionConfigurationSchema = z.strictObject({
@@ -30,6 +32,7 @@ export const ProductionConfigurationSchema = z.strictObject({
   routing: RoutingConfigurationSchema,
   providers: z.strictObject({ codex: provider.optional(), claude: provider.optional() }).default({}),
   pdf: PdfConfigurationSchema.default({ enabled: true }),
+  email: EmailConfigurationSchema.default({ enabled: false }),
   discourse: DiscourseConfigurationSchema.optional(),
   github: z.strictObject({ databasePath: z.string(), configuration: GitHubConfigurationSchema, developmentConfiguration: DevelopmentConfigurationSchema.optional(),
     credentialExpiresAtUtc: z.iso.datetime({ precision: 3, offset: false }).optional() }).optional(),
@@ -43,6 +46,10 @@ function readJson(path: string) {
 // The existing isolated CLI + broker boundary owns every actual model invocation.
 export function createProductionRuntime(configurationPath: string, ownerToken: string, clock = () => new Date().toISOString()) {
   const configuration = ProductionConfigurationSchema.parse(readJson(configurationPath));
+  // Lazy credential injection: constructing the adapter neither reads the key
+  // nor connects. Missing/invalid enabled configuration fails before this point.
+  const email = configuration.email.enabled ? { configuration: configuration.email,
+    transport: createQqEmailTransport(configuration.email, () => process.env.QQ_SMTP_KEY) } : undefined;
   const path = (value: string) => resolve(dirname(resolve(configurationPath)), value);
   const sources = () => SourceConfigurationSchema.parse(readJson(path(configuration.sourceConfigurationPath)));
   const sourceConfiguration = sources();
@@ -78,6 +85,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
     ...(configuration.github.developmentConfiguration ? { developmentConfiguration: () => configuration.github!.developmentConfiguration } : {}) }) : undefined;
   const observer = createObserver({ databasePath: path(configuration.databasePath), ownerToken, mode: "production", clock,
     pdf: configuration.pdf,
+    ...(email ? { email } : {}),
     sourcePolicies: sourceConfiguration.sources, sourcePolicyReader: () => sources().sources, ...(github ? { github } : {}),
     ...(mastodon ? { discourse: { configuration: configuration.discourse, adapter: mastodon } } : {}),
     routing: { configuration: configuration.routing, executionScope: "live", providers, clock,

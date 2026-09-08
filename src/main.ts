@@ -22,6 +22,8 @@ try {
     if (shutdown.signal.aborted) return;
     const rendition = observer.processPdfRenditions(shutdown.signal).catch(() => console.error("pdf-rendition-tick-failed"));
     inFlight.add(rendition); void rendition.finally(() => inFlight.delete(rendition));
+    const delivery = observer.processEmailDeliveries(shutdown.signal).catch(() => console.error("email-delivery-tick-failed"));
+    inFlight.add(delivery); void delivery.finally(() => inFlight.delete(delivery));
     if (!runtime) return;
     const work = runtime.tick(async (versionId) => {
       const response = await fetch(`http://127.0.0.1:${server.port}/v1/reports/${versionId}`, {
