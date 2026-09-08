@@ -42,9 +42,18 @@ export function initializeRetention(database: DatabaseSync) {
   if (database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='routing_runs'").get()) {
     database.exec(`CREATE TRIGGER IF NOT EXISTS rights_routing_insert BEFORE INSERT ON routing_runs
       WHEN EXISTS(SELECT 1 FROM rights_routing_runs WHERE id=NEW.id) BEGIN SELECT RAISE(IGNORE); END;`);
-    for (const action of ["INSERT", "UPDATE"]) database.exec(`CREATE TRIGGER IF NOT EXISTS retention_agent_${action.toLowerCase()} AFTER ${action} ON routing_runs BEGIN
-      INSERT OR IGNORE INTO agent_events(id,occurred_at_utc,provider,kind)
-      SELECT NEW.id||':'||json_extract(value,'$.sequence'),json_extract(value,'$.atUtc'),COALESCE(json_extract(value,'$.provider'),'none'),json_extract(value,'$.state') FROM json_each(NEW.payload,'$.decisions'); END;`);
+    // Replace old triggers atomically for existing databases; keep every recorded event.
+    // An outer routing UPSERT can override a trigger's OR IGNORE conflict policy.
+    database.exec("SAVEPOINT retention_agent_triggers");
+    try {
+      for (const action of ["INSERT", "UPDATE"]) database.exec(`DROP TRIGGER IF EXISTS retention_agent_${action.toLowerCase()};
+        CREATE TRIGGER retention_agent_${action.toLowerCase()} AFTER ${action} ON routing_runs BEGIN
+        INSERT INTO agent_events(id,occurred_at_utc,provider,kind)
+        SELECT NEW.id||':'||json_extract(decision.value,'$.sequence'),json_extract(decision.value,'$.atUtc'),COALESCE(json_extract(decision.value,'$.provider'),'none'),json_extract(decision.value,'$.state')
+        FROM json_each(NEW.payload,'$.decisions') AS decision
+        WHERE NOT EXISTS(SELECT 1 FROM agent_events WHERE id=NEW.id||':'||json_extract(decision.value,'$.sequence')); END;`);
+      database.exec("RELEASE retention_agent_triggers");
+    } catch (error) { database.exec("ROLLBACK TO retention_agent_triggers; RELEASE retention_agent_triggers"); throw error; }
   }
 }
 
