@@ -1,6 +1,6 @@
 # Observer
 
-私人 Daily Brief 服务端。已接通六栏研究路由、持久日调度、恢复补齐、私有归档/设备同步、中文 PDF 和同版本邮件投递。研究调度与邮件默认关闭；整期无可信内容时不发空刊。生产入口不提供测试归档内容，真实上线与外部质量验收尚未完成；当前实施票见[执行记录](docs/planning/v1/EXECUTION.md)。
+私人 Daily Brief 服务端。已接通六栏研究路由、持久日调度、恢复补齐、私有归档/设备同步、中文 PDF、同版本邮件、更正/撤稿和七日来源巡检。研究调度、邮件、更正与巡检默认关闭；整期无可信内容时不发空刊。生产入口不提供测试归档内容，真实上线与外部质量验收尚未完成；当前实施票见[执行记录](docs/planning/v1/EXECUTION.md)。
 
 ## 快速开始与检查策略
 
@@ -48,7 +48,7 @@ npm run smoke
 | `/v1/reports/YYYY-MM-DD-v1` | 同一版本的 `version`、`record`、`canonicalMarkdown` JSON |
 | `/v1/reports/YYYY-MM-DD-v1/markdown` | 已保存的 Canonical Markdown，UTF-8 |
 
-无有效凭证为 401；未知版本为 404；生产读取已知 fixture 仍为 404。未启用研究调度时不会生成新日报，但默认 PDF 后台仍会为已有报告转换并保存产物；这不是纯只读进程。
+无有效凭证为 401；未知版本为 404；生产读取已知 fixture 仍为 404。已撤销的旧正文及其签名下载返回 410，新的安全撤稿说明版本仍可读。未启用研究调度时不会生成普通新刊，但默认 PDF 后台仍会为已有报告转换；单独启用的更正/巡检也有独立处理入口，因此这不是纯只读进程。
 
 设置 `OBSERVER_RUNTIME_CONFIG` 指向 [运行配置](config/runtime.example.v1.json)，将其中 `schedule.enabled` 显式设为 `true`，即可在北京时间每天 07:30 冻结并运行。配置中的路径相对于该文件。`collect: false` 只消费已有采集缓存；`collect: true` 启用经 Source Policy 授权的 RSS/Atom、可选 GitHub 与 Mastodon 采集。Provider 需要单独的启用、资格及凭据配置；有可信材料时可发布缺栏/合规链接降级版，整期为空则有界恢复，不发空刊。调度用法见 [V1-15](docs/implementation/v1-15.md)，午前恢复和 Completion 见 [V1-16](docs/implementation/v1-16.md)。
 
@@ -57,6 +57,8 @@ npm run smoke
 - [私有归档、设备配对/撤销和同步](docs/implementation/v1-17.md)：V1 是服务端契约，无 Android UI 或推送。
 - [中文 PDF](docs/implementation/v1-18.md)：只转换同版本已有 Markdown，后台默认开启，失败不影响 MD；部署需保留 `assets/fonts/`。
 - [QQ SMTP 邮件](docs/implementation/v1-19.md)：安全 HTML 总览、有限 PDF 附件、24小时对象下载链接和持久交付状态。默认禁用；实际地址放受控运行配置，授权码仅通过 `QQ_SMTP_KEY` 注入。SMTP受理不等于实际收件，未知结果不自动重发。
+- [更正与可读撤稿版本](docs/implementation/v1-20.md)：给定信号经过独立证据门后生成新版本，撤销失效旧正文访问，复用 PDF 和重大更正通知；不提供人工编辑界面。
+- [最近七日来源巡检](docs/implementation/v1-21.md)：复查已报道的获准精确 URL，持久记录任务、缺口与候选信号；正常页面变化或 404 不自动判作事实错误。默认06:00–07:15巡查，保护07:30冻结及08:30可读时段；排队不代表已完成纠错。
 
 技术选择见 [ADR-0004](docs/adr/0004-start-with-typescript-and-atomic-sqlite-report-archive.md)，公共契约及证据见 [V1-01 实现说明](docs/implementation/v1-01.md)。
 
