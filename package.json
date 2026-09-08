@@ -15,6 +15,7 @@
     "start": "node dist/main.js",
     "collect": "node dist/collect-main.js",
     "devices": "node src/device-admin.ts",
+    "email": "node src/email-admin.ts",
     "prepare:codex": "node scripts/prepare-codex-runtime.mjs",
     "prepare:claude": "node scripts/prepare-claude-runtime.mjs"
   },
@@ -22,6 +23,7 @@
     "fontkit": "2.0.4",
     "ipaddr.js": "2.2.0",
     "markdown-it": "14.1.0",
+    "nodemailer": "10.0.1",
     "pdfkit": "0.17.2",
     "saxes": "6.0.0",
     "zod": "4.1.12"

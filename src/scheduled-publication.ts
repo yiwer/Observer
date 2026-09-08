@@ -133,7 +133,7 @@ export function scheduledStore(database: DatabaseSync, clock: () => string) {
       const updated = database.prepare("UPDATE scheduled_tasks SET state='published',completed_at_utc=?,latest_version_id=?,latest_readable_at_utc=NULL,content_state=?,timing_state=CASE WHEN readable_at_utc IS NULL THEN 'pending' WHEN readable_at_utc<=deadline_utc THEN 'on-time' ELSE 'delayed' END,recovery_state=?,next_attempt_utc=?,owner=NULL,pid=NULL WHERE business_date=? AND state='running' AND owner=?")
         .run(atUtc, versionId, content, recoverable ? "open" : "complete", new Date(Date.parse(atUtc) + retryDelayMs).toISOString(), date, instance);
       if (!updated.changes) throw new Error("scheduled-task-ownership-lost");
-      database.prepare("INSERT INTO delivery_outbox (id,report_version_id,created_at_utc) VALUES (?,?,?)").run(`report-published:${versionId}`, versionId, atUtc);
+      database.prepare("INSERT OR IGNORE INTO delivery_outbox (id,report_version_id,created_at_utc) VALUES (?,?,?)").run(`report-published:${versionId}`, versionId, atUtc);
     },
     failed(date: string, reason: string, configuration: z.infer<typeof ScheduleConfigurationSchema>) {
       const value = row(date);

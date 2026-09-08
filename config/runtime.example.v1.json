@@ -9,6 +9,7 @@
   "taskRoot": "../data/agent-tasks",
   "collect": false,
   "pdf": { "enabled": true },
+  "email": { "enabled": false },
   "routing": { "schemaVersion": 1, "version": 1, "primary": "codex" },
   "providers": {}
 }

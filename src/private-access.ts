@@ -9,7 +9,7 @@ export class PrivateApiError extends Error {
 }
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const equal = (a: string, b: string) => timingSafeEqual(Buffer.from(digest(a)), Buffer.from(digest(b)));
-const lifetime = { pairing: 10 * 60_000, device: 90 * 86400_000, download: 5 * 60_000 };
+const lifetime = { pairing: 10 * 60_000, device: 90 * 86400_000, download: 5 * 60_000, mailDownload: 24 * 3600_000 };
 export type Principal = { kind: "owner"; id: string } | { kind: "device"; id: string };
 const pairingInput = z.strictObject({ pairingId: z.uuid(), code: z.string().min(1).max(128), deviceName: z.string().trim().min(1).max(80) });
 
@@ -103,11 +103,18 @@ export function privateAccess(database: DatabaseSync, ownerToken: string, clock:
       const principal = authenticate(credential), expiresAtUtc = new Date(Date.parse(clock()) + lifetime.download).toISOString();
       return { token: seal({ v: 1, purpose: "download", principal, versionId, format, edition, expiresAtUtc }), expiresAtUtc };
     },
+    // Called only by the controlled local mail processor, never a remote issuer.
+    signMailDownload(versionId: string, format: "pdf" | "markdown", credential: string) {
+      const principal = authenticate(credential);
+      if (principal.kind !== "owner") throw new PrivateApiError("unauthorized", 401);
+      const expiresAtUtc = new Date(Date.parse(clock()) + lifetime.mailDownload).toISOString();
+      return { token: seal({ v: 1, purpose: "mail-download", principal, versionId, format, edition: null, expiresAtUtc }), expiresAtUtc };
+    },
     authorizeDownload(token: string, versionId: string, format: string, edition: string | null) {
       try {
         const grant = unseal(token);
         const principal = z.discriminatedUnion("kind", [z.object({ kind: z.literal("owner"), id: z.string() }), z.object({ kind: z.literal("device"), id: z.uuid() })]).parse(grant.principal);
-        if (grant.v !== 1 || grant.purpose !== "download" || grant.versionId !== versionId || grant.format !== format || grant.edition !== edition ||
+        if (grant.v !== 1 || !["download", "mail-download"].includes(String(grant.purpose)) || grant.versionId !== versionId || grant.format !== format || grant.edition !== edition ||
           typeof grant.expiresAtUtc !== "string" || grant.expiresAtUtc <= clock() || !active(principal)) throw new Error();
       } catch { throw new PrivateApiError("invalid-download-signature", 401); }
     },
