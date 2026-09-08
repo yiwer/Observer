@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SaxesParser } from 'saxes';
+import { createDailyWindow, publicationDecision } from './daily-window.mjs';
 
 const EDITIONS = ['world', 'ai', 'finance', 'frontier', 'social', 'github'];
 const KEY_NAMES = ['TAVILY_API_KEY', 'EXA_API_KEY', 'OPENALEX_API_KEY', 'ZHIHU_ACCESS_SECRET', 'ALPHAVANTAGE_API_KEY'];
@@ -17,11 +18,11 @@ const RSS = [
 ];
 const QUERIES = {
   world: ['world major developments diplomacy conflict humanitarian international news', '国际新闻 全球 政策 外交 最新进展'],
-  ai: ['AI model releases OpenAI Anthropic Google DeepMind open source latest announcement', '人工智能 大模型 通义 千问 DeepSeek 新发布 开源'],
+  ai: ['AI model releases OpenAI Anthropic Google DeepMind open source latest announcement', '人工智能 大模型 通义 千问 DeepSeek 新发布 开源', 'Anthropic Claude announced launched latest official news', '中国 人工智能 大模型 阿里 腾讯 字节 智谱 今日 新发布'],
   finance: ['global economy central bank inflation companies earnings financial news', '中国 财经 央行 统计局 上市公司 最新 消息'],
-  frontier: ['science breakthrough space semiconductor robotics quantum energy materials latest research', '科技前沿 航天 芯片 机器人 量子 新能源 科研 最新进展'],
+  frontier: ['science breakthrough space semiconductor robotics quantum energy materials latest research', '科技前沿 航天 芯片 机器人 量子 新能源 科研 最新进展', 'semiconductor robotics breakthrough research announced latest official'],
   social: ['Hacker News technology discussion controversy community today', '知乎 今日 热点 讨论 社会议题'],
-  github: ['GitHub new open source developer tools AI agents repositories latest release'],
+  github: ['GitHub open source developer tools AI agents new version release announcement'],
 };
 
 function credentials() {
@@ -73,14 +74,17 @@ function parseFeed(xml) {
 
 export async function collectDaily({ date, outputDir } = {}) {
   const now = new Date();
-  date ??= new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(`${date}T00:00:00+08:00`))) throw new Error('invalid-business-date');
+  const window = createDailyWindow({ date, now }); date = window.date;
+  if (outputDir && await access(resolve(outputDir, 'acquisition.json')).then(() => true, () => false)) throw new Error('acquisition-already-exists');
   const keys = credentials();
   const redact = value => { let text = String(value ?? ''); for (const secret of Object.values(keys)) if (secret) text = text.split(secret).join('[redacted]'); return text.replace(/(api[_-]?key|access[_-]?secret|authorization)\s*[=:]\s*[^\s&,]+/gi, '$1=[redacted]'); };
   const checks = []; const warnings = []; const items = []; const seen = new Set();
-  const cutoff = Math.min(now.getTime(), Date.parse(`${date}T23:59:59.999+08:00`));
-  const earliest = Date.parse(`${date}T00:00:00+08:00`) - 6 * 86400000;
+  const cutoff = Date.parse(window.cutoff);
+  const earliest = Date.parse(window.windowStart);
   const since = new Date(earliest).toISOString();
+  const sinceDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date(earliest));
+  const filteredOut = Object.fromEntries(EDITIONS.map(e => [e, {}]));
+  const rejected = (edition, reason) => { filteredOut[edition][reason] = (filteredOut[edition][reason] ?? 0) + 1; };
   const request = async (url, options = {}) => {
     const response = await fetch(url, { ...options, redirect: options.headers?.Authorization || options.headers?.['x-api-key'] || new URL(url).searchParams.has('apikey') || new URL(url).searchParams.has('api_key') ? 'error' : 'follow', signal: AbortSignal.timeout(25000), headers: { 'User-Agent': 'Observer-Personal-Daily/1.0', ...options.headers } });
     const reader = response.body.getReader(); let bytes = 0; const chunks = [];
@@ -93,10 +97,11 @@ export async function collectDaily({ date, outputDir } = {}) {
   const add = (edition, source, item) => {
     let url; try { const parsed = new URL(item.url); if (!['https:', 'http:'].includes(parsed.protocol) || parsed.username || parsed.password) return; for (const name of [...parsed.searchParams.keys()]) if (/^(utm_|fbclid|gclid)/i.test(name)) parsed.searchParams.delete(name); parsed.hash = ''; url = parsed.href; } catch { return; }
     const title = redact(plain(item.title)).slice(0, 280); if (!title) return;
-    const time = published(item.publishedAt); const timeMs = time ? Date.parse(time) : null;
-    if (timeMs !== null && (timeMs < earliest || timeMs > cutoff)) return;
+    const decision = publicationDecision(item.publishedAt, window);
+    const time = decision.publishedAt;
+    if (!decision.eligible && !['missing-publication-time', 'day-overlaps-cutoff'].includes(decision.reason)) { rejected(edition, decision.reason); return; }
     const key = `${edition}:${url}`; if (seen.has(key)) return; seen.add(key);
-    items.push({ id: `e${String(items.length + 1).padStart(3, '0')}`, edition, title, url: redact(url), publishedAt: time, retrievedAt: new Date().toISOString(), text: redact(plain(item.text)).slice(0, 2000), source, ...item.metadata });
+    items.push({ id: `e${String(items.length + 1).padStart(3, '0')}`, edition, title, url: redact(url), publishedAt: time, publicationPrecision: decision.precision, retrievedAt: new Date().toISOString(), text: redact(plain(item.text)).slice(0, 2000), source, ...item.metadata });
   };
   const task = async (service, operation, action) => {
     const start = items.length;
@@ -110,7 +115,7 @@ export async function collectDaily({ date, outputDir } = {}) {
   const jobs = RSS.map(([source, edition, url]) => () => task(source, 'rss', async () => {
     const response = await request(url); const rows = parseFeed(response.raw); let accepted = 0;
     for (const row of rows.sort((a, b) => (Date.parse(b.publishedAt) || 0) - (Date.parse(a.publishedAt) || 0))) { const before = items.length; add(edition, source, { ...row, metadata: { evidenceKind: 'publisher-feed-summary' } }); accepted += items.length - before; if (accepted >= 14) break; }
-    if (!accepted) warnings.push(`${source}: feed可读，但近7天无可用新条目`);
+    if (!accepted) warnings.push(`${source}: feed可读，但昨天北京时间00:00至采集截止无可用新条目`);
     return { received: rows.length, accepted, balance: 'not-applicable' };
   }));
 
@@ -128,17 +133,32 @@ export async function collectDaily({ date, outputDir } = {}) {
   }));
 
   jobs.push(() => task('GitHub', 'repository-search', async () => {
-    const day = since.slice(0, 10); let received = 0; const limits = [];
-    for (const query of [`topic:ai-agent stars:>100 pushed:>=${day} archived:false`, `topic:developer-tools stars:>100 pushed:>=${day} archived:false`, `created:>=${day} stars:>20 archived:false`]) {
+    const day = since.slice(0, 10); let received = 0; let releasesChecked = 0; const limits = []; const reposSeen = new Set();
+    for (const query of [`created:>=${since} stars:>5 archived:false`, `topic:ai-agent stars:>100 pushed:>=${day} archived:false`, `topic:developer-tools stars:>100 pushed:>=${day} archived:false`]) {
       const response = await request(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=8`, { headers: { Accept: 'application/vnd.github+json' } });
       const data = response.json(); limits.push(response.headers);
       if (data.incomplete_results) warnings.push('GitHub: 搜索返回incomplete_results，不是完整候选池');
       for (const repo of data.items ?? []) {
+        if (reposSeen.has(repo.id)) continue; reposSeen.add(repo.id);
         received++;
-        add('github', 'GitHub 官方 API', { title: repo.full_name, url: repo.html_url, publishedAt: null, text: `${repo.description || '未提供描述'}。语言：${repo.language || '未标注'}；stars ${repo.stargazers_count}；forks ${repo.forks_count}。这是观测时总量，不是今日增长。`, metadata: { evidenceKind: 'repository-metadata', repositoryId: repo.id, stars: repo.stargazers_count, forks: repo.forks_count, language: repo.language, createdAt: repo.created_at, pushedAt: repo.pushed_at, license: repo.license?.spdx_id ?? null, observedAt: now.toISOString() } });
+        const metadata = { repositoryId: repo.id, repositoryUrl: repo.html_url, stars: repo.stargazers_count, forks: repo.forks_count, language: repo.language, createdAt: repo.created_at, pushedAt: repo.pushed_at, license: repo.license?.spdx_id ?? null, observedAt: new Date().toISOString() };
+        if (publicationDecision(repo.created_at, window).eligible) {
+          add('github', 'GitHub 官方 API · 新建仓库', { title: repo.full_name, url: repo.html_url, publishedAt: repo.created_at, text: `${repo.description || '未提供描述'}。语言：${repo.language || '未标注'}；stars ${repo.stargazers_count}；forks ${repo.forks_count}。这是观测时总量，不是今日增长。`, metadata: { ...metadata, evidenceKind: 'new-repository-metadata', publicationBasis: 'repository created_at：仓库创建时间代理，不证明首次转为公开的时间，也不证明项目此前不存在' } });
+        } else if (releasesChecked < (query.includes('ai-agent') ? 4 : 8)) {
+          releasesChecked++;
+          await task('GitHub', 'published-release', async () => {
+            const releaseResponse = await request(`https://api.github.com/repos/${repo.full_name}/releases?per_page=5`, { headers: { Accept: 'application/vnd.github+json' } });
+            const releases = releaseResponse.json(); let accepted = 0;
+            for (const release of releases) {
+              if (release.draft || !publicationDecision(release.published_at, window).eligible) continue;
+              add('github', 'GitHub 官方 API · 新发布版本', { title: `${repo.full_name} — ${release.name || release.tag_name}`, url: release.html_url, publishedAt: release.published_at, text: `项目用途：${repo.description || '未提供描述'}。本次版本：${release.tag_name}；${release.prerelease ? '预发布版本' : '正式发布版本'}。发布说明片段：${plain(release.body).slice(0, 1500)}`, metadata: { ...metadata, evidenceKind: 'repository-release', releaseTag: release.tag_name, publicationBasis: 'GitHub release.published_at；不是仓库pushed_at或本次观测时间' } }); accepted++;
+            }
+            return { received: releases.length, accepted, rateLimits: releaseResponse.headers };
+          });
+        } else rejected('github', 'old-repository-no-window-publication');
       }
     }
-    return { received, rateLimits: limits, balance: 'not-applicable', authenticated: false };
+    return { received, releasesChecked, rateLimits: limits, balance: 'not-applicable', authenticated: false };
   }));
 
   if (hasKey('Tavily', 'TAVILY_API_KEY')) jobs.push(async () => {
@@ -150,7 +170,7 @@ export async function collectDaily({ date, outputDir } = {}) {
     });
     await usage('usage-before');
     for (const [edition, queries] of Object.entries(QUERIES)) for (const query of queries) await task('Tavily', `search-${edition}`, async () => {
-      const data = (await post('https://api.tavily.com/search', headers, { query: `${query} ${date}`, topic: edition === 'github' || edition === 'social' ? 'general' : 'news', search_depth: 'basic', max_results: 6, start_date: since.slice(0, 10), end_date: date, include_answer: false, include_raw_content: false, include_usage: true })).json();
+      const data = (await post('https://api.tavily.com/search', headers, { query: `${query} ${sinceDate} ${date}`, topic: 'news', search_depth: 'basic', max_results: 6, start_date: sinceDate, end_date: date, include_answer: false, include_raw_content: false, include_usage: true })).json();
       if (!Array.isArray(data.results)) throw new Error('invalid-search-response');
       for (const row of data.results) add(edition, `Tavily · ${new URL(row.url).hostname}`, { title: row.title, url: row.url, publishedAt: row.published_date, text: row.content, metadata: { evidenceKind: 'search-excerpt', discoveryQuery: query, providerScore: row.score ?? null } });
       return { received: data.results.length, credits: data.usage?.credits ?? null, scope: edition };
@@ -170,7 +190,7 @@ export async function collectDaily({ date, outputDir } = {}) {
   if (hasKey('OpenAlex', 'OPENALEX_API_KEY')) jobs.push(async () => {
     const headers = { Authorization: `Bearer ${keys.OPENALEX_API_KEY}` };
     await task('OpenAlex', 'works', async () => {
-      const url = new URL('https://api.openalex.org/works'); url.searchParams.set('filter', `from_publication_date:${since.slice(0, 10)},to_publication_date:${date}`); url.searchParams.set('search', 'robotics semiconductor quantum energy'); url.searchParams.set('per_page', '8'); url.searchParams.set('sort', 'publication_date:desc');
+      const url = new URL('https://api.openalex.org/works'); url.searchParams.set('filter', `from_publication_date:${sinceDate},to_publication_date:${date}`); url.searchParams.set('search', 'robotics semiconductor quantum energy'); url.searchParams.set('per_page', '8'); url.searchParams.set('sort', 'publication_date:desc');
       const response = await request(url, { headers }); const data = response.json(); if (!Array.isArray(data.results)) throw new Error('invalid-works-response');
       for (const work of data.results) {
         const words = []; for (const [word, positions] of Object.entries(work.abstract_inverted_index ?? {})) for (const position of positions) if (position < 300) words[position] = word;
@@ -225,13 +245,59 @@ export async function collectDaily({ date, outputDir } = {}) {
     if (!selected.some(item => item.edition === edition)) warnings.push(`${edition}: 本轮没有可用内容，需检查该栏数据源或权限；不会以凑满7条为门槛`);
   }
   const completedAt = new Date().toISOString();
-  const result = { date, retrievedAt: completedAt, completedAt, cutoff: new Date(cutoff).toISOString(), discoveryWindowStart: since, items: selected, checks, warnings: [...new Set(warnings)] };
+  const result = { ...window, date, retrievedAt: completedAt, completedAt, discoveryWindowStart: since, items: selected, checks, filteredOut, warnings: [...new Set(warnings)] };
   await enrichBundle(result, keys);
+  enforcePublicationWindow(result);
   if (outputDir) { await mkdir(outputDir, { recursive: true }); await writeFile(resolve(outputDir, 'acquisition.json'), JSON.stringify(result, null, 2), { flag: 'wx', encoding: 'utf8' }); }
   return result;
 }
 
+function enforcePublicationWindow(bundle) {
+  if (bundle.publicationPolicy !== 'previous-day-midnight-v1') throw new Error('legacy-bundle-requires-new-collection');
+  bundle.filteredOut ??= Object.fromEntries(EDITIONS.map(e => [e, {}]));
+  bundle.warningsByEdition = Object.fromEntries(EDITIONS.map(e => [e, []]));
+  bundle.items = bundle.items.filter(item => {
+    const result = publicationDecision(item.publishedAt, bundle);
+    if (!result.eligible) { const counts = bundle.filteredOut[item.edition]; counts[result.reason] = (counts[result.reason] ?? 0) + 1; return false; }
+    item.publishedAt = result.publishedAt; item.publicationPrecision = result.precision;
+    if (result.precisionNote) item.publicationPrecisionNote = result.precisionNote;
+    return true;
+  });
+  for (const edition of EDITIONS) {
+    const rejected = bundle.filteredOut[edition]; const unknown = (rejected['missing-publication-time'] ?? 0) + (rejected['missing-publication-timezone'] ?? 0); const imprecise = rejected['day-overlaps-cutoff'] ?? 0;
+    if (unknown) bundle.warningsByEdition[edition].push(`${unknown}条候选缺少可确认的发布日期/时区，已剔除；观察、编辑或抓取时间不能代替发布。`);
+    if (imprecise) bundle.warningsByEdition[edition].push(`${imprecise}条候选只有当日日期、无小时，无法确认早于截止，已剔除。`);
+    if (!bundle.items.some(item => item.edition === edition)) bundle.warningsByEdition[edition].push('本次没有取得昨天北京时间00:00至采集截止之间发布的可用资料；未放宽时间范围或凑条数。');
+  }
+  bundle.checks.push({ service: '发布日期范围', operation: 'strict-publication-window', status: 'ok', details: { windowStart: bundle.windowStart, cutoff: bundle.cutoff, rejectedByEdition: bundle.filteredOut, description: 'unknown、窗口外及不能确认早于截止的当日日精度条目均不进入生成资料' } });
+}
+
+function pagePublicationTime(html) {
+  for (const match of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const find = object => {
+        if (!object || typeof object !== 'object') return null;
+        if (Array.isArray(object)) { for (const entry of object) { const found = find(entry); if (found) return found; } return null; }
+        const types = [].concat(object['@type'] ?? []);
+        if (types.some(type => ['Article', 'NewsArticle', 'BlogPosting', 'DiscussionForumPosting', 'Question', 'QAPage'].includes(type))) {
+          const value = object.datePublished || (types.includes('Question') ? object.dateCreated : null);
+          if (value) return { value, basis: 'publisher JSON-LD datePublished/dateCreated on content page' };
+        }
+        return find(object['@graph']) || find(object.mainEntity);
+      };
+      const found = find(JSON.parse(match[1])); if (found) return found;
+    } catch { /* A malformed metadata block is not a publication date. */ }
+  }
+  for (const match of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const attrs = Object.fromEntries([...match[0].matchAll(/([\w:-]+)=["']([^"']*)["']/g)].map(m => [m[1].toLowerCase(), m[2]]));
+    const name = attrs.property || attrs.name || attrs.itemprop;
+    if (['article:published_time', 'datePublished', 'dateCreated', 'pubdate', 'publishdate'].includes(name) && attrs.content) return { value: attrs.content, basis: `publisher content-page metadata ${name}` };
+  }
+  return null;
+}
+
 async function enrichBundle(bundle, keys) {
+  if (bundle.publicationPolicy !== 'previous-day-midnight-v1') throw new Error('legacy-bundle-requires-new-collection');
   const redact = text => { for (const secret of Object.values(keys)) if (secret) text = text.split(secret).join('[redacted]'); return text; };
   const getJson = async (url, options = {}) => {
     const response = await fetch(url, { ...options, redirect: 'error', signal: AbortSignal.timeout(45000) });
@@ -268,7 +334,7 @@ async function enrichBundle(bundle, keys) {
         const story = await getJson(`https://hacker-news.firebaseio.com/v0/item/${new URL(item.url).searchParams.get('id')}.json`); const samples = [];
         for (const id of (story.kids ?? []).slice(0, 2)) {
           const c = await getJson(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
-          if (c && !c.deleted && !c.dead && c.text) samples.push({ url: `https://news.ycombinator.com/item?id=${id}`, text: redact(plain(c.text)).slice(0, 350), publishedAt: new Date(c.time * 1000).toISOString() });
+          if (c && !c.deleted && !c.dead && c.text && publicationDecision(new Date(c.time * 1000).toISOString(), bundle).eligible) samples.push({ url: `https://news.ycombinator.com/item?id=${id}`, text: redact(plain(c.text)).slice(0, 350), publishedAt: new Date(c.time * 1000).toISOString() });
         }
         item.commentSamples = samples; item.observedAt = new Date().toISOString(); comments += samples.length;
         item.text = `${item.text} 抽样评论（不是整体民意）：${samples.map(s => s.text).join(' ')}`.slice(0, 2000);
@@ -277,6 +343,27 @@ async function enrichBundle(bundle, keys) {
     }
     bundle.checks.push({ service: 'Hacker News', operation: 'bounded-comment-sample', status: comments ? 'ok' : 'empty', details: { commentsReceived: comments, description: '最多6个主题、每主题最多2条评论，不代表整体立场' } });
   }
+  // Public metadata lookup can establish publication time; hot-list rank and
+  // EditTime never do. No cookies/auth or challenge bypass is attempted.
+  const dateDomains = new Set(['www.zhihu.com', 'zhuanlan.zhihu.com', 'www.anthropic.com', 'openai.com', 'huggingface.co', 'www.nasa.gov', 'science.nasa.gov']);
+  const unresolved = bundle.items.filter(item => !publicationDecision(item.publishedAt, bundle).eligible && dateDomains.has(new URL(item.url).hostname))
+    .sort((a, b) => Number(b.evidenceKind === 'social-hot-list') - Number(a.evidenceKind === 'social-hot-list'));
+  let resolvedTimes = 0; let inspected = 0; let zhihuInspected = 0;
+  for (const item of unresolved) {
+    if (inspected >= 10) break;
+    const isZhihu = new URL(item.url).hostname.endsWith('zhihu.com');
+    if (isZhihu && zhihuInspected >= 3) continue;
+    if (isZhihu) zhihuInspected++; inspected++;
+    try {
+      const response = await fetch(item.url, { redirect: 'error', signal: AbortSignal.timeout(12000), headers: { 'User-Agent': 'Observer-Personal-Daily/1.0' } });
+      if (!response.ok) { item.publicationLookup = `http-${response.status}; no bypass`; continue; }
+      const reader = response.body.getReader(); const chunks = []; let bytes = 0;
+      try { for (;;) { const {done, value} = await reader.read(); if (done) break; bytes += value.length; if (bytes > 4 * 1024 * 1024) throw new Error('metadata-page-too-large'); chunks.push(value); } } finally { await reader.cancel().catch(() => {}); }
+      const found = pagePublicationTime(Buffer.concat(chunks).toString('utf8'));
+      if (found) { item.publishedAt = found.value; item.publicationBasis = found.basis; resolvedTimes++; } else item.publicationLookup = 'page-has-no-recognized-publication-metadata';
+    } catch { item.publicationLookup = 'public-page-unavailable; no bypass'; }
+  }
+  bundle.checks.push({ service: '发布者页面', operation: 'publication-metadata', status: 'ok', details: { inspected, resolvedTimes, description: '只有JSON-LD/文章发布时间字段可用于补日期；编辑、抓取、热榜观察时间不采用' } });
   if (keys.TAVILY_API_KEY && !bundle.checks.some(c => c.operation === 'bounded-extract')) {
     const selected = [];
     for (const edition of ['world', 'ai', 'finance', 'frontier']) {
@@ -307,6 +394,7 @@ export async function enrichDaily({ outputDir }) {
   for (const edition of EDITIONS) if (await access(resolve(outputDir, `${edition}.json`)).then(() => true, () => false)) throw new Error('bundle-already-in-use');
   const file = resolve(outputDir, 'acquisition.json'); const bundle = JSON.parse(await readFile(file, 'utf8'));
   await enrichBundle(bundle, credentials());
+  enforcePublicationWindow(bundle);
   await writeFile(file, JSON.stringify(bundle, null, 2), 'utf8');
   return bundle;
 }
@@ -318,6 +406,7 @@ export async function supplementSocial({ outputDir }) {
     if (await access(resolve(outputDir, `${edition}.json`)).then(() => true, () => false)) throw new Error('bundle-already-in-use');
   }
   const file = resolve(outputDir, 'acquisition.json'); const bundle = JSON.parse(await readFile(file, 'utf8'));
+  if (bundle.publicationPolicy !== 'previous-day-midnight-v1') throw new Error('legacy-bundle-requires-new-collection');
   if (bundle.socialSupplementCompletedAt) return bundle;
   const keys = credentials();
   const scrub = text => { for (const key of Object.values(keys)) if (key) text = text.split(key).join('[redacted]'); return text; };
@@ -347,7 +436,7 @@ export async function supplementSocial({ outputDir }) {
       const excerpts = [];
       for (const child of (story.kids ?? []).slice(0, 2)) {
         const comment = await get(`https://hacker-news.firebaseio.com/v0/item/${child}.json`);
-        if (comment && !comment.deleted && !comment.dead && comment.text) {
+        if (comment && !comment.deleted && !comment.dead && comment.text && publicationDecision(new Date(comment.time * 1000).toISOString(), bundle).eligible) {
           excerpts.push({ url: `https://news.ycombinator.com/item?id=${child}`, text: plain(comment.text).slice(0, 350), publishedAt: new Date(comment.time * 1000).toISOString() });
         }
       }
@@ -360,6 +449,7 @@ export async function supplementSocial({ outputDir }) {
   bundle.checks.push({ service: 'Hacker News', operation: 'bounded-comment-sample', status: sampledComments ? 'ok' : 'empty', details: { storiesSampled: hn.length, commentsReceived: sampledComments, description: '至多6个主题、每主题至多2条排序靠前评论，不能代表全部社区立场' } });
   bundle.completedAt = new Date().toISOString(); bundle.retrievedAt = bundle.completedAt; bundle.socialSupplementCompletedAt = bundle.completedAt;
   bundle.warnings = [...new Set(bundle.warnings)];
+  enforcePublicationWindow(bundle);
   await writeFile(file, scrub(JSON.stringify(bundle, null, 2)), { encoding: 'utf8' });
   return bundle;
 }

@@ -1,5 +1,25 @@
 # 六栏 HTML 日报：采集接口与一次真实运行
 
+## 当前规则：仅昨天00:00至本次采集开始（2026-09-08更新）
+
+当前权威策略为 `previous-day-midnight-v1`，不再采用本文后段历史批次的“近几日/观察快照可进入”规则。采集一开始就冻结 `cutoff`，`windowStart` 为当前北京时间日期的前一天00:00；`completedAt/retrievedAt`只记录操作完成，不能扩大发布范围。日期必须是当前北京时间日期，不通过传旧date伪造补报。
+
+共享 helper `scripts/daily-window.mjs`：
+
+- `createDailyWindow({date,now})` 返回 `{date,windowStart,cutoff,timeZone,publicationPolicy}`。
+- `publicationDecision(publishedAtOrItem,window)` 返回 `{eligible,publishedAt,precision,reason,precisionNote?}`，供采集、生成、发送引用检查共用。
+- 缺发布日期、缺时区、窗口前、截止后都剔除。日精度保留原 `YYYY-MM-DD`；只接受完整日期落窗（本场景为昨天），今天仅日日期因不能证明早于截止而剔除，不伪造00:00发表时间。日精度的日期归窗按北京时间日历解释，并保留精度说明，不声明有精确发表小时。
+- `warningsByEdition`为每栏可读缺口，`filteredOut`按栏目/原因计数。内部候选可以先补元数据，但最终`items`全部通过同一helper，没有unknown逃生通道，也不以“没凑够7条”为由放宽范围。
+- HN帖子采用`story.time`，抽样评论也要求`comment.time`落窗。知乎热榜只作发现，最多3次匿名公开页面读取尝试找JSON-LD或文章发布日期；EditTime、热榜名次、观察时间均不能代替发表日期。拿不到就剔除，不能把权限成功误报为内容满足日期。
+- GitHub新仓库以`created_at`作为明确标注的创建时间代理，不证明首次公开时刻或项目此前不存在。老仓库只允许窗口内`release.published_at`的新版本说明或有日期的新报道，`pushed_at`仅发现候选。匿名最多8个老仓库取发布列表，只保留版本说明短片段，不下载源码/assets。[官方发布接口](https://docs.github.com/en/rest/releases/releases#list-releases)
+- 本次新增2条AI、1条科技精确查询，所有搜索起点与昨日日期对齐；最终由时间helper兜底，不相信搜索过滤自动保证时间。旧事件可通过窗口内的新报道入选，稿件内历史背景不能冒充本期新发生。
+
+旧目录不重跑、不覆盖。新的严格窗口采集为 `data/daily-html/2026-09-08-editions-02`；具体结果以新目录`acquisition.json`为准。下方真实用量表属于此前合并邮件批次的历史证据，不是新批次用量或当前内容规则。
+
+本次严格窗唯一真实采集：北京时间 `2026-09-07 00:00` 至 `2026-09-08 18:13:02.500`，完成 `18:13:53.350`。最终候选世界33、AI21、财经40、科技18、社交30、GitHub13；最新共享helper只读检查全部候选均符合窗口，没有unknown入包。知乎接口仍成功，但25个候选因无可确认首次发布时间剔除；3次公开页面元数据读取未补得日期，不能将此说成缺key。HN19个窗口内帖子与9条窗口内评论提供社交样本。OpenAlex此窗0条，不是权限失败。GitHub含2条窗口内release（Hermes Agent v0.21.1、Graphify v0.9.56）、8条窗口内新建仓库及3条有日期的检索报道；内容是否值得报道仍由编辑筛选，不因计数可用就全部发布。
+
+本批次Tavily14次Basic搜索各报告1credit、7篇网页补充报告1credit，共已知15credits；usage仍0属于未同步/计量差异，不能据此称零消耗。Exa三次各报告0.007美元；OpenAlex本次0.001美元、当日剩余0.998美元。未再次运行旧目录、未为本轮回归或额度探针重搜。
+
 日期：2026-09-08。模块：`scripts/daily-acquisition.mjs`。本记录只说明获取层，不代表最终摘要、邮件或完整发布验收通过。按 Owner 快速验证要求，没有执行测试、夹具、typecheck、build、回归或 hash 验证。实现 subagent 完成真实采集并冻结证据，代码 review 与最终邮件验收交由 root orchestrator。
 
 ## 调用与行为
