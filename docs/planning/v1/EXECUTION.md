@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- Owner已确认本机已登录Codex，并明确跳过国家审查；旧“方向/地区待确认”阻断解除，不再追问或做地理检查。决定已记 `fe9e7a6` / ADR-0006。fresh-context `/root/implement_v1_26_native` 正在 `O:/GenesisCode/Observer-worktrees/v1-26-native` / `ticket/v1-26-native`（base `fe9e7a6`）接通真实native入口、研究/复核/路由/评测身份及配置；最多块末一次有界本机真实调用，不叠加hash验收、类型/测试矩阵或回归。当前Root仅刷新help/version/login-status，CLI 0.153.4且既有ChatGPT登录；未发起模型调用，不把旧容器/API证明套给native。#26其余live类别与#27/#28仍未通过，但不阻断本次native实现。
+
 - #26仅完成[最小就绪交接](../../implementation/v1-26-readiness.md)，作者 `5ebd854`、文档集成 `b1cf081`（base `c710c99`）。Root读完49行并静态核对接线/链接，未派新审查轮次、未运行检查或live操作；本票仍OPEN，#27/#28未开始。当前无运行中的实施/验证句柄，安全范围内预检已完成，等待Owner确认native/API方向及国家地区、目标Linux/私有地址、获准真实来源/最新删除契约、私有节点外存储和独立秘密接线路径。不要索要秘密值或重复QQ授权码；不得擅自改造认证路径、购买/部署/发送，亦不能以此文档关闭#26。目标仍未完成。
 
 - #25已实际读回CLOSED（2026-09-08T06:19:54Z），GitHub仅#26–#28开放。#26的fresh-context `/root/implement_v1_26_readiness` 已在 `O:/GenesisCode/Observer-worktrees/v1-26` / `ticket/v1-26`（base `c710c99`）做一次简短只读接入就绪交接；不触发模型、SMTP、部署、存储或检查。Owner的native/API方向及主机地区等输入仍未回复；本门未通过，不会因依赖票完成而自动启用服务。原Codex本机调用/QQ授权与实际证据继续保留，不重新索要秘密。
