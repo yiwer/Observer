@@ -32,7 +32,7 @@ export function editionMarkdown(report: PublishedReport, edition: Edition): stri
  * Feed snapshots contain public metadata only, never evidence, prompts or secrets. */
 export function privateArchive(database: DatabaseSync, access: PrivateAccess, mode: "production" | "test-fixture") {
   const reportSnapshot = (row: string) => `json_object('version',json_extract(${row}.payload,'$.version'),
-    'availableEditions',json(COALESCE(json_extract(${row}.payload,'$.record.recovery.availableEditions'),
+    'availableEditions',json(COALESCE(json_extract(${row}.payload,'$.record.revision.availableEditions'),json_extract(${row}.payload,'$.record.recovery.availableEditions'),
       (SELECT json_group_array(DISTINCT json_extract(value,'$.edition')) FROM json_each(${row}.payload,'$.record.stories')))),
     'completedEditions',json(COALESCE(json_extract(${row}.payload,'$.record.recovery.completedEditions'),'[]')),
     'linkEditions',json((SELECT json_group_array(DISTINCT json_extract(value,'$.edition')) FROM json_each(${row}.payload,'$.record.recovery.links'))),
@@ -63,6 +63,9 @@ export function privateArchive(database: DatabaseSync, access: PrivateAccess, mo
         SELECT 'baseline:'||s.business_date,'brief-state',s.business_date,s.latest_version_id,${time},${stateSnapshot("s")}
         FROM scheduled_tasks s ORDER BY s.business_date;
         INSERT INTO archive_migrations VALUES (1);`);
+    }
+    if (!database.prepare("SELECT 1 FROM archive_migrations WHERE id=2").get()) {
+      database.exec("DROP TRIGGER IF EXISTS archive_report_insert; INSERT INTO archive_migrations VALUES (2)");
     }
     database.exec(`CREATE TRIGGER IF NOT EXISTS archive_report_insert AFTER INSERT ON reports BEGIN
       INSERT INTO archive_events(event_id,kind,business_date,version_id,occurred_at_utc,payload)
@@ -99,12 +102,13 @@ export function privateArchive(database: DatabaseSync, access: PrivateAccess, mo
     const versions = publications.map((snapshot) => {
       const id = snapshot.version.id;
       const revisions = events.filter((event) => event.versionId === id && ["withdrawal", "correction"].includes(event.kind));
-      const withdrawn = snapshot.version.revisionReason === "withdrawal" || revisions.some((event) => event.kind === "withdrawal");
+      const withdrawn = snapshot.version.revisionReason === "withdrawal" && snapshot.version.schemaVersion !== 12 || revisions.some((event) => event.kind === "withdrawal");
       const supersededByVersionIds = [...new Set([...publications.filter((entry) => entry.version.previousVersionId === id).map((entry) => entry.version.id),
         ...revisions.flatMap((event) => typeof event.snapshot.replacementVersionId === "string" ? [event.snapshot.replacementVersionId] : [])])];
       const pdf = events.findLast((event) => event.kind === "rendition-state" && event.versionId === id)?.snapshot;
       const pdfAvailable = !withdrawn && pdf?.state === "ready";
-      return { ...snapshot, status: withdrawn ? "withdrawn" : supersededByVersionIds.length ? "superseded" : "current", supersededByVersionIds,
+      return { ...snapshot, status: withdrawn ? "withdrawn" : supersededByVersionIds.length ? "superseded" : "current", retracted: withdrawn,
+        contentSemantics: snapshot.version.schemaVersion === 12 && snapshot.version.revisionReason === "withdrawal" ? "safe-withdrawal-notice" : "report", supersededByVersionIds,
         changes: revisions.map(({ eventId, kind, snapshot: change }) => ({ eventId, kind, ...change })),
         renditions: { markdown: { available: !withdrawn, path: `/v1/reports/${id}/markdown` },
           pdf: { ...pdf, scope: "full-report", available: pdfAvailable,

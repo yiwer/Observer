@@ -13,6 +13,7 @@ export interface EvaluationOptions {
   verifier: SemanticVerifier | undefined;
   recordVerifierDispatch?: boolean;
   domainRules?: boolean;
+  revisionContext?: VerificationInput["revisionContext"];
   beforeVerification?: () => Promise<void>;
   afterVerification?: () => Promise<void>;
   claimEligibility?: (story: CandidateV2, claim: Claim) => string | null;
@@ -34,7 +35,7 @@ export async function evaluatePublication(options: EvaluationOptions) {
   const modelFailures = new Map(request.evidenceBundle.evidence.map((item) => [item.id, options.modelPolicyCheck([item.id], beforeVerifierUtc)]));
   const permitted = new Set([...modelFailures].filter(([, reason]) => reason === null).map(([id]) => id));
   const reviewStories = stories.map((story) => ({ ...story, title: "陈述级核验", claims: story.claims.filter((claim) => !structuralReason(story, claim) && claim.evidenceIds.every((id) => permitted.has(id))) })).filter((story) => story.claims.length > 0);
-  const context = { schemaVersion: 1 as const, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId, stories: reviewStories, evidence: request.evidenceBundle.evidence.filter((evidence) => permitted.has(evidence.id)) };
+  const context = { schemaVersion: 1 as const, taskId: request.taskId, evidenceBundleId: request.evidenceBundle.id, configurationId: request.configurationId, stories: reviewStories, evidence: request.evidenceBundle.evidence.filter((evidence) => permitted.has(evidence.id)), ...(options.revisionContext ? { revisionContext: options.revisionContext } : {}) };
   const input: VerificationInput = { ...context, inputSha256: inputDigest(context) };
   let output: unknown;
   let dispatchedEvidenceIds: string[] = [];

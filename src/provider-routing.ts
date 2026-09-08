@@ -350,6 +350,8 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       const valid = validVerification;
       const primary = valid(result, input);
       if (!primary) return result; // The existing Gate rejects the actual malformed primary receipt.
+      // Verification-only revision runs still bind final publication to current qualification.
+      if (input.revisionContext && !selected.has(edition)) selected.set(edition, verifierProvider);
       const targets = primary.assessments.filter((entry) => entry.domain?.risk.level === "high" || entry.conclusion === "conflicting" || entry.evidence.some((evidence) => evidence.relation === "contradicts"));
       if (!targets.length) return result;
       const other: Provider = attempt.provider === "codex" ? "claude" : "codex";
@@ -359,7 +361,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       });
       const evidenceIds = new Set(stories.flatMap((story) => story.claims.flatMap((claim) => claim.evidenceIds)));
       const context = { schemaVersion: 1 as const, taskId: `review-${inputDigest([receipt.runId, input.inputSha256])}`, evidenceBundleId: input.evidenceBundleId, configurationId: input.configurationId,
-        stories, evidence: input.evidence.filter((entry) => evidenceIds.has(entry.id)) };
+        stories, evidence: input.evidence.filter((entry) => evidenceIds.has(entry.id)), ...(input.revisionContext ? { revisionContext: input.revisionContext } : {}) };
       const reviewInput = { ...context, inputSha256: inputDigest(context) };
       let review: Verification | undefined;
       const available = eligible(other) && !!options.providers[other]?.verifier && roleAvailable("review");

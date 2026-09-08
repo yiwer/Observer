@@ -16,6 +16,7 @@
     "collect": "node dist/collect-main.js",
     "devices": "node src/device-admin.ts",
     "email": "node src/email-admin.ts",
+    "corrections": "node src/correction-admin.ts",
     "prepare:codex": "node scripts/prepare-codex-runtime.mjs",
     "prepare:claude": "node scripts/prepare-claude-runtime.mjs"
   },
