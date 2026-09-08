@@ -49,3 +49,24 @@ Truth Social [官方帮助中心](https://help.truthsocial.com/)说明订阅提�
 可直接向用户说：
 
 > 可以。现有 Tavily/Exa 能发现部分 X 发言，但不能保证账号每天不漏帖；稳定跟踪建议接 X 官方 API。公开账号只需我们自己的开发者 Bearer Token，不需要对方授权。按每天合计100条新帖估算，帖子读取约15美元/月，其他资源另计。你先给准确账号链接，尤其 tibo 和“Claude运营”；Trump 再补 Truth Social，接口未确认前会明确标注覆盖限制。
+
+## 同日补充：允许非商业特殊抓取后的快速 v1 选择
+
+Owner 已表示接受非商业用途的特殊抓取。因此 **X 官方付费 API 不再是试用前置条件**：先做少量准确账号的检索发现与可访问原帖提取；接受覆盖不全，再决定是否接会话型 RSS 或付费服务。此处是技术选型建议，不把“非商业”解释为任何抓取都自动获平台许可。本次仍只研究，没有读取浏览器、Cookie、账号或购买服务。
+
+| 方案 | 当前确切条件与失败方式 | 本项目判断 |
+| --- | --- | --- |
+| 公开页面 / 浏览器提取 | X 官方提供公开账号的网页嵌入，但这是展示组件，不是承诺完整分页、时间窗与增量的新闻 API；受保护帖不能嵌入。单帖能看到不代表匿名主页能按时间完整列帖。[X 官方嵌入说明](https://help.x.com/en/using-x/embed-x-feed) | 先试匿名公开原帖；必要时由 Owner 手动登录专用浏览器配置。只提取实际可见作者、原帖链接、正文、原发布时间。登录墙、验证码、限流、页面变化即标记失败，不承诺绕过；本轮未实测账号可读率。 |
+| 自建 RSSHub | 当前 `/twitter/user/:id` 支持回复/转发选择。网页模式用 `TWITTER_AUTH_TOKEN`，即已登录 X 的 `auth_token` Cookie；不是 X 开发者 Bearer。旧用户名/密码移动端登录路线已在项目说明中标为自2025年10月失效；也可配置官方按用量 API。[项目当前路由说明源码](https://github.com/DIYgod/RSSHub/blob/master/lib/routes/twitter/namespace.ts) | 自建 RSS 的优先备选，但不是匿名零配置。源码会捕获部分取帖错误并允许空 feed，因此 **HTTP 200 + 空 RSS 不能当作账号没发帖**，必须同时看错误/上次成功时间。[用户路由源码](https://github.com/DIYgod/RSSHub/blob/master/lib/routes/twitter/user.ts) |
+| 自建 Nitter | 当前需真实 X 账号会话，`sessions.jsonl` 存 `auth_token/ct0`，另有 Docker 与 Redis/Valkey 依赖。RSS 是否开放取决于实例。[维护者会话说明](https://github.com/zedeus/nitter/wiki/Creating-session-tokens) | 不推荐作为新 v1 主依赖：README 披露2026年8月24日 X 发出停止运营要求，随后表示项目继续；这不是“已关闭”，但明显增加持续运营不确定性。公开实例亦不宜做唯一来源。[当前 README](https://github.com/zedeus/nitter/blob/master/README.md) |
+| 托管第三方抓取 | 例如 Apify 社区维护者 API Dojo 的 `twitter-scraper-lite` 支持账号、单帖、回复和日期查询；公开输入表未要求用户提供 X Cookie，需注册 Apify，程序化接入使用其凭据。它不是 X 官方服务，也明确承认搜索遗漏和分页变化；`start/end` 仅作用于 `searchTerms`，不作用于 `twitterHandles/startUrls`。[供应方说明](https://apify.com/apidojo/twitter-scraper-lite) | 愿付费但不想维护会话时可选。不能只看“$0.40/千条起”：lite 按事件计费；另一 `tweet-scraper` 每查询至少50条、禁止单帖/会话抓取，免费仅每月5次每次10条，不适合小白名单逐日查询。[供应方限制](https://apify.com/apidojo/tweet-scraper) |
+| X 官方 API | 前文 app Bearer、按返回资源付费方案仍适用，不需要 Cookie | 稳定性优先时的升级路线；不阻塞先验证内容价值。 |
+
+建议 v1（产品选择，非平台的完整性承诺）：
+
+1. Owner 给 **5–10个准确主页链接**，每天整理时每账号一次低频发现；Tavily/Exa 找候选，公开原帖/可见页面补作者、正文、发布时间。暂不做实时监控、无限翻页或全网人物图谱。
+2. 延续日报的北京时间前一天00:00至冻结截止点，按帖子 ID 去重；保留有信息量的回复并标注上下文，排纯转发。不知道原发布时间就不入当天稿；搜索失败写“未取得/覆盖不完整”，不写“今日无发言”。
+3. 登录模式只有 Owner 明确选择后才用；建议其手动登录专用浏览器配置，或把会话仅交给本机私有 RSSHub。会话按密码级秘密管理，不进模型、日志、仓库或公共 RSS 实例；不要求关闭2FA，不轮换账号规避封禁。验证码/限制出现时暂停该来源并提示 Owner。
+4. 若发现覆盖确实不足，再二选一：**可接受维护会话→私有 RSSHub；不想维护→官方 X API，或先审核第三方小量付费试用**。不先堆 Nitter、代理池、多个托管供应商。每日只交付可信摘要与链接，不因一条人物源失效取消其他六栏。
+
+新增配置最少只有账号白名单；可选登录由 Owner 自行完成。RSSHub 才额外需要本地会话配置；托管/官方付费需另行注册、凭据与预算批准。尚未实现或验证这些新增采集路径。
