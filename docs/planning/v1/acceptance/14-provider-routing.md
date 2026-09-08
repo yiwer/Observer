@@ -381,3 +381,11 @@ Root核163–169b各capture完整before/after一致及实际日志SHA。163保�
 Root核170–172完整before/after一致、实际日志SHA，亲读公开CLI测试及host绑定/cleanup校验后的policy-violation隔离分支。170真实RED：四个Codex语义attempt仍全部选择Codex，未按预期切换后两个，exit1，SHA `53ab3406ea758f3af5e42623da2f63933adce4820eec0b13c391d984f50c2e90`。171两种主Provider方向合并用例1/1、0skip/0cancelled、exit0，SHA `8664566a39531a1162dd2f33bd6714e2725a02688d0daa4c9d44c97aa7b2b0e0`；172类型exit0。
 
 每个方向world实际主CLI成功，AI主CLI收到Owned越权工具响应后failed/policy-violation且cleanup removed，其后两普通栏切到Owned备用Verifier（execution=null，不冒称实际备用CLI）。最终是总共三条安全故事，包含先前world，AI缺口；报告不含恶意canary，只读重启run一致。恶意进程收据exitCode=null/terminal=missing如实保留，不写成正常CLI完成。RED四容器、GREEN四容器，完整ID均在日志；窗口归还后Root独查未过滤docker ps --all完整ID，八个记录ID残留0、无running容器。不是live模型验收。#14继续六栏/历史、终态防覆盖、资格剩余边界和容量矩阵，尚未冻结或整票关闭。
+
+## 终态存储及只读遗留状态173–175
+
+Root核173–175完整before/after一致、实际日志SHA，亲读终态更新故障注入、只读重启及trigger实现。173真实RED为published运行被UPDATE为running，exit1，SHA `ea01ebeca897540c31cc3e6a9a1935bd995b3a05d03e20498c8670c6d0ac4658`；174排除Audit与CLI后51/51、0skip/0cancelled、exit0，SHA `1d1c1e057e36843d1951ba1bc218d7951d887337415472ce5d4bb2565d64be62`；175类型exit0。
+
+首次routing存储安装增加immutable_routing_terminal触发器，拒绝published/failed行UPDATE；已安装库的触发器缺失/不同则拒绝启动，不自动重建保护或改遗留记录。直接公开断言覆盖published更新拒绝，以及Owned注入的running快照在只读重启后完整不变；failed分支目前只有实现检查，不冒称直接回归。该测试没有真实kill/重启接管/cleanup证据，也不声称能防有权限删除触发器的数据库操作者。既有身份篡改用例明确移除触发器注入、验证鉴权readRun及关联readReport拒绝错误身份，再恢复原记录与触发器，保留读取完整性检测目的。
+
+Root实时读取GitHub：#1–#13 CLOSED，#14–#28 OPEN，无漏关已验收票；#14作者仍running并开始六栏真实业务来源结构及Record11历史fixture，未提前进入#15。Root无在途重型检查，本段仍为未冻结作者切片证据。
