@@ -4,6 +4,8 @@
 
 ## 快速开始与检查策略
 
+**本机快速生成六栏 HTML 邮件：**见[手动 HTML 日报流程](docs/implementation/daily-html.md)。这是按最新 Owner 请求增加的采集与更新稿入口，不要求七条或 PDF，不覆盖下面原有服务的归档和调度。
+
 需要 Node **24.18.0 或较新的 24.x**、npm，依赖版本见 `package-lock.json`。安装和构建服务：
 
 ```sh
