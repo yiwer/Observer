@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const qqAddress = z.email().max(254).regex(/^[\x21-\x7e]+@(qq|foxmail)\.com$/i).transform((value) => value.toLowerCase());
+export const QqTransportConfigurationSchema = z.strictObject({ enabled: z.literal(true), transport: z.literal("qq-smtp"), address: qqAddress });
 const origin = z.url({ protocol: /^https$/ }).refine((value) => {
   const url = new URL(value);
   return !url.username && !url.password && !url.search && !url.hash && url.pathname === "/";

@@ -140,7 +140,8 @@ export function emailDeliveries(database: DatabaseSync, clock: () => string, mod
             unknown_at_utc=CASE WHEN state='sending' THEN ? ELSE unknown_at_utc END,
             reason=CASE WHEN state='sending' THEN 'send-interrupted-unconfirmed' ELSE 'preparation-interrupted' END,
             lease_until_utc=NULL,attempt_id=NULL,updated_at_utc=? WHERE state IN ('preparing','sending') AND lease_until_utc<=?`).run(now, now, now);
-          const visibility = mode === "production" ? " AND json_extract(r.payload,'$.version.provenance')!='test-fixture'" : "";
+          // Owner-requested reports have a dedicated once-only attachment dispatch.
+          const visibility = mode === "production" ? " AND json_extract(r.payload,'$.version.provenance')='scheduled'" : "";
           const pending = database.prepare(`SELECT n.*,json_extract(r.payload,'$.version.publishedAtUtc') AS published_at_utc
             FROM email_notifications n JOIN reports r ON r.id=n.version_id
             WHERE substr(n.version_id,1,10)>=? AND NOT EXISTS (SELECT 1 FROM rights_versions WHERE version_id=n.version_id)

@@ -240,6 +240,7 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
   function ensureOutput(report: PublishedReport, history: PublishedReport[], owner: Campaign, provider: Provider, input: FrozenShadowInput) {
     const identity = owner.providers[provider];
     for (const entry of [report, ...history]) {
+      if (entry.version.provenance === "owner-requested") throw new Error("shadow-owner-request-not-scheduled");
       if (entry.version.businessDate !== input.request.businessDate || entry.record.businessDate !== input.request.businessDate || entry.record.configurationId !== input.request.configurationId ||
         entry.record.applicationVersion !== owner.applicationVersion || owner.scope === "live" && entry.version.provenance !== "scheduled") throw new Error("shadow-output-identity-mismatch");
       const record = entry.record;

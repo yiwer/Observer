@@ -11,7 +11,7 @@ export function correctionMarkdown(record: Correction) {
   };
   const storyText = (story: Correction["stories"][number]) => story.claims.map((claim) => `${escapeMarkdown(claimWording(claim))}\n\n${claim.evidenceIds.map(citation).join("\n\n")}`).join("\n\n");
   return [`# Observer Daily Brief — ${record.businessDate}`, `版本：${record.id.replace(/-record$/, "")} · ${withdrawn ? "Withdrawal · 部分撤稿" : "Correction · 事实更正"}`,
-    ...(record.publicationMode === "scheduled" ? [] : ["> 固定输入与注入语义替身验证；未经过真实研究或生产准入。"]),
+    ...(record.publicationMode === "test-fixture" ? ["> 固定输入与注入语义替身验证；未经过真实研究或生产准入。"] : record.publicationMode === "owner-requested" ? ["> 今日补发的修订版本 · Owner 显式请求；非定时准时交付。"] : []),
     `实际发布时间 ${record.publicationGate.checkedAtUtc}；${revision.severity === "major" ? "重大" : "轻微"}修订。原 Evidence Bundle ${escapeMarkdown(revision.originalBundleId)}（截稿 ${revision.originalCutoffUtc}）保持不变。`,
     `前版本 ${revision.previousVersionId} 的失效正文访问已撤销；[版本关系](/v1/archive/${record.businessDate})。${withdrawn ? "受影响栏目已撤回，错误尚未解决；旧结论不得继续作为有效事实。" : "受影响栏目仅采用本次通过 Publication Gate 的更正内容；旧结论失效。"}`,
     `受影响陈述：${revision.affected.map((item) => `${escapeMarkdown(item.versionId)}/${escapeMarkdown(item.storyId)}/${escapeMarkdown(item.claimId)}`).join("、")}。更正材料用途：correction-review；接收 ${revision.receivedAtUtc}。`,
