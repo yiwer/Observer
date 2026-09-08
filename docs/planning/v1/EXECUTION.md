@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- 2026-09-08 最新真实结果：Owner 已批准最少公开来源，等待来源不再是阻断。本机既有 Codex `gpt-6-astra / medium` 四次研究/语义核验实际成功，已生成 `2026-09-08-v1` 的 MD、HTML 与 5 页 PDF，明确今日迟到补发。内容仍显著降级：仅 1 个 GitHub 冷启动项目，其他栏目空源或陈述类型隔离，不能声称内容达标；提示说明已局部修正供下次使用，未重写归档。单次邮件及详细状态见[真实补发记录](acceptance/26-owner-live-2026-09-08.md)。#26–#28 实际仍 OPEN，日程未启用，本轮未 push；下列等待来源、无模型成功等均为历史。
+
 - native 开发子块已本地集成 `f594512`（作者 `4320637`，base `fe9e7a6`），Standards 0 / Spec 0；与已合入的 Owner 补发子块共同完成本机配置装配。Root 真实本地 status 成功读出 `gpt-6-astra / medium`、既有登录由 CLI 自管，所有日常副作用关闭；模型修后未复测，唯一启动在配置阶段失败，不标连接 PASS。见[接线接受记录](acceptance/26-native-codex-local.md)。当前无活动作者/实际运行任务，来源白名单一次确认尚未回复，不能代签启用；今日采集/产物/发送均未发生。已安全保存私人运行脚本和独立配置，#26–#28 实际仍 OPEN，目标未完成，本轮未 push。
 
 - #26 手动补发/附件邮件子块已本地集成 `84048d7`（作者 `f462f2e`，base `28606c7`）。短静态 Standards 0、Spec 0，无额外检查；见[子块接受记录](acceptance/26-owner-requested-publication.md)。native 子块的唯一真实启动在 CLI 配置阶段 exit 1，模型成功未证实，已清理进程；作者正根据配置 Schema 作静态修正，不重复模型 probe。真实来源启用确认仍待回复，今日报告/PDF/邮件尚未生成发送，#26 仍 OPEN。
