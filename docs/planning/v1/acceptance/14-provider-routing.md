@@ -349,3 +349,11 @@ Root再次实时检查无running容器且两固定镜像ID一致后批准155串�
 各provider的一轮四普通栏均经真实Gate生成，Owner readReport/readRun与无Provider只读重启完全相等。input12/output21来自Owned响应；Codex cost未知null、Claude CLI返回cost0.0003516，不能称真实账单或实际付费消耗。没有真实模型网络/凭据，也无镜像build/pull/retag。作者归还窗口后Root独查docker ps --all完整ID，八个本次ID均不存在；既有Exited容器未动。
 
 这证明真实固定CLI+Owned语义主核验闭环，不是live、实际地区/账户资格、条件review CLI、专用六栏或生产通过。Root另指出schema/hash合法但assessment覆盖/归属非法时，semanticAttempt可能先记succeeded而后Gate拒绝；作者已接下公开边界TDD，当前不把该细节算已验收。#14仍为未冻结WIP，剩余原矩阵继续。
+
+## 核验覆盖终态157–159与逐响应观察准入
+
+Root核157–159完整before/after一致及实际日志SHA，亲读公开三场景及统一validVerification。157真实RED为缺项receipt使attempt仍succeeded而预期failed，SHA `205a2e25ce604d7c142fea5f4843b7fce05b95df1278bccb288e3d71b2d30037`；158排除Audit|CLI后48/48、0skip/0cancelled、exit0，SHA `654e2d7b6a302468be0b1ab4a3e35bfa00d715390e73a8c2b2f41a7bb94faaa1`；159类型exit0。缺项、重复、foreign story三类schema合法/hash匹配评估均在attempt成功前按完整story/claim/evidence覆盖拒绝，world核验failed/invalid-output，其他三普通栏保留，Owned execution=null、重启run完全一致。没有伪造实际CLI来源。
+
+Root批准下一host dispatchControl.observeUsage最小增量：实际Runner/Verifier读取每次响应后观察白名单safe usage，仅绑定本attempt真实已dispatch请求序号（1..实际modelRequests、最大8）；模型正文不能自行增加收据。相同请求不得双计，重复/冲突及未知转已知规则明确；CLI聚合与broker请求来源分别保留，不相加重复计量。冻结run或已终态attempt的迟到观察不能改旧审计，阈值保护只描述已观察下界，可取消在途并阻止新send，但保留cleanup grace/熔断和外部Promise实际settle才释放槽的生命周期。
+
+新增数组、数值与安全元数据须同时纳入审计最坏字节预留，不存原始响应。本项尚为TDD准入，不记实时用量保护已通过；作者继续实际响应/条件review/旧Candidate协议回归及完整六栏历史。Root建议在轻量checkpoint先跑既有纯协议测试，Docker仍另行协调。
