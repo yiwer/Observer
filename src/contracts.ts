@@ -251,7 +251,7 @@ const DiscourseRecordSchema = DomainRecordSchema.extend({ schemaVersion: z.liter
 const GitHubRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v6"), github: GitHubSnapshotSchema });
 const GitHubHeatRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v7"), github: GitHubRankingSnapshotSchema, githubRanking: GitHubRankingSchema });
 const GitHubRepromotionRecordSchema = GitHubHeatRecordSchema.extend({ schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v8"), githubDevelopments: DevelopmentSnapshotSchema, githubRepromotion: GitHubRepromotionRankingSchema });
-export const RoutedRecordSchema = GitHubRepromotionRecordSchema.extend({ schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), routing: RoutingReceiptSchema, finalEditor: FinalEditorReceiptSchema });
+export const RoutedRecordSchema = GitHubRepromotionRecordSchema.extend({ schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), routing: RoutingReceiptSchema, finalEditor: FinalEditorReceiptSchema, publicationMode: z.literal("scheduled").optional() });
 export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema, GitHubHeatRecordSchema, GitHubRepromotionRecordSchema, RoutedRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
@@ -282,6 +282,7 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
   schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v8"), reportRecordSha256: sha256,
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v9"), reportRecordSha256: sha256,
+  provenance: z.enum(["test-fixture", "scheduled"]),
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({

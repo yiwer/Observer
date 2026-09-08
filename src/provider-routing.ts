@@ -21,6 +21,7 @@ function validVerification(value: unknown, context: VerificationInput): Verifica
   return parsed.data;
 }
 export interface RoutingOptions {
+  executionScope?: "protocol-fixture" | "live";
   configuration: unknown;
   eligibility(): unknown;
   providers: Partial<Record<Provider, { editions: Partial<Record<Edition, AgentRunner>>; verifier: SemanticVerifier }>>;
@@ -105,7 +106,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       }
       latestQualification.set(provider, configurationSha256);
     }
-    return matching.length === 1 && matching[0]!.enabled && matching[0]!.accountEligible && matching[0]!.regionEligible && matching[0]!.checkedAtUtc <= now && matching[0]!.validUntilUtc > now && matching[0]!.scope === "protocol-fixture";
+    return matching.length === 1 && matching[0]!.enabled && matching[0]!.accountEligible && matching[0]!.regionEligible && matching[0]!.checkedAtUtc <= now && matching[0]!.validUntilUtc > now && matching[0]!.scope === (options.executionScope ?? "protocol-fixture");
   };
   const eligible = (provider: Provider) => !isolatedProviders.has(provider) && qualificationEligible(provider);
   const selected = new Map<Edition, Provider>();
@@ -184,6 +185,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       if (!verifier) throw new RoutingBoundaryError("verifier-unavailable");
       let result = await Promise.race([verifier.verify(structuredClone(input), { signal, dispatchControl: dispatchControl(attempt), semanticAttempt: { id: attempt.id, inputSha256: input.inputSha256 } }), cleanupBoundary]);
       const host = readTrustedSemanticRun(result);
+      if (options.executionScope === "live" && (!host || host.execution?.provenance !== `${provider}-cli` || host.execution.processKind !== `${provider}-cli` || host.execution.modelTransport !== (provider === "codex" ? "openai-api" : "anthropic-api"))) throw new RoutingBoundaryError("live-semantic-execution-required");
       if (host) {
         attempt.execution = host.execution ?? null; attempt.usageSource = host.usage?.source ?? "unknown";
         attempt.usage = { inputTokens: host.usage?.inputTokens ?? null, outputTokens: host.usage?.outputTokens ?? null, costUsd: host.usage?.costUsd ?? null };
