@@ -344,7 +344,7 @@ export function createObserver(options: ObserverOptions) {
       const request = parsedRequest.data.schemaVersion === 10 ? { ...parsedRequest.data, schemaVersion: 9 as const } : parsedRequest.data;
       if (routed && !options.routing) throw new ObserverError("routing-unavailable");
       const collectedInput = routed ? structuredClone(request.evidenceBundle) : undefined;
-      const routingOptions = frozen ? { ...options.routing!, configuration: frozen.routing, executionScope: options.mode === "production" ? "live" as const : "protocol-fixture" as const } : options.routing!;
+      const routingOptions = frozen ? { ...options.routing!, assemblyIdentity: options.routing!, configuration: frozen.routing, executionScope: options.mode === "production" ? "live" as const : "protocol-fixture" as const } : options.routing!;
       const routing = routed && request.schemaVersion === 9 ? createProviderRouting(routingOptions, request, (receipt) => {
         const safe = RoutingReceiptSchema.parse(receipt);
         const payload = JSON.stringify(safe);

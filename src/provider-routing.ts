@@ -22,13 +22,14 @@ function validVerification(value: unknown, context: VerificationInput): Verifica
 }
 export interface RoutingOptions {
   executionScope?: "protocol-fixture" | "live";
+  assemblyIdentity?: object;
   configuration: unknown;
   eligibility(): unknown;
   providers: Partial<Record<Provider, { editions: Partial<Record<Edition, AgentRunner>>; verifier: SemanticVerifier }>>;
   clock?: () => string;
 }
 interface AssemblyState { cleanupUnverified: boolean; active: number; waiters: Set<() => void>; externalActive: number; externalWaiters: Set<() => void>; maxProcesses: number; maxExternal: number }
-const assemblyStates = new WeakMap<RoutingOptions, AssemblyState>();
+const assemblyStates = new WeakMap<object, AssemblyState>();
 export class RoutingBoundaryError extends Error {}
 // Each binding owns its identity and ledger; it never discovers a run via a mutable latest-run pointer.
 export function createProviderRouting(options: RoutingOptions, task: SixEditionRequest, persist: (receipt: RoutingReceipt) => void,
@@ -36,8 +37,9 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
   const configuration = RoutingConfigurationSchema.parse(options.configuration), clock = options.clock ?? (() => new Date().toISOString());
   const deadline = performance.now() + configuration.limits.totalTimeoutMs;
   const remaining = () => Math.max(0, deadline - performance.now());
-  let assembly = assemblyStates.get(options);
-  if (!assembly) { assembly = { cleanupUnverified: false, active: 0, waiters: new Set(), externalActive: 0, externalWaiters: new Set(), maxProcesses: configuration.limits.maxConcurrentProcesses, maxExternal: configuration.limits.maxConcurrentExternalRequests }; assemblyStates.set(options, assembly); }
+  const assemblyIdentity = options.assemblyIdentity ?? options;
+  let assembly = assemblyStates.get(assemblyIdentity);
+  if (!assembly) { assembly = { cleanupUnverified: false, active: 0, waiters: new Set(), externalActive: 0, externalWaiters: new Set(), maxProcesses: configuration.limits.maxConcurrentProcesses, maxExternal: configuration.limits.maxConcurrentExternalRequests }; assemblyStates.set(assemblyIdentity, assembly); }
   const authorizeAssembly = () => {
     if (assembly.maxProcesses !== configuration.limits.maxConcurrentProcesses || assembly.maxExternal !== configuration.limits.maxConcurrentExternalRequests) throw new RoutingBoundaryError("assembly-configuration-changed");
   };
