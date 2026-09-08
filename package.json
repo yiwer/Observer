@@ -21,6 +21,7 @@
     "retention": "node src/retention-admin.ts",
     "ops": "node src/ops-admin.ts",
     "backup": "node src/backup-admin.ts",
+    "shadow": "node src/shadow-admin.ts",
     "prepare:codex": "node scripts/prepare-codex-runtime.mjs",
     "prepare:claude": "node scripts/prepare-claude-runtime.mjs"
   },
