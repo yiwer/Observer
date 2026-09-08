@@ -55,13 +55,14 @@ export function scheduledStore(database: DatabaseSync, clock: () => string) {
   const row = (date: string) => database.prepare("SELECT * FROM scheduled_tasks WHERE business_date=?").get(date);
   const status = (date: string) => {
     const value = row(date); if (!value) return null;
+    const onTime = value.readable_at_utc === null ? null : String(value.readable_at_utc) <= String(value.deadline_utc);
     return { businessDate: String(value.business_date), cutoffUtc: String(value.cutoff_utc), deadlineUtc: String(value.deadline_utc),
       frozenAtUtc: String(value.frozen_at_utc), state: String(value.state), attempts: Number(value.attempts),
       completedAtUtc: value.completed_at_utc as string | null, readableAtUtc: value.readable_at_utc as string | null,
       latestVersionId: value.latest_version_id as string | null, latestReadableAtUtc: value.latest_readable_at_utc as string | null,
-      content: value.content_state as string | null, timing: value.timing_state as string | null,
+      content: value.content_state as string | null, timing: onTime === null ? value.latest_version_id ? "pending" : null : onTime ? "on-time" : "delayed",
       recovery: String(value.recovery_state), recoveryDeadlineUtc: recoveryDeadline(date), missedAtUtc: value.missed_at_utc as string | null,
-      onTime: value.readable_at_utc === null ? null : String(value.readable_at_utc) <= String(value.deadline_utc), failure: value.failure as string | null };
+      onTime, failure: value.failure as string | null };
   };
   return {
     status,
@@ -127,10 +128,10 @@ export function scheduledStore(database: DatabaseSync, clock: () => string) {
     },
     owned(date: string) { const value = row(date); return value?.state === "running" && value.owner === instance; },
     // Called inside Observer's existing publication transaction, after the Report insert.
-    published(date: string, versionId: string, atUtc: string, content: string, timing: string, recoverable: boolean, retryDelayMs: number) {
+    published(date: string, versionId: string, atUtc: string, content: string, recoverable: boolean, retryDelayMs: number) {
       if (atUtc >= recoveryDeadline(date)) throw new Error("recovery-window-closed");
-      const updated = database.prepare("UPDATE scheduled_tasks SET state='published',completed_at_utc=?,latest_version_id=?,latest_readable_at_utc=NULL,content_state=?,timing_state=?,recovery_state=?,next_attempt_utc=?,owner=NULL,pid=NULL WHERE business_date=? AND state='running' AND owner=?")
-        .run(atUtc, versionId, content, timing, recoverable ? "open" : "complete", new Date(Date.parse(atUtc) + retryDelayMs).toISOString(), date, instance);
+      const updated = database.prepare("UPDATE scheduled_tasks SET state='published',completed_at_utc=?,latest_version_id=?,latest_readable_at_utc=NULL,content_state=?,timing_state=CASE WHEN readable_at_utc IS NULL THEN 'pending' WHEN readable_at_utc<=deadline_utc THEN 'on-time' ELSE 'delayed' END,recovery_state=?,next_attempt_utc=?,owner=NULL,pid=NULL WHERE business_date=? AND state='running' AND owner=?")
+        .run(atUtc, versionId, content, recoverable ? "open" : "complete", new Date(Date.parse(atUtc) + retryDelayMs).toISOString(), date, instance);
       if (!updated.changes) throw new Error("scheduled-task-ownership-lost");
       database.prepare("INSERT INTO delivery_outbox (id,report_version_id,created_at_utc) VALUES (?,?,?)").run(`report-published:${versionId}`, versionId, atUtc);
     },
@@ -141,7 +142,8 @@ export function scheduledStore(database: DatabaseSync, clock: () => string) {
         .run(exhausted ? "failed" : "queued", reason, new Date(Date.parse(clock()) + (exhausted || value?.latest_version_id ? configuration.recoveryRetryDelayMs : configuration.retryDelayMs)).toISOString(), date, instance);
     },
     readable(versionId: string) {
-      database.prepare("UPDATE scheduled_tasks SET state='readable',readable_at_utc=COALESCE(readable_at_utc,?),latest_readable_at_utc=? WHERE latest_version_id=? AND state='published'").run(clock(), clock(), versionId);
+      const atUtc = clock();
+      database.prepare("UPDATE scheduled_tasks SET state='readable',readable_at_utc=COALESCE(readable_at_utc,?),latest_readable_at_utc=?,timing_state=CASE WHEN COALESCE(readable_at_utc,?)<=deadline_utc THEN 'on-time' ELSE 'delayed' END WHERE latest_version_id=? AND state='published'").run(atUtc, atUtc, atUtc, versionId);
     },
     outbox() { return database.prepare("SELECT id,report_version_id AS reportVersionId,created_at_utc AS createdAtUtc,state FROM delivery_outbox ORDER BY created_at_utc,id").all(); },
     // Frozen raw evidence obeys the original cache lifetime even after publication.

@@ -788,12 +788,13 @@ export function createObserver(options: ObserverOptions) {
         if (previous && !completedEditions.length) throw new ObserverError("completion-no-new-content");
         const previousGaps = previous?.record.schemaVersion === 11 ? previous.record.recovery?.coverageGaps ?? previous.record.coverageGaps : [];
         const coverageGaps = previous ? [...previousGaps.filter((gap) => !completedEditions.includes(gap.edition)), ...record.coverageGaps.filter((gap) => completedEditions.includes(gap.edition))] : record.coverageGaps;
-        const deadlineUtc = schedule.status(request.businessDate)!.deadlineUtc;
-        const timing = previous?.version.schemaVersion === 11 ? previous.version.timing : previous ? previous.version.publishedAtUtc <= deadlineUtc ? "on-time" : "delayed" : publishedAtUtc <= deadlineUtc ? "on-time" : "delayed";
+        const delivery = schedule.status(request.businessDate)!;
+        const deadlineUtc = delivery.deadlineUtc;
+        const timing = delivery.onTime === null ? "pending" : delivery.onTime ? "on-time" : "delayed";
         const availableEditions = [...new Set([...(previous?.record.schemaVersion === 11 ? previous.record.recovery?.availableEditions ?? (Object.keys(editionNames) as Array<keyof typeof editionNames>).filter((edition) => !missingEditions.includes(edition)) : []), ...(Object.keys(editionNames) as Array<keyof typeof editionNames>).filter((edition) => editionContent(record as Extract<ReportRecord, { schemaVersion: 11 }>, edition) > 0)])];
-        record.recovery = { contract: "observer-recovery-v1", version: publicationVersion, revisionReason: previous ? "completion" : "initial", previousVersionId: previous?.version.id ?? null,
+        record.recovery = { contract: "observer-recovery-v2", version: publicationVersion, revisionReason: previous ? "completion" : "initial", previousVersionId: previous?.version.id ?? null,
           publishedAtUtc, deadlineUtc, recoveryDeadlineUtc: recoveryDeadline(request.businessDate), timing,
-          delayReason: timing === "delayed" ? "原定08:30发布未完成，午前恢复后按真实时间发布" : null,
+          delayReason: timing === "delayed" ? "首次私有可读确认晚于08:30交付期限" : null,
           content: !hasContent && links.length ? "links-only" : coverageGaps.length ? "degraded" : "complete", coverageGaps, completedEditions, availableEditions,
           inheritedMarkdown: previous?.canonicalMarkdown ?? null, collectionRecoveredAtUtc: frozen.collectionRecovery?.attachedAtUtc ?? null, links };
       }
@@ -837,7 +838,7 @@ export function createObserver(options: ObserverOptions) {
           database.prepare("INSERT INTO reports (id,payload,development_capture_sha256) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING").run(report.version.id, JSON.stringify(report), capturedDevelopment);
         if (insertion.changes === 0) throw new ObserverError("version-already-exists");
         if (routing) { routing.authorize(report.record.stories.length > 0); routing.complete(report.version.id); }
-        if (frozen && report.record.schemaVersion === 11 && report.record.recovery) schedule.published(request.businessDate, report.version.id, clock(), report.record.recovery.content, report.record.recovery.timing,
+        if (frozen && report.record.schemaVersion === 11 && report.record.recovery) schedule.published(request.businessDate, report.version.id, clock(), report.record.recovery.content,
           recoveryEditions(report).length > 0, scheduleConfiguration!.recoveryRetryDelayMs);
         if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("COMMIT");
       } catch (error) { if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("ROLLBACK"); throw error; }

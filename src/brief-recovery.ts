@@ -43,8 +43,13 @@ export function recoveryMarkdown(record: Record, base: string) {
   const recovery = record.recovery;
   if (!recovery) return base;
   const label = recovery.content === "complete" ? "内容完整" : recovery.content === "links-only" ? "Degraded Brief · 仅来源链接，Agent 不可用，未生成摘要或分析" : "Degraded Brief · 内容降级";
+  const delivery = recovery.timing === "pending" ? "本版生成时首次私有可读交付尚待确认" : `已确认首发交付：${recovery.timing === "delayed" ? "Delayed Brief" : "on-time"}`;
+  const deliveryReference = `[交付状态与首次可读时间](/v1/briefs/${record.businessDate})`;
   if (recovery.revisionReason === "initial") {
-    base = base.replace("## Today Overview", `${label}。${recovery.timing === "delayed" ? "Delayed Brief" : "按时生成"}；实际发布时间 ${recovery.publishedAtUtc}。${recovery.delayReason ? `迟到原因：${escapeMarkdown(recovery.delayReason)}。` : ""}\n\n## Today Overview`);
+    // Keep the previous contract's rendering stable for immutable archives.
+    const publication = recovery.contract === "observer-recovery-v1" ? `${label}。${recovery.timing === "delayed" ? "Delayed Brief" : "按时生成"}；实际发布时间 ${recovery.publishedAtUtc}。${recovery.delayReason ? `迟到原因：${escapeMarkdown(recovery.delayReason)}。` : ""}` :
+      `${label}；实际生成时间 ${recovery.publishedAtUtc}。${recovery.publishedAtUtc > recovery.deadlineUtc ? "Delayed Brief：生成已晚于08:30期限。" : ""}${delivery}；${deliveryReference}。`;
+    base = base.replace("## Today Overview", `${publication}\n\n## Today Overview`);
     for (const edition of Object.keys(editionNames) as Array<keyof typeof editionNames>) {
       const links = recovery.links.filter((entry) => entry.edition === edition);
       if (links.length) base = base.replace(`## ${editionNames[edition]}\n`, `## ${editionNames[edition]}\n\n### 来源链接（未经 Agent 摘要或事实核验）\n\n${links.map((link) => `- [${escapeMarkdown(link.title)}](<${link.url.replace(/[<>\s]/g, encodeURIComponent)}>) — ${escapeMarkdown(link.attribution)}；来源发布时间：${link.publishedAtUtc ?? "未知或政策未允许展示"}`).join("\n")}\n`);
@@ -54,7 +59,8 @@ export function recoveryMarkdown(record: Record, base: string) {
   const inherited = recovery.inheritedMarkdown!;
   base = base.replaceAll('id="story-', `id="v${recovery.version}-story-`).replaceAll('](#story-', `](#v${recovery.version}-story-`);
   return [`# Observer Daily Brief — ${record.businessDate}`, `版本：${record.businessDate}-v${recovery.version} · Completion Revision`,
-    `${label}；实际发布时间 ${recovery.publishedAtUtc}。首发时效：${recovery.timing === "delayed" ? "Delayed Brief" : "on-time"}。`,
+    recovery.contract === "observer-recovery-v1" ? `${label}；实际发布时间 ${recovery.publishedAtUtc}。首发时效：${recovery.timing === "delayed" ? "Delayed Brief" : "on-time"}。` :
+      `${label}；实际生成时间 ${recovery.publishedAtUtc}。${delivery}；${deliveryReference}。`,
     `[前版本 ${recovery.previousVersionId}](/v1/reports/${recovery.previousVersionId}/markdown) 保持不可变。本版完整包含前版本有效内容，补齐栏目：${recovery.completedEditions.map((edition) => editionNames[edition]).join("、")}；仅使用原冻结材料。`,
     "## Today Overview",
     ...Object.entries(editionNames).map(([edition, name]) => `- [${name}](#edition-${edition})：${recovery.completedEditions.includes(edition as keyof typeof editionNames) ? "本次补齐" : "保留前版本内容"}${recovery.coverageGaps.filter((gap) => gap.edition === edition).map((gap) => `；Coverage Gap（${escapeMarkdown(gap.reason)}）`).join("")}`),

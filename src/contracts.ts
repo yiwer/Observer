@@ -252,10 +252,10 @@ const GitHubRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.liter
 const GitHubHeatRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v7"), github: GitHubRankingSnapshotSchema, githubRanking: GitHubRankingSchema });
 const GitHubRepromotionRecordSchema = GitHubHeatRecordSchema.extend({ schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v8"), githubDevelopments: DevelopmentSnapshotSchema, githubRepromotion: GitHubRepromotionRankingSchema });
 export const BriefRecoverySchema = z.strictObject({
-  contract: z.literal("observer-recovery-v1"), version: z.number().int().positive(),
+  contract: z.enum(["observer-recovery-v1", "observer-recovery-v2"]), version: z.number().int().positive(),
   revisionReason: z.enum(["initial", "completion"]), previousVersionId: id.nullable(),
   publishedAtUtc: utc, deadlineUtc: utc, recoveryDeadlineUtc: utc,
-  timing: z.enum(["on-time", "delayed"]), delayReason: z.string().nullable(),
+  timing: z.enum(["pending", "on-time", "delayed"]), delayReason: z.string().nullable(),
   content: z.enum(["complete", "degraded", "links-only"]),
   coverageGaps: z.array(z.strictObject({ edition, reason: z.string().min(1) })),
   completedEditions: z.array(edition), availableEditions: z.array(edition), inheritedMarkdown: z.string().nullable(), collectionRecoveredAtUtc: utc.nullable(),
@@ -298,7 +298,7 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
   schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), reportRecordSha256: sha256,
   version: z.number().int().positive(), revisionReason: z.enum(["initial", "completion", "correction", "withdrawal"]), previousVersionId: id.nullable(),
   provenance: z.enum(["test-fixture", "scheduled"]),
-  content: z.enum(["complete", "degraded", "links-only"]), timing: z.enum(["on-time", "delayed"]),
+  content: z.enum(["complete", "degraded", "links-only"]), timing: z.enum(["pending", "on-time", "delayed"]),
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({
