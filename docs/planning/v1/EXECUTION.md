@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #18已实际读回CLOSED；#19 OPEN已派发fresh-context `/root/implement_v1_19`，专属 `O:/GenesisCode/Observer-worktrees/v1-19` / `ticket/v1-19`，base `88b8c6b`。实现同版本安全HTML总览/私有链接/预算内PDF、QQ SMTP可替换传输、持久幂等身份与未知受理状态；接通既有发布outbox和runtime，不仅写替身接口。默认邮件关闭，本票作者不读取秘密或真实邮箱、不连接SMTP/发送邮件。沿快速功能块交付，无hash验收、逐步或集成回归；必要块末类型与一次本地替身关键路径，Root简短静态review。
+
 - 2026-09-08 #18已接受并本地集成 `13f3668`（功能 `161b2e0`，base `541cbe5`）。短静态 Standards/Spec 各0；最终类型通过，存量Completion全文一次转换/保存/私有下载通过，Root复用两页现成PNG确认代表性排版。无hash验收、逐步或集成回归，见[#18接受记录](acceptance/18-markdown-to-pdf-rendition.md)。下一票#19邮件投递；[QQ SMTP实施预研](../../research/qq-smtp-delivery-preflight-2026-09-08.md)已提交 `9bf8ff5`，未连接SMTP或发送邮件。代码未push，真实部署未验证；下方为历史状态。
 
 - 2026-09-08 #17已接受并本地集成 `f23fccf`（功能 `c244a5e`，base `3049fa2`）。短静态 Standards/Spec 各0，作者类型检查及修正配对 INSERT 后唯一核心路径1/1；Root未重复验证，无hash验收/逐步回归。已交付私有归档、持久分页同步、一次性配对与设备撤销、对象绑定短期下载，见[#17接受记录](acceptance/17-private-archive-and-device-sync.md)。下一票#18 Canonical MD转中文PDF；仍按完整功能块快速交付，真实部署未验证。下方#16等为历史状态。
