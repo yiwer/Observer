@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CollectedEvidence, EvidenceBundle } from "./contracts.ts";
+import type { CollectedEvidence, EvidenceBundle, AgentRunOptions } from "./contracts.ts";
 import { EventAssessmentSchema, EventProjectionSchema } from "./event-contracts.ts";
 import { SelectionAssessmentSchema, SelectionProjectionSchema } from "./interest-contracts.ts";
 import { DomainAssessmentSchema, DomainProjectionSchema } from "./domain-contracts.ts";
@@ -58,7 +58,7 @@ export interface VerificationInput {
   evidence: ReadonlyArray<CollectedEvidence | EvidenceBundle["evidence"][number]>;
 }
 // A semantic judgment is external input, never a deterministic proof of truth.
-export interface SemanticVerifier { verify(input: VerificationInput): Promise<unknown>; }
+export interface SemanticVerifier { verify(input: VerificationInput, options?: AgentRunOptions): Promise<unknown>; }
 
 const check = z.strictObject({ status: z.enum(["passed", "failed", "not-evaluated"]), reason: id });
 export const GateDecisionSchema = z.strictObject({

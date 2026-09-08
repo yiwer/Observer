@@ -23,12 +23,16 @@ export function createClaudeRunner(options: {
     const schema = z.toJSONSchema(CandidateOutput, { target: "draft-7" });
     const receipts: ModelUsageReceipt[] = [];
     const transport = options.transport && { provenance: options.transport.provenance, respond: async (body: Record<string, unknown>, signal: AbortSignal) => {
+      const send = async () => {
       if (task.evidenceBundle.schemaVersion === 2 && task.evidenceBundle.evidence.some((evidence) => evidence.expiresAtUtc <= clock())) throw new ModelBoundaryError("evidence-expired");
       const receipt = { request: receipts.length + 1, ...unknownUsage() };
       receipts.push(receipt);
       const response = await options.transport!.respond(body, signal);
       if (response.status === 200 && Buffer.byteLength(response.body) <= 2 * 1024 * 1024) Object.assign(receipt, readMessagesAccounting(response.body, options.model).usage);
+      runOptions?.dispatchControl?.observeUsage?.(receipt.request, receipt);
       return response;
+      };
+      return runOptions?.dispatchControl ? runOptions.dispatchControl.dispatch(send, signal) : send();
     } };
     const args = ["--bare", "-p", "--restricted", "--tools", "", "--permission-mode", "dontAsk", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
       "--disable-slash-commands", "--no-session-persistence", "--model", options.model, "--max-turns", "4", "--output-format", "stream-json", "--verbose", "--json-schema", JSON.stringify(schema)];

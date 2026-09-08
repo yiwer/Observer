@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { TestContext } from "node:test";
 import { createGitHubObserver } from "../../src/github-observations.ts";
 import { createGitHubAdapter } from "../../src/github-adapter.ts";
-import { createObserver } from "../../src/observer.ts";
+import { createObserver, type ObserverOptions } from "../../src/observer.ts";
 import { SourcePolicySchema, type SourcePolicy } from "../../src/collection.ts";
 import { editionNames } from "../../src/contracts.ts";
 import type { DevelopmentVerificationInput } from "../../src/github-development-contracts.ts";
@@ -21,8 +21,8 @@ export function ownedAssessment(input: DevelopmentVerificationInput) {
       change: { category: "breaking-interface", object: "legacy search endpoint", scope: "removal of the legacy search contract" },
       evidenceExcerpt: "This release removes the legacy search endpoint.", relation: { kind: "new-material", previousDevelopmentId: null } })) };
 }
-export async function repromotionFixture(t: TestContext) {
-  const directory = await mkdtemp(join(tmpdir(), "observer-repromotion-owned-"));
+export async function repromotionFixture(t: TestContext, options: { observer?: Partial<ObserverOptions>; directoryRoot?: string } = {}) {
+  const directory = await mkdtemp(join(options.directoryRoot ?? tmpdir(), "observer-repromotion-owned-"));
   const state = {
     source: SourcePolicySchema.parse({ ...policy(), sourceId: "github-development-fixture", edition: "github-projects", feedUrl: "https://api.github.com",
       review: { ...policy().review, reviewedAtUtc: "2026-09-01T00:00:00.000Z" },
@@ -66,7 +66,7 @@ export async function repromotionFixture(t: TestContext) {
       assessSecurity: (input: SecurityVerificationInput) => state.assessSecurity?.(input) ?? Promise.resolve(null) } };
   let observations = createGitHubObserver(observationOptions);
   const reportPath = join(directory, "reports.sqlite");
-  const observerOptions = { databasePath: reportPath, ownerToken, mode: "test-fixture" as const, clock: () => state.now, sourcePolicyReader: () => [state.source, ...state.additionalSources] };
+  const observerOptions = { databasePath: reportPath, ownerToken, mode: "test-fixture" as const, clock: () => state.now, sourcePolicyReader: () => [state.source, ...state.additionalSources], ...options.observer };
   let observer = createObserver({ ...observerOptions, github: observations });
   let observerOpen = true, observationsOpen = true;
   function close() {

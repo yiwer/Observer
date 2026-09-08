@@ -17,6 +17,7 @@ export interface EvaluationOptions {
   afterVerification?: () => Promise<void>;
   claimEligibility?: (story: CandidateV2, claim: Claim) => string | null;
   semanticEligibility?: (story: CandidateV2, claim: Claim, assessment: import("./gate-contracts.ts").Verification["assessments"][number]) => string | null;
+  reviewDecision?: (storyId: string, claim: Claim) => { outcome: "unconfirmed" | "quarantined"; reason: string } | null;
   clock: () => string;
   modelPolicyCheck: (evidenceIds: string[], atUtc: string) => string | null;
   publicationPolicyCheck: (evidenceIds: string[], claim: Claim, atUtc: string) => string | null;
@@ -89,6 +90,11 @@ export async function evaluatePublication(options: EvaluationOptions) {
       const specialFailure = options.semanticEligibility?.(story, claim, assessment!);
       if (specialFailure) { decide("quarantined", specialFailure); return false; }
       const domainRejected = options.domainRules && assessment ? domainFailure(claim, assessment, request.evidenceBundle.evidence, request.evidenceBundle.cutoffUtc) : null;
+      const reviewDecision = options.reviewDecision?.(story.id, claim);
+      if (reviewDecision?.outcome === "quarantined" && domainRejected?.outcome !== "quarantined") {
+        decide("quarantined", reviewDecision.reason, { semantic: { status: "unsafe", reason: reviewDecision.reason } });
+        return false;
+      }
       if (domainRejected) {
         decide(domainRejected.outcome, domainRejected.reason, { semantic: { status: assessment!.conclusion, reason: assessment!.reason } });
         return false;
@@ -101,6 +107,10 @@ export async function evaluatePublication(options: EvaluationOptions) {
       if (semanticFailure) {
         const unresolved = semanticFailure === "source-conflict" || semanticFailure === "insufficient-evidence";
         decide(unresolved ? "unconfirmed" : "quarantined", semanticFailure, { semantic: { status: unresolved ? semanticFailure === "source-conflict" ? "conflicting" : "insufficient" : "unsafe", reason: semanticFailure } });
+        return false;
+      }
+      if (reviewDecision) {
+        decide(reviewDecision.outcome, reviewDecision.reason, { semantic: { status: reviewDecision.outcome === "unconfirmed" ? "conflicting" : "unsafe", reason: reviewDecision.reason } });
         return false;
       }
       if (claim.kind === "quotation" && (!request.evidenceBundle.evidence.find((item) => item.id === claim.evidenceIds[0])?.content?.includes(claim.originalText) || (!claim.translated && claim.text !== claim.originalText) || assessment?.wording !== "quotation")) {
@@ -141,6 +151,9 @@ export function claimWording(claim: Claim): string {
 export const escapeMarkdown = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   .replace(/[\\`*_{}\[\]()#+!|~]/g, "\\$&").replace(/[\r\n]+/g, " ");
 export const failureExplanations: Record<string, string> = {
+  "provider-review-disagreement": "两次 Provider 复核存在分歧，未将主 Provider 的说法作为已证事实。",
+  "invalid-provider-review": "条件复核结果不完整或不可安全采用，该陈述已隔离。",
+  "unsafe-provider-review": "条件复核判定内容不安全或证据无关，该陈述已隔离。",
   "domain-assessment-unavailable": "主题风险评估缺失或未知，无法安全呈现该陈述。",
   "domain-assertion-inconsistent": "陈述类型与事实、归因或解释判断不一致，不能借类型标签绕过证据门。",
   "high-risk-independent-sources-required": "高风险断言至少需要两个独立可靠来源；相同上游的转载不能形成交叉确认。",

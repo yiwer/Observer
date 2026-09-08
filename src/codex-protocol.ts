@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CandidateV2Schema } from "./gate-contracts.ts";
+import { CandidateV2Schema, VerificationSchema, type VerificationInput, type Verification } from "./gate-contracts.ts";
 import type { ProduceRequest } from "./contracts.ts";
 import { CandidateOutput } from "./agent-candidate.ts";
 
@@ -16,6 +16,24 @@ const Frame = z.discriminatedUnion("kind", [
 
 // This grammar belongs to the adapter. The business layer never consumes CLI events.
 export function readCodexResult(stdout: string, task: ProduceRequest, edition: string) {
+  return readCodexProtocol(stdout, (value) => {
+    const output = CandidateOutput.parse(value);
+    if (output.taskId !== task.taskId || output.evidenceBundleId !== task.evidenceBundle.id || output.configurationId !== task.configurationId || output.stories.some((story) => story.edition !== edition)) throw new Error();
+    return output.stories;
+  });
+}
+
+export function readCodexVerification(stdout: string, input: VerificationInput) {
+  let verification: Verification | null = null;
+  const result = readCodexProtocol(stdout, (value) => {
+    const output = VerificationSchema.parse(value);
+    if (output.inputSha256 !== input.inputSha256) throw new Error();
+    verification = output; return [];
+  });
+  return { ...result, verification };
+}
+
+function readCodexProtocol(stdout: string, accept: (value: unknown) => z.infer<typeof CandidateV2Schema>[]) {
   const state = {
     valid: false, cliVersion: "unknown", terminal: "missing" as "missing" | "invalid" | "completed" | "failed",
     exitCode: null as number | null, stories: [] as z.infer<typeof CandidateV2Schema>[],
@@ -39,10 +57,7 @@ export function readCodexResult(stdout: string, task: ProduceRequest, edition: s
         returned = true;
         state.exitCode = frame.exitCode;
         if (!ended || state.terminal !== "completed" || !message || frame.final === null || frame.final !== message) throw new Error();
-        const output = CandidateOutput.parse(JSON.parse(frame.final));
-        if (output.taskId !== task.taskId || output.evidenceBundleId !== task.evidenceBundle.id || output.configurationId !== task.configurationId ||
-            output.stories.some((story) => story.edition !== edition)) throw new Error();
-        state.stories = output.stories;
+        state.stories = accept(JSON.parse(frame.final));
       } else {
         if (state.cliVersion !== codexVersion || ended) throw new Error();
         const event = z.object({ type: z.string() }).passthrough().parse(JSON.parse(frame.line));

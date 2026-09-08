@@ -6,6 +6,7 @@ import { DiscourseSnapshotSchema } from "./discourse-contracts.ts";
 import { GitHubSnapshotSchema, GitHubRankingSnapshotSchema } from "./github-contracts.ts";
 import { GitHubRankingSchema } from "./github-ranking-contracts.ts";
 import { DevelopmentSnapshotSchema, GitHubRepromotionRankingSchema } from "./github-development-contracts.ts";
+import { RoutingReceiptSchema, FinalEditorReceiptSchema } from "./routing-contracts.ts";
 
 const id = z.string().min(1).max(200);
 const utc = z.iso.datetime({ precision: 3, offset: false });
@@ -151,6 +152,7 @@ export const DiscourseEditionRequestSchema = SixEditionRequestSchema.extend({ sc
 export const GitHubEditionRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(7) });
 export const GitHubHeatRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(8) });
 export const GitHubRepromotionRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(9) });
+export const RoutedRequestSchema = DiscourseEditionRequestSchema.extend({ schemaVersion: z.literal(10) });
 export type SixEditionRequest = z.infer<typeof SixEditionRequestSchema> | z.infer<typeof EventEditionRequestSchema> | z.infer<typeof InterestEditionRequestSchema> | z.infer<typeof DomainEditionRequestSchema> | z.infer<typeof DiscourseEditionRequestSchema> | z.infer<typeof GitHubEditionRequestSchema> | z.infer<typeof GitHubHeatRequestSchema> | z.infer<typeof GitHubRepromotionRequestSchema>;
 // Six-Edition research appends a known Edition suffix to the unchanged 200-character input ID.
 // This bounded envelope extension does not alter the legacy AgentRunner/CLI contract.
@@ -178,8 +180,15 @@ export interface EditionRunner {
 }
 
 // A runner is an external, untrusted boundary: successful resolution is not publication authority.
+export interface AgentRunOptions {
+  signal?: AbortSignal;
+  // Host identity for a semantic process; the model cannot select this value.
+  semanticAttempt?: { id: string; inputSha256: string };
+  // Trusted host-only control. Never constructed from a CLI/model request body.
+  dispatchControl?: { dispatch<T>(send: () => Promise<T>, signal: AbortSignal): Promise<T>; observeUsage?(request: number, usage: TokenUsage): void };
+}
 export interface AgentRunner {
-  run(task: ProduceRequest, options?: { signal?: AbortSignal }): Promise<unknown>;
+  run(task: ProduceRequest, options?: AgentRunOptions): Promise<unknown>;
 }
 
 const LegacyReportRecordSchema = z.strictObject({
@@ -242,7 +251,8 @@ const DiscourseRecordSchema = DomainRecordSchema.extend({ schemaVersion: z.liter
 const GitHubRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v6"), github: GitHubSnapshotSchema });
 const GitHubHeatRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v7"), github: GitHubRankingSnapshotSchema, githubRanking: GitHubRankingSchema });
 const GitHubRepromotionRecordSchema = GitHubHeatRecordSchema.extend({ schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v8"), githubDevelopments: DevelopmentSnapshotSchema, githubRepromotion: GitHubRepromotionRankingSchema });
-export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema, GitHubHeatRecordSchema, GitHubRepromotionRecordSchema]);
+export const RoutedRecordSchema = GitHubRepromotionRecordSchema.extend({ schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), routing: RoutingReceiptSchema, finalEditor: FinalEditorReceiptSchema });
+export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema, GitHubHeatRecordSchema, GitHubRepromotionRecordSchema, RoutedRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
 const LegacyReportVersionSchema = z.strictObject({
@@ -270,6 +280,8 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
   schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v7"), reportRecordSha256: sha256,
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v8"), reportRecordSha256: sha256,
+}), LegacyReportVersionSchema.extend({
+  schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v9"), reportRecordSha256: sha256,
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({
