@@ -24,13 +24,14 @@ if (flag !== "--config" || !file || !["run", "status", "remove", "contract", "ap
     database = new DatabaseSync(reportPath); database.exec("PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON");
     if (database.prepare("PRAGMA user_version").get()!.user_version !== 1 || !database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='reports'").get()) throw new Error("unsupported-storage");
     const sources = () => SourceConfigurationSchema.parse(json(path(configuration.sourceConfigurationPath))).sources;
-    collection = createCollection({ databasePath: collectionPath, sources: sources(), policyReader: sources });
     if (configuration.github) {
       const githubPath = path(configuration.github.databasePath);
       if ([reportPath, collectionPath].includes(githubPath) || !statSync(githubPath).isFile()) throw new Error("invalid-storage-target");
       github = new DatabaseSync(githubPath);
-      if (github.prepare("PRAGMA application_id").get()!.application_id !== 1329746759) throw new Error("unsupported-github-storage");
+      if (github.prepare("PRAGMA application_id").get()!.application_id !== 1329746759 || github.prepare("PRAGMA user_version").get()!.user_version !== 1)
+        throw new Error("unsupported-github-storage");
     }
+    collection = createCollection({ databasePath: collectionPath, sources: sources(), policyReader: sources });
     const clock = () => new Date().toISOString(), schedule = scheduledStore(database, clock);
     const lifecycle = retentionLifecycle(database, clock, sources, { purgeRaw: (ids) => collection!.suppressSources(ids),
       availableEvidence: (ids) => collection!.correctionEvidence(ids).map((entry) => entry.id), purgeScheduled: (current) => schedule.purge(current),

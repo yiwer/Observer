@@ -33,6 +33,7 @@ export function initializeRetention(database: DatabaseSync) {
     CREATE TABLE IF NOT EXISTS retention_jobs(id TEXT PRIMARY KEY,state TEXT NOT NULL,reason TEXT NOT NULL,updated_at_utc TEXT NOT NULL,result TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS agent_events(id TEXT PRIMARY KEY,occurred_at_utc TEXT NOT NULL,provider TEXT NOT NULL,kind TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS rights_routing_runs(id TEXT PRIMARY KEY);
+    CREATE TABLE IF NOT EXISTS rights_correction_signals(signal_id TEXT PRIMARY KEY);
     CREATE TABLE IF NOT EXISTS rights_email_scope(delivery_id TEXT PRIMARY KEY,version_id TEXT NOT NULL,scope TEXT NOT NULL,recorded_at_utc TEXT NOT NULL);`);
   database.exec(`CREATE TRIGGER IF NOT EXISTS rights_report_insert BEFORE INSERT ON reports WHEN
     EXISTS(SELECT 1 FROM json_tree(NEW.payload) j JOIN rights_sources s ON j.key='sourceId' AND j.value=s.source_id) OR
@@ -63,23 +64,76 @@ function tightened(previous: SourcePolicy, current: SourcePolicy) {
 
 /** Local authority only. Markers commit before cross-database cleanup and are never
  * lifted by a config rollback or by restoring an older report database. */
-export function retentionLifecycle(database: DatabaseSync, clock: () => string, readPolicies: () => SourcePolicy[],
+export function retentionLifecycle(database: DatabaseSync, clock: () => string, readPolicies: () => SourcePolicy[] | undefined,
   hooks: { purgeRaw?: (sourceIds: string[]) => void; purgeScheduled?: (policies: SourcePolicy[]) => void;
     availableEvidence?: (ids: string[]) => string[];
     compactGitHub?: (published: unknown[], sourceIds: string[]) => unknown } = {}) {
   initializeRetention(database);
-  let refreshing = false, lastMaintenance = 0;
+  let refreshing = false, lastMaintenance = 0, policyAuthorityAvailable = false;
   const has = (table: string) => !!database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table);
   const blocked = () => database.prepare("SELECT source_id FROM rights_sources").all().map((row) => String(row.source_id));
+  function taskDependencies(value: unknown) {
+    const inputs: unknown[] = [value], item = value as Record<string, unknown>;
+    // Routing receipts carry task/bundle identities rather than source bodies.
+    // Resolve those identities before deciding that their dependencies are unknown.
+    if (typeof item.taskId === "string") {
+      if (item.taskId.startsWith("correction:") && has("correction_signals")) {
+        const signal = database.prepare("SELECT payload FROM correction_signals WHERE signal_id=?").get(item.taskId.slice("correction:".length));
+        if (signal) inputs.push(JSON.parse(String(signal.payload)));
+      }
+      if (has("correction_patrol_tasks")) {
+        const target = database.prepare("SELECT target FROM correction_patrol_tasks WHERE id=?").get(item.taskId);
+        if (target) inputs.push(JSON.parse(String(target.target)));
+      }
+    }
+    if (typeof item.evidenceBundleId === "string") {
+      for (const report of database.prepare("SELECT payload FROM reports WHERE json_extract(payload,'$.record.evidenceBundle.id')=?").all(item.evidenceBundleId)) inputs.push(JSON.parse(String(report.payload)));
+      if (has("scheduled_tasks")) for (const task of database.prepare("SELECT snapshot FROM scheduled_tasks WHERE json_extract(snapshot,'$.request.evidenceBundle.id')=?").all(item.evidenceBundleId)) inputs.push(JSON.parse(String(task.snapshot)));
+    }
+    const dependencies = contentDependencies(inputs), visited = new Set<string>();
+    for (const version of dependencies.versions) {
+      if (visited.has(version)) continue;
+      visited.add(version);
+      const report = database.prepare("SELECT payload FROM reports WHERE id=?").get(version);
+      if (!report) continue;
+      const prior = contentDependencies(JSON.parse(String(report.payload)));
+      prior.sources.forEach((source) => dependencies.sources.add(source));
+      prior.versions.forEach((parent) => dependencies.versions.add(parent));
+    }
+    return { ...dependencies, known: dependencies.sources.size > 0 || [...dependencies.versions].some((version) =>
+      !!database.prepare("SELECT 1 FROM rights_versions WHERE version_id=?").get(version)) };
+  }
   function mark(input: RightsRemoval, atUtc = clock()) {
-    database.prepare(`INSERT INTO rights_sources VALUES(?,?,?,?) ON CONFLICT(source_id) DO UPDATE SET
-      retain_version_audit=MIN(rights_sources.retain_version_audit,excluded.retain_version_audit)`)
-      .run(input.sourceId, input.reason, atUtc, Number(input.retainVersionAudit));
-    database.prepare(`INSERT INTO retention_jobs VALUES(?,'pending',?,?, '{}') ON CONFLICT(id) DO UPDATE SET state='pending',updated_at_utc=excluded.updated_at_utc`)
-      .run(`rights:${input.sourceId}`, input.reason, atUtc);
+    database.exec("SAVEPOINT rights_removal_marker");
+    try {
+      const firstRemoval = !database.prepare("SELECT 1 FROM rights_sources WHERE source_id=?").get(input.sourceId);
+      // The conservative fallback is a durable snapshot taken once at revocation.
+      // Later tasks with unknown dependencies are not swept up on every retry.
+      if (firstRemoval) {
+        for (const [table, key, target] of [["correction_signals", "signal_id", "rights_correction_signals"], ["routing_runs", "id", "rights_routing_runs"]] as const) {
+          if (!has(table)) continue;
+          for (const row of database.prepare(`SELECT ${key} AS id,payload FROM ${table}`).all()) {
+            const value = JSON.parse(String(row.payload)) as Record<string, unknown>, dependencies = taskDependencies(value);
+            if (dependencies.sources.has(input.sourceId) || !dependencies.known && (table === "correction_signals" || value.status !== "published"))
+              database.prepare(`INSERT OR IGNORE INTO ${target} VALUES(?)`).run(row.id!);
+          }
+        }
+      }
+      database.prepare(`INSERT INTO rights_sources VALUES(?,?,?,?) ON CONFLICT(source_id) DO UPDATE SET
+        retain_version_audit=MIN(rights_sources.retain_version_audit,excluded.retain_version_audit)`)
+        .run(input.sourceId, input.reason, atUtc, Number(input.retainVersionAudit));
+      database.prepare(`INSERT INTO retention_jobs VALUES(?,'pending',?,?, '{}') ON CONFLICT(id) DO UPDATE SET state='pending',updated_at_utc=excluded.updated_at_utc`)
+        .run(`rights:${input.sourceId}`, input.reason, atUtc);
+      database.exec("RELEASE rights_removal_marker");
+    } catch (error) { database.exec("ROLLBACK TO rights_removal_marker; RELEASE rights_removal_marker"); throw error; }
   }
   function policies() {
-    const current = SourcePolicySchema.array().max(100).parse(readPolicies());
+    const authority = readPolicies();
+    policyAuthorityAvailable = authority !== undefined;
+    // Missing runtime configuration is not an authoritative empty source list.
+    // Return no read grants, without inferring revocation or changing saved policy.
+    if (authority === undefined) return [];
+    const current = SourcePolicySchema.array().max(100).parse(authority);
     if (refreshing) return current.filter((source) => !blocked().includes(source.sourceId));
     refreshing = true;
     try {
@@ -107,7 +161,7 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
   // Upgrade existing archives without relying on a previously installed registry.
   // An old collected grant cannot silently become a current grant at first boot.
   const initialPolicies = readPolicies();
-  for (const row of database.prepare("SELECT payload FROM reports WHERE COALESCE(json_extract(payload,'$.rightsRemoved'),0)=0").all()) {
+  if (initialPolicies !== undefined) for (const row of database.prepare("SELECT payload FROM reports WHERE COALESCE(json_extract(payload,'$.rightsRemoved'),0)=0").all()) {
     function inspect(value: unknown) {
       if (Array.isArray(value)) { value.forEach(inspect); return; }
       if (!value || typeof value !== "object") return;
@@ -128,6 +182,13 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
     policies();
     if (removed(versionId)) throw new PrivateApiError("report-rights-removed", 410);
     if (payload && [...contentDependencies(payload).sources].some((source) => blocked().includes(source))) throw new PrivateApiError("report-rights-removed", 410);
+    function requiresPolicy(value: unknown): boolean {
+      if (Array.isArray(value)) return value.some(requiresPolicy);
+      if (!value || typeof value !== "object") return false;
+      const item = value as Record<string, unknown>, origin = item.origin as Record<string, unknown> | undefined;
+      return typeof item.sourceId === "string" && (typeof item.policyVersion === "number" || origin?.kind === "collected") || Object.values(item).some(requiresPolicy);
+    }
+    if (!policyAuthorityAvailable && requiresPolicy(payload)) throw new PrivateApiError("source-policy-unavailable", 403);
   }
   function cleanRights() {
     const sources = blocked(), sourceSet = new Set(sources);
@@ -147,10 +208,21 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
     const forbiddenAudit = database.prepare("SELECT 1 FROM rights_sources WHERE retain_version_audit=0 LIMIT 1").get();
     // Commit even before purgeRaw: a failed secondary database cannot expose reports.
     for (const version of affected) database.prepare("INSERT INTO rights_versions VALUES(?,?,?) ON CONFLICT(version_id) DO UPDATE SET retain_version_audit=MIN(rights_versions.retain_version_audit,excluded.retain_version_audit)").run(version, clock(), Number(!forbiddenAudit));
-    hooks.purgeRaw?.(sources);
+    if (policyAuthorityAvailable || sources.length) hooks.purgeRaw?.(sources);
     if (!sources.length && !affected.size) return;
     const touches = (value: unknown) => { const dependencies = contentDependencies(value);
       return [...dependencies.sources].some((source) => sourceSet.has(source)) || [...dependencies.versions].some((version) => affected.has(version)); };
+    // Resolve indirect task dependencies while the original report/schedule
+    // provenance still exists, before replacing those records with tombstones.
+    const correctionIds = new Set(database.prepare("SELECT signal_id FROM rights_correction_signals").all().map((row) => String(row.signal_id)));
+    const routingIds = new Set(database.prepare("SELECT id FROM rights_routing_runs").all().map((row) => String(row.id)));
+    for (const [table, key, ids] of [["correction_signals", "signal_id", correctionIds], ["routing_runs", "id", routingIds]] as const) {
+      if (!has(table)) continue;
+      for (const row of database.prepare(`SELECT ${key} AS id,payload FROM ${table}`).all()) {
+        const dependency = taskDependencies(JSON.parse(String(row.payload)));
+        if ([...dependency.sources].some((source) => sourceSet.has(source)) || [...dependency.versions].some((version) => affected.has(version))) ids.add(String(row.id));
+      }
+    }
     database.exec("BEGIN IMMEDIATE");
     try {
       // These two triggers are suspended only inside this atomic rights operation;
@@ -187,12 +259,12 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
       if (has("scheduled_discourse_samples")) for (const row of database.prepare("SELECT rowid,payload FROM scheduled_discourse_samples").all()) {
         if (touches(JSON.parse(String(row.payload)))) database.prepare("DELETE FROM scheduled_discourse_samples WHERE rowid=?").run(row.rowid!);
       }
-      // Candidate text cannot survive loss of its exact raw source. Conservatively
-      // scrub queued candidates on any source removal; identities remain terminal.
-      if (has("correction_signals") && sources.length) database.exec("UPDATE correction_signals SET payload='{}',state='blocked',reason='rights-removed',owner=NULL,lease_until_utc=NULL");
+      if (has("correction_signals")) for (const signalId of correctionIds) {
+        database.prepare("INSERT OR IGNORE INTO rights_correction_signals VALUES(?)").run(signalId);
+        database.prepare("UPDATE correction_signals SET payload='{}',state='blocked',reason='rights-removed',owner=NULL,lease_until_utc=NULL WHERE signal_id=?").run(signalId);
+      }
       if (has("routing_runs")) for (const row of database.prepare("SELECT id,payload FROM routing_runs").all()) {
-        const run = JSON.parse(String(row.payload)) as Record<string, unknown>;
-        if (touches(run) || sources.length && run.status !== "published") {
+        if (routingIds.has(String(row.id))) {
           database.prepare("INSERT OR IGNORE INTO rights_routing_runs VALUES(?)").run(row.id!);
           database.prepare("DELETE FROM routing_runs WHERE id=?").run(row.id!);
           database.prepare("DELETE FROM agent_events WHERE substr(id,1,?)=?").run(String(row.id).length + 1, `${row.id}:`);
@@ -204,7 +276,7 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
       if (forbiddenAudit) {
         if (has("correction_signals")) database.exec("UPDATE correction_signals SET identity_key='rights:'||signal_id,input_digest='' WHERE reason='rights-removed'");
         if (has("correction_patrol_tasks")) database.exec("UPDATE correction_patrol_tasks SET material_id=NULL WHERE reason='rights-removed'");
-        if (has("correction_patrol_materials")) database.exec("DELETE FROM correction_patrol_materials");
+        if (has("correction_patrol_materials")) for (const signalId of correctionIds) database.prepare("DELETE FROM correction_patrol_materials WHERE signal_id=?").run(signalId);
         for (const source of sources) {
           if (has("correction_patrol_source_budget")) database.prepare("DELETE FROM correction_patrol_source_budget WHERE source=?").run(source);
           database.prepare("UPDATE retention_policies SET payload='null' WHERE source_id=?").run(source);
@@ -219,17 +291,17 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
     if (!force && Date.parse(clock()) - lastMaintenance < 60000 && !database.prepare("SELECT 1 FROM retention_jobs WHERE state!='complete' LIMIT 1").get()) return;
     database.prepare("INSERT OR REPLACE INTO retention_jobs VALUES('maintenance','running','source-ttl-agent-log-30d-github-90d',?,'{}')").run(clock());
     try {
-      cleanRights(); hooks.purgeScheduled?.(current);
+      cleanRights(); if (policyAuthorityAvailable) hooks.purgeScheduled?.(current);
       const expiredEvents = database.prepare("DELETE FROM agent_events WHERE occurred_at_utc<=?").run(new Date(Date.parse(clock()) - 30 * 86400000).toISOString()).changes;
       // Raw candidates are bounded by their original source TTL, at most 30 days.
-      if (has("correction_signals")) for (const row of database.prepare("SELECT signal_id,payload,received_at_utc,state FROM correction_signals WHERE payload!='{}'").all()) {
+      if (policyAuthorityAvailable && has("correction_signals")) for (const row of database.prepare("SELECT signal_id,payload,received_at_utc,state FROM correction_signals WHERE payload!='{}'").all()) {
         const body = JSON.parse(String(row.payload)) as { evidence?: Array<{ evidenceId: string; retrievedAtUtc: string }> };
         const ttl = Math.min(720, ...current.map((source) => source.storage.retentionHours));
         const evidence = body.evidence ?? [], available = hooks.availableEvidence?.(evidence.map((entry) => entry.evidenceId));
         if (evidence.some((entry) => available ? !available.includes(entry.evidenceId) : Date.parse(entry.retrievedAtUtc) + ttl * 3600000 <= Date.parse(clock()))) database.prepare("UPDATE correction_signals SET payload='{}',state=CASE WHEN state IN ('pending','processing') THEN 'blocked' ELSE state END,reason='candidate-source-ttl',owner=NULL,lease_until_utc=NULL WHERE signal_id=?").run(row.signal_id!);
       }
       const published = database.prepare("SELECT payload FROM reports WHERE COALESCE(json_extract(payload,'$.rightsRemoved'),0)=0").all().map((row) => JSON.parse(String(row.payload)) as unknown);
-      const github = hooks.compactGitHub?.(published, blocked()) ?? null;
+      const github = policyAuthorityAvailable || blocked().length ? hooks.compactGitHub?.(published, blocked()) ?? null : null;
       const result = JSON.stringify({ expiredAgentEvents: Number(expiredEvents), github, reason: "rights-overrides-immutable-content; publication-inputs-pinned" });
       database.prepare("UPDATE retention_jobs SET state='complete',updated_at_utc=?,result=?").run(clock(), result);
       lastMaintenance = Date.parse(clock());
@@ -240,7 +312,7 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
   }
   return { policies, assertReadable, maintenance,
     remove(input: unknown) { const value = RightsRemovalSchema.parse(input);
-      value.retainVersionAudit &&= !!readPolicies().find((source) => source.sourceId === value.sourceId)?.storage.retainRecordKeys;
+      value.retainVersionAudit &&= !!readPolicies()?.find((source) => source.sourceId === value.sourceId)?.storage.retainRecordKeys;
       mark(value); maintenance(true); return { sourceId: value.sourceId, state: "complete" }; },
     status() { return database.prepare("SELECT id,state,reason,updated_at_utc AS updatedAtUtc,result FROM retention_jobs ORDER BY id").all(); },
     contract(): DeletionContract { return DeletionContractSchema.parse({ schemaVersion: 1, kind: "observer-rights-suppression",

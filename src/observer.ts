@@ -136,10 +136,10 @@ export function createObserver(options: ObserverOptions) {
   // Validate explicit mail configuration before database, transport or secret use.
   if (options.email) EmailConfigurationSchema.parse(options.email.configuration);
   const interest = interestConfiguration(options.databasePath);
-  const policies = (options.sourcePolicies ?? []).map((source) => SourcePolicySchema.parse(source));
+  const policies = options.sourcePolicies?.map((source) => SourcePolicySchema.parse(source));
   let retention: ReturnType<typeof retentionLifecycle> | undefined;
   const rawPolicies = () => options.sourcePolicyReader ? SourcePolicySchema.array().parse(options.sourcePolicyReader()) : policies;
-  const currentPolicies = () => retention ? retention.policies() : rawPolicies();
+  const currentPolicies = () => retention ? retention.policies() : rawPolicies() ?? [];
   function checkedPolicy(evidence: { sourceId: string; policyVersion: number; policySha256: string }, authority = currentPolicies()) {
     const source = authority.find((source) => source.sourceId === evidence.sourceId);
     if (!source || source.review.status !== "approved" || !source.collection.enabled || source.version !== evidence.policyVersion || policyDigest(source) !== evidence.policySha256) throw new ObserverError("source-policy-invalid");
@@ -477,7 +477,7 @@ export function createObserver(options: ObserverOptions) {
     },
     scheduledDiscourseSamples(businessDate: string) { return schedule.discourseSamples(businessDate); },
     pendingScheduled() { schedule.expire(); return schedule.pending(); },
-    purgeScheduledEvidence() { schedule.purge(currentPolicies()); },
+    purgeScheduledEvidence() { if (rawPolicies() !== undefined) schedule.purge(currentPolicies()); },
     async runScheduled(businessDate: string, signal?: AbortSignal) {
       if (!scheduleConfiguration?.enabled) throw new ObserverError("publication-disabled");
       schedule.expire();
