@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- 2026-09-08 14:58 接续刷新：旧 native/manual agent 句柄已从活动列表消失，两个工作树仍有完整未提交 WIP，按精确树路径检查无相关运行进程或真实调用结果。已派 fresh-context `/root/finish_v1_26_native` 与 `/root/finish_v1_26_manual` 接手原树收尾，不重建、不丢弃改动；native 最多一次安全真实调用，manual 仅静态提交。Root 补齐现有 lock 依赖并准备 ignored 的本地独立 generate/export/send 操作脚本，未执行。真实来源 [starter](../../research/today-source-starter-2026-09-08.md)已完成，已非阻塞询问 Owner 批准五家机构的最少公开字段用于私人摘要/邮件，未代签；当前无今日日报或新邮件。
+
 - 最新增量：Owner 指定 Codex 默认 `gpt-6-astra` / `medium`，已交 native 作者接入。并行 fresh-context `/root/implement_v1_26_manual` 在 `O:/GenesisCode/Observer-worktrees/v1-26-manual` / `ticket/v1-26-manual`（base `28606c7`）实现 Owner 鉴权的一次性今日初刊/附件邮件入口，使用实际冻结时间与独立截止时间，不改变自动日程或把手动补发计入准时影子样本。Root 在集成后执行真实来源采集、成品检查及单次发送；作者不触发模型/SMTP。后台 research 准备第一方许可来源，当前尚未生成或发送今日日报。下面较早的等待国家/接入选择条目为历史，不再构成前置阻断。
 
 - Owner已确认本机已登录Codex，并明确跳过国家审查；旧“方向/地区待确认”阻断解除，不再追问或做地理检查。决定已记 `fe9e7a6` / ADR-0006。fresh-context `/root/implement_v1_26_native` 正在 `O:/GenesisCode/Observer-worktrees/v1-26-native` / `ticket/v1-26-native`（base `fe9e7a6`）接通真实native入口、研究/复核/路由/评测身份及配置；最多块末一次有界本机真实调用，不叠加hash验收、类型/测试矩阵或回归。当前Root仅刷新help/version/login-status，CLI 0.153.4且既有ChatGPT登录；未发起模型调用，不把旧容器/API证明套给native。#26其余live类别与#27/#28仍未通过，但不阻断本次native实现。
