@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "configurationId": "observer-runtime-v1",
+  "schedule": { "enabled": false, "startBusinessDate": "2026-09-09", "retryDelayMs": 60000, "maxAttempts": 3 },
+  "sourceConfigurationPath": "sources.example.v1.json",
+  "interestProfilePath": "interest.example.v1.json",
+  "databasePath": "../data/observer.sqlite",
+  "collectionDatabasePath": "../data/collection.sqlite",
+  "taskRoot": "../data/agent-tasks",
+  "collect": false,
+  "routing": { "schemaVersion": 1, "version": 1, "primary": "codex" },
+  "providers": {}
+}

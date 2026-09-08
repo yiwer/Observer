@@ -1,25 +1,44 @@
 import { resolve } from "node:path";
 import { createObserver, ObserverError } from "./observer.ts";
 import { startPrivateServer } from "./http.ts";
+import { createProductionRuntime } from "./production-runtime.ts";
 
 const port = Number(process.env.OBSERVER_PORT ?? "3000");
 if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("Invalid OBSERVER_PORT");
 
-// No environment variable or CLI argument enables fixture publication in this entry point.
 try {
-  const observer = createObserver({
+  const ownerToken = process.env.OBSERVER_OWNER_TOKEN ?? "";
+  const runtime = process.env.OBSERVER_RUNTIME_CONFIG ? createProductionRuntime(resolve(process.env.OBSERVER_RUNTIME_CONFIG), ownerToken) : undefined;
+  const observer = runtime?.observer ?? createObserver({
     databasePath: resolve(process.env.OBSERVER_DATABASE_PATH ?? "data/observer.sqlite"),
-    ownerToken: process.env.OBSERVER_OWNER_TOKEN ?? "",
+    ownerToken,
     mode: "production",
   });
   const server = await startPrivateServer(observer, port);
-  console.log(`Observer listening on http://127.0.0.1:${server.port} (publication disabled)`);
+  console.log(`Observer listening on http://127.0.0.1:${server.port} (scheduled publication ${runtime?.enabled ? "enabled" : "disabled"})`);
+  const shutdown = new AbortController();
+  const inFlight = new Set<Promise<unknown>>();
+  const tick = () => {
+    if (!runtime || shutdown.signal.aborted) return;
+    const work = runtime.tick(async (versionId) => {
+      const response = await fetch(`http://127.0.0.1:${server.port}/v1/reports/${versionId}`, {
+        headers: { Authorization: `Bearer ${ownerToken}` }, signal: AbortSignal.timeout(10000), redirect: "error",
+      });
+      if (!response.ok || (await response.json() as { version?: { id?: string } }).version?.id !== versionId) throw new Error("private-version-unreadable");
+    }, shutdown.signal).catch(() => console.error("scheduled-tick-failed"));
+    inFlight.add(work); void work.finally(() => inFlight.delete(work));
+    const collection = runtime.collect(shutdown.signal).catch(() => console.error("scheduled-collection-failed"));
+    inFlight.add(collection); void collection.finally(() => inFlight.delete(collection));
+  };
+  const timer = setInterval(tick, 1000); tick();
   let stopping = false;
   async function stop() {
     if (stopping) return;
     stopping = true;
+    clearInterval(timer); shutdown.abort();
+    await Promise.allSettled(inFlight);
     await server.close();
-    observer.close();
+    if (runtime) runtime.close(); else observer.close();
   }
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);

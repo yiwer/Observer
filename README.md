@@ -1,6 +1,6 @@
 # Observer
 
-私人 Daily Brief 服务端。当前完成 V1-01 的固定数据闭环：一条有来源故事、六栏总览、五个 Coverage Gap、不可变归档和鉴权读取。固定数据和替身只用于自动化测试；当前生产启动入口禁用发布，也不提供测试归档内容。
+私人 Daily Brief 服务端。V1-15 已接通可配置启用的持久日调度、六栏研究路由、原子归档和私有读取。默认仍关闭调度；没有启用来源或 Provider 的栏目显示 Coverage Gap。生产入口不提供测试归档内容，真实上线与外部质量验收尚未完成。
 
 ## 本地检查
 
@@ -37,7 +37,9 @@ npm run build
 | `/v1/reports/YYYY-MM-DD-v1` | 同一版本的 `version`、`record`、`canonicalMarkdown` JSON |
 | `/v1/reports/YYYY-MM-DD-v1/markdown` | 已保存的 Canonical Markdown，UTF-8 |
 
-无有效凭证为 401；未知版本为 404；其他方法为 405。生产入口不会采集、调用 Agent、创建报告或返回 fixture 报告，所以本票生产入口合法读取已知 fixture 也为 404。成功读取的本地能力由测试专用装配验证。
+无有效凭证为 401；未知版本为 404；其他方法为 405。未配置调度时入口只读；生产读取已知 fixture 仍为 404。
+
+设置 `OBSERVER_RUNTIME_CONFIG` 指向 [运行配置](config/runtime.example.v1.json)，将其中 `schedule.enabled` 显式设为 `true`，即可在北京时间每天 07:30 冻结并运行。配置中的路径相对于该文件。`collect: false` 只消费已有采集缓存；`collect: true` 启用经 Source Policy 授权的 RSS/Atom、可选 GitHub 与 Mastodon 采集。Provider 需要单独的启用、资格及凭据配置；没有可用 Provider 时生成明确缺口。完整用法与未测范围见 [V1-15](docs/implementation/v1-15.md)。
 
 技术选择见 [ADR-0004](docs/adr/0004-start-with-typescript-and-atomic-sqlite-report-archive.md)，公共契约及证据见 [V1-01 实现说明](docs/implementation/v1-01.md)。
 

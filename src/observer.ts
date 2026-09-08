@@ -30,8 +30,9 @@ import { developmentPermission, developmentRunPermission } from "./github-develo
 import { advisoryOrigins } from "./github-advisories.ts";
 import { projectGitHubPublication } from "./github-publication-budget.ts";
 import { createProviderRouting, RoutingBoundaryError, type RoutingOptions } from "./provider-routing.ts";
-import { MAX_ROUTING_AUDIT_BYTES, RoutingReceiptSchema } from "./routing-contracts.ts";
+import { MAX_ROUTING_AUDIT_BYTES, RoutingReceiptSchema, RoutingConfigurationSchema } from "./routing-contracts.ts";
 import { finalizeRoutedRecord, routedMarkdown } from "./routed-publication.ts";
+import { ScheduleConfigurationSchema, scheduledStore, type ScheduledSnapshot } from "./scheduled-publication.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -56,6 +57,7 @@ export interface ObserverOptions {
   github?: GitHubObservationReader;
   sourcePolicyReader?: () => unknown;
   routing?: RoutingOptions;
+  schedule?: { configuration: unknown; runtimeConfiguration: ScheduledSnapshot["configuration"]; versions: Record<string, string> };
 }
 
 function digest(text: string): string {
@@ -172,6 +174,10 @@ export function createObserver(options: ObserverOptions) {
 
   const routingInstalled = database.prepare("PRAGMA table_xinfo(reports)").all().some((entry) => entry.name === "routing_capture_sha256");
   const reportColumns = `id,payload,development_capture_sha256,${routingInstalled ? "routing_capture_sha256" : "NULL AS routing_capture_sha256"}`;
+  const clock = options.clock ?? (() => new Date().toISOString());
+  const scheduleConfiguration = options.schedule ? ScheduleConfigurationSchema.parse(options.schedule.configuration) : undefined;
+  const schedule = scheduledStore(database, clock);
+  const activeScheduled = new Map<string, ScheduledSnapshot>();
 
   function storedRun(runId: string) {
     if (!database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='routing_runs'").get()) throw new ObserverError("not-found");
@@ -240,6 +246,15 @@ export function createObserver(options: ObserverOptions) {
   }
 
   function developmentHistoryRead<T>(use: (scope: DevelopmentHistoryReadScope) => T & SyncResult<T>): T {
+    if (!options.github) {
+      const unavailable: DevelopmentHistoryReadScope["authorize"] = (snapshot) => {
+        const { publicationProjection, ...development } = snapshot.developments;
+        const empty = { ...emptyGitHubSnapshot(snapshot.github.cutoffUtc), schemaVersion: 2 };
+        return JSON.stringify(snapshot.github) === JSON.stringify(empty) && JSON.stringify(development) === JSON.stringify(emptyDevelopments(snapshot.github.cutoffUtc)) &&
+          (!publicationProjection || publicationProjection.origins.length === 0 && publicationProjection.omissions.length === 0) ? null : "github-observation-unavailable";
+      };
+      return use({ authorize: unavailable, authorizeDevelopmentHistory: unavailable });
+    }
     if (!options.github?.withDevelopmentHistoryRead) throw new ObserverError("github-development-history-unavailable");
     return options.github.withDevelopmentHistoryRead<T>(use);
   }
@@ -276,18 +291,61 @@ export function createObserver(options: ObserverOptions) {
     return history;
   }
 
-  return {
+  const observer = {
     importInterestProfile(filePath: string) { return interest.import(filePath); },
     exportInterestProfile(filePath: string) { return interest.export(filePath); },
-    async produce(input: unknown, runOptions?: { signal?: AbortSignal }) {
-      if (options.mode !== "test-fixture") throw new ObserverError("publication-disabled");
+    freezeScheduled(input: unknown) {
+      if (!scheduleConfiguration?.enabled || !options.routing) throw new ObserverError("publication-disabled");
+      const request = RoutedRequestSchema.parse(input);
+      const existing = schedule.status(request.businessDate);
+      if (existing) return existing;
+      if (request.evidenceBundle.schemaVersion !== 2) throw new ObserverError("invalid-scheduled-input");
+      const github = GitHubRepromotionSnapshotSchema.parse(options.github?.repromotionSnapshot?.(request.evidenceBundle.cutoffUtc) ?? {
+        schemaVersion: 1, github: { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2 }, developments: emptyDevelopments(request.evidenceBundle.cutoffUtc),
+      });
+      return schedule.freeze({ schemaVersion: 1, request, policies: currentPolicies(), interest: interest.snapshot(),
+        discourse: DiscourseConfigurationSchema.parse(options.discourse?.configuration ?? { schemaVersion: 1, version: 1, groups: [] }),
+        github, routing: RoutingConfigurationSchema.parse(options.routing.configuration),
+        configuration: options.schedule!.runtimeConfiguration, versions: options.schedule!.versions, frozenAtUtc: clock() });
+    },
+    scheduledStatus(businessDate: string) { return schedule.status(businessDate); },
+    saveScheduledDiscourseSample(sample: unknown) { schedule.saveDiscourseSample(sample); },
+    scheduledDiscourseSamples(businessDate: string) { return schedule.discourseSamples(businessDate); },
+    pendingScheduled() { return schedule.pending(); },
+    purgeScheduledEvidence() { schedule.purge(currentPolicies()); },
+    async runScheduled(businessDate: string, signal?: AbortSignal) {
+      if (!scheduleConfiguration?.enabled) throw new ObserverError("publication-disabled");
+      const snapshot = schedule.claim(businessDate, scheduleConfiguration.maxAttempts);
+      if (!snapshot) return null;
+      activeScheduled.set(businessDate, snapshot);
+      try {
+        if (JSON.stringify(snapshot.versions) !== JSON.stringify(options.schedule!.versions)) throw new ObserverError("frozen-runtime-version-unavailable");
+        return await observer.produce(snapshot.request, { scheduledBusinessDate: businessDate, ...(signal ? { signal } : {}) });
+      } catch (error) {
+        schedule.failed(businessDate, error instanceof ObserverError ? error.code : "scheduled-execution-failed", scheduleConfiguration);
+        throw error;
+      } finally { activeScheduled.delete(businessDate); }
+    },
+    markScheduledReadable(versionId: string, credential: string) {
+      observer.readReport(versionId, credential);
+      schedule.readable(versionId);
+    },
+    pendingDeliveries(credential: string) {
+      if (!timingSafeEqual(Buffer.from(digest(credential)), Buffer.from(digest(options.ownerToken)))) throw new ObserverError("unauthorized");
+      return schedule.outbox();
+    },
+    async produce(input: unknown, runOptions?: { signal?: AbortSignal; scheduledBusinessDate?: string }) {
+      const frozen = runOptions?.scheduledBusinessDate ? activeScheduled.get(runOptions.scheduledBusinessDate) : undefined;
+      if (options.mode !== "test-fixture" && (!scheduleConfiguration?.enabled || !frozen || !schedule.owned(runOptions!.scheduledBusinessDate!))) throw new ObserverError("publication-disabled");
       const parsedRequest = ProduceRequestSchema.or(SixEditionRequestSchema).or(EventEditionRequestSchema).or(InterestEditionRequestSchema).or(DomainEditionRequestSchema).or(DiscourseEditionRequestSchema).or(GitHubEditionRequestSchema).or(GitHubHeatRequestSchema).or(GitHubRepromotionRequestSchema).or(RoutedRequestSchema).safeParse(input);
       if (!parsedRequest.success) throw new ObserverError("invalid-request");
       const routed = parsedRequest.data.schemaVersion === 10;
+      if (frozen && JSON.stringify(parsedRequest.data) !== JSON.stringify(frozen.request)) throw new ObserverError("scheduled-input-changed");
       const request = parsedRequest.data.schemaVersion === 10 ? { ...parsedRequest.data, schemaVersion: 9 as const } : parsedRequest.data;
       if (routed && !options.routing) throw new ObserverError("routing-unavailable");
       const collectedInput = routed ? structuredClone(request.evidenceBundle) : undefined;
-      const routing = routed && request.schemaVersion === 9 ? createProviderRouting(options.routing!, request, (receipt) => {
+      const routingOptions = frozen ? { ...options.routing!, assemblyIdentity: options.routing!, configuration: frozen.routing, executionScope: options.mode === "production" ? "live" as const : "protocol-fixture" as const } : options.routing!;
+      const routing = routed && request.schemaVersion === 9 ? createProviderRouting(routingOptions, request, (receipt) => {
         const safe = RoutingReceiptSchema.parse(receipt);
         const payload = JSON.stringify(safe);
         if (Buffer.byteLength(payload) > Math.min(MAX_ROUTING_AUDIT_BYTES, safe.configuration.limits.maxAuditBytes)) throw new ObserverError("routing-audit-capacity-exceeded");
@@ -318,11 +376,14 @@ export function createObserver(options: ObserverOptions) {
       const editionRunner = routing ?? options.editionRunner;
       const verifier = routing ?? options.verifier;
       try {
-      const requestPolicies = () => { try { return currentPolicies(); } catch (error) { if ((request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) return []; throw error; } };
+      const requestPolicies = () => { try {
+        const current = currentPolicies();
+        return frozen ? frozen.policies.filter((source) => JSON.stringify(source) === JSON.stringify(current.find((entry) => entry.sourceId === source.sourceId))) : current;
+      } catch (error) { if ((request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) return []; throw error; } };
       const frozenAtUtc = (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? (options.clock ?? (() => new Date().toISOString()))() : undefined;
-      const discourseConfiguration = (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? DiscourseConfigurationSchema.parse(options.discourse?.configuration ?? { schemaVersion: 1, version: 1, groups: [] }) : undefined;
+      const discourseConfiguration = (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? DiscourseConfigurationSchema.parse(frozen?.discourse ?? options.discourse?.configuration ?? { schemaVersion: 1, version: 1, groups: [] }) : undefined;
       const repromotion = request.schemaVersion === 9 ? (() => {
-        try { return GitHubRepromotionSnapshotSchema.parse(options.github?.repromotionSnapshot?.(request.evidenceBundle.cutoffUtc) ?? { schemaVersion: 1, github: { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2 }, developments: emptyDevelopments(request.evidenceBundle.cutoffUtc) }); }
+        try { return GitHubRepromotionSnapshotSchema.parse(frozen?.github ?? options.github?.repromotionSnapshot?.(request.evidenceBundle.cutoffUtc) ?? { schemaVersion: 1, github: { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2 }, developments: emptyDevelopments(request.evidenceBundle.cutoffUtc) }); }
         catch { return GitHubRepromotionSnapshotSchema.parse({ schemaVersion: 1, github: { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2, reasons: ["github-observation-unavailable"] }, developments: emptyDevelopments(request.evidenceBundle.cutoffUtc) }); }
       })() : undefined;
       const capturedDevelopment = repromotion ? developmentCapture(`${request.businessDate}-v1`, request.businessDate, request.evidenceBundle.cutoffUtc, repromotion) : null;
@@ -347,7 +408,7 @@ export function createObserver(options: ObserverOptions) {
         else request.evidenceBundle.evidence = request.evidenceBundle.evidence.filter((evidence) => !rejectedIds.has(evidence.id));
         request.editions = request.editions.map((entry) => ({ ...entry, evidenceIds: entry.evidenceIds.filter((id) => !rejectedIds.has(id)) }));
       }
-      const interestProfile = request.schemaVersion === 4 || request.schemaVersion === 5 || (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? interest.snapshot() : undefined;
+      const interestProfile = request.schemaVersion === 4 || request.schemaVersion === 5 || (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? frozen?.interest ?? interest.snapshot() : undefined;
       const rankingHistory = request.schemaVersion === 8 || request.schemaVersion === 9 ? githubHistory(request.businessDate, request.evidenceBundle.cutoffUtc) : undefined;
       const eventHistory = request.schemaVersion === 9 ? developmentHistoryRead((scope) => {
         if (repromotion!.github.runs.length && scope.authorize(repromotion!) !== null) throw new ObserverError("github-publication-input-changed");
@@ -436,7 +497,9 @@ export function createObserver(options: ObserverOptions) {
       let publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
       const validFixtureRun = (result: AgentResult) => {
         const protocolFixture = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === "protocol-fixture" && verifier;
-        return (result.provider === "fixture" || !!protocolFixture) && result.startedAtUtc >= bundle.cutoffUtc &&
+        const liveRun = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === `${result.provider}-cli` && result.execution.processKind === `${result.provider}-cli` &&
+          result.execution.modelTransport === (result.provider === "codex" ? "openai-api" : "anthropic-api");
+        return (options.mode === "production" ? liveRun : result.provider === "fixture" || !!protocolFixture) && result.startedAtUtc >= bundle.cutoffUtc &&
           result.startedAtUtc <= result.finishedAtUtc && result.finishedAtUtc <= publishedAtUtc;
       };
       if (request.schemaVersion !== 1) {
@@ -691,7 +754,7 @@ export function createObserver(options: ObserverOptions) {
       if (routing) {
         routing.authorize(record.stories.length > 0);
         if (record.schemaVersion !== 10) throw new ObserverError("routing-record-invalid");
-        record = finalizeRoutedRecord(record, routing.freeze());
+        record = finalizeRoutedRecord(record, routing.freeze(), frozen && options.mode === "production" ? "scheduled" : undefined);
       }
       record = ReportRecordSchema.parse(record);
       if ((record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) && !consistentRecord(record)) throw new ObserverError("canonical-record-invalid");
@@ -702,7 +765,7 @@ export function createObserver(options: ObserverOptions) {
           schemaVersion: 1, id: `${request.businessDate}-v1`, briefId: request.businessDate,
           businessDate: request.businessDate, version: 1,
           publishedAtUtc,
-          revisionReason: "initial", previousVersionId: null, provenance: "test-fixture",
+          revisionReason: "initial", previousVersionId: null, provenance: frozen && options.mode === "production" ? "scheduled" : "test-fixture",
           reportRecordId: record.id, canonicalMarkdownSha256: digest(canonicalMarkdown),
           ...(record.schemaVersion === 11 || record.schemaVersion === 10 || record.schemaVersion === 9 || record.schemaVersion === 8 || record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7) ? { schemaVersion: record.schemaVersion - 1, editorialContract: record.editorialContract, reportRecordSha256: digest(JSON.stringify(record)) } : {}),
         },
@@ -728,6 +791,7 @@ export function createObserver(options: ObserverOptions) {
           database.prepare("INSERT INTO reports (id,payload,development_capture_sha256) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING").run(report.version.id, JSON.stringify(report), capturedDevelopment);
         if (insertion.changes === 0) throw new ObserverError("version-already-exists");
         if (routing) { routing.authorize(report.record.stories.length > 0); routing.complete(report.version.id); }
+        if (frozen) schedule.published(request.businessDate, report.version.id, clock());
         if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("COMMIT");
       } catch (error) { if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("ROLLBACK"); throw error; }
       return report.version;
@@ -811,7 +875,8 @@ export function createObserver(options: ObserverOptions) {
       }
       return report;
     },
-    close() { database.close(); },
+    close() { schedule.close(); database.close(); },
   };
+  return observer;
 }
 export type Observer = ReturnType<typeof createObserver>;

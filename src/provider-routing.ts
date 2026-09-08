@@ -21,13 +21,15 @@ function validVerification(value: unknown, context: VerificationInput): Verifica
   return parsed.data;
 }
 export interface RoutingOptions {
+  executionScope?: "protocol-fixture" | "live";
+  assemblyIdentity?: object;
   configuration: unknown;
   eligibility(): unknown;
   providers: Partial<Record<Provider, { editions: Partial<Record<Edition, AgentRunner>>; verifier: SemanticVerifier }>>;
   clock?: () => string;
 }
 interface AssemblyState { cleanupUnverified: boolean; active: number; waiters: Set<() => void>; externalActive: number; externalWaiters: Set<() => void>; maxProcesses: number; maxExternal: number }
-const assemblyStates = new WeakMap<RoutingOptions, AssemblyState>();
+const assemblyStates = new WeakMap<object, AssemblyState>();
 export class RoutingBoundaryError extends Error {}
 // Each binding owns its identity and ledger; it never discovers a run via a mutable latest-run pointer.
 export function createProviderRouting(options: RoutingOptions, task: SixEditionRequest, persist: (receipt: RoutingReceipt) => void,
@@ -35,8 +37,9 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
   const configuration = RoutingConfigurationSchema.parse(options.configuration), clock = options.clock ?? (() => new Date().toISOString());
   const deadline = performance.now() + configuration.limits.totalTimeoutMs;
   const remaining = () => Math.max(0, deadline - performance.now());
-  let assembly = assemblyStates.get(options);
-  if (!assembly) { assembly = { cleanupUnverified: false, active: 0, waiters: new Set(), externalActive: 0, externalWaiters: new Set(), maxProcesses: configuration.limits.maxConcurrentProcesses, maxExternal: configuration.limits.maxConcurrentExternalRequests }; assemblyStates.set(options, assembly); }
+  const assemblyIdentity = options.assemblyIdentity ?? options;
+  let assembly = assemblyStates.get(assemblyIdentity);
+  if (!assembly) { assembly = { cleanupUnverified: false, active: 0, waiters: new Set(), externalActive: 0, externalWaiters: new Set(), maxProcesses: configuration.limits.maxConcurrentProcesses, maxExternal: configuration.limits.maxConcurrentExternalRequests }; assemblyStates.set(assemblyIdentity, assembly); }
   const authorizeAssembly = () => {
     if (assembly.maxProcesses !== configuration.limits.maxConcurrentProcesses || assembly.maxExternal !== configuration.limits.maxConcurrentExternalRequests) throw new RoutingBoundaryError("assembly-configuration-changed");
   };
@@ -105,7 +108,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       }
       latestQualification.set(provider, configurationSha256);
     }
-    return matching.length === 1 && matching[0]!.enabled && matching[0]!.accountEligible && matching[0]!.regionEligible && matching[0]!.checkedAtUtc <= now && matching[0]!.validUntilUtc > now && matching[0]!.scope === "protocol-fixture";
+    return matching.length === 1 && matching[0]!.enabled && matching[0]!.accountEligible && matching[0]!.regionEligible && matching[0]!.checkedAtUtc <= now && matching[0]!.validUntilUtc > now && matching[0]!.scope === (options.executionScope ?? "protocol-fixture");
   };
   const eligible = (provider: Provider) => !isolatedProviders.has(provider) && qualificationEligible(provider);
   const selected = new Map<Edition, Provider>();
@@ -184,6 +187,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       if (!verifier) throw new RoutingBoundaryError("verifier-unavailable");
       let result = await Promise.race([verifier.verify(structuredClone(input), { signal, dispatchControl: dispatchControl(attempt), semanticAttempt: { id: attempt.id, inputSha256: input.inputSha256 } }), cleanupBoundary]);
       const host = readTrustedSemanticRun(result);
+      if (options.executionScope === "live" && (!host || host.execution?.provenance !== `${provider}-cli` || host.execution.processKind !== `${provider}-cli` || host.execution.modelTransport !== (provider === "codex" ? "openai-api" : "anthropic-api"))) throw new RoutingBoundaryError("live-semantic-execution-required");
       if (host) {
         attempt.execution = host.execution ?? null; attempt.usageSource = host.usage?.source ?? "unknown";
         attempt.usage = { inputTokens: host.usage?.inputTokens ?? null, outputTokens: host.usage?.outputTokens ?? null, costUsd: host.usage?.costUsd ?? null };
