@@ -279,6 +279,8 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
         });
         try {
           result = AgentResultSchema.parse(await Promise.race([runner.run(ProduceRequestSchema.parse(external), { signal, dispatchControl: dispatchControl(attempt) }), cleanupBoundary]));
+          attempt.execution = result.execution ?? null;
+          attempt.usageSource = result.usage?.source ?? "unknown";
           if (result.execution?.cleanup === "unverified" || result.status !== "succeeded" && result.failure.category === "cleanup-failed") assembly.cleanupUnverified = true;
           if (result.taskId !== attempt.id || result.provider !== attempt.provider || result.model !== (attempt.provider === "codex" ? "gpt-5.6-sol" : "claude-sonnet-4-6") || result.evidenceBundleId !== input.evidenceBundle.id || result.configurationId !== input.configurationId ||
             result.status === "succeeded" && result.stories.some((story) => story.schemaVersion !== 2 || story.edition !== edition || story.claims.some((claim) => claim.evidenceIds.some((id) => !assigned.evidenceIds.includes(id))))) throw new RoutingBoundaryError("invalid-output");
