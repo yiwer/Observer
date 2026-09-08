@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
+import MarkdownIt from "markdown-it";
 import { CollectedEvidenceSchema, CorrectionRecordSchema, PublishedReportSchema, editionNames, type CollectedEvidence, type PublishedReport, type SixEditionRequest } from "./contracts.ts";
 import { type SemanticVerifier } from "./gate-contracts.ts";
 import { policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
@@ -23,6 +24,28 @@ interface Dependencies {
 }
 class CorrectionFailure extends Error {}
 function fail(reason: string): never { throw new CorrectionFailure(reason); }
+// Parse only; this never renders HTML or follows links. Canonical anchors belong
+// to the renderer (ordinal story-N, possibly vN-prefixed), not business story IDs.
+const canonicalParser = new MarkdownIt("commonmark", { html: true, linkify: false, typographer: false });
+function sectionReferences(markdown: string) {
+  const anchors = new Set<string>(), targets = new Set<string>();
+  const visit = (tokens: ReturnType<typeof canonicalParser.parse>): void => {
+    for (const token of tokens) {
+      if (token.type === "html_inline" || token.type === "html_block") {
+        for (const match of token.content.matchAll(/<a\s+id="([^"]+)"\s*>/g)) anchors.add(match[1]!);
+      }
+      if (token.type === "link_open") {
+        const href = token.attrGet("href");
+        if (href?.startsWith("#")) {
+          try { targets.add(decodeURIComponent(href.slice(1))); } catch { /* malformed fragments cannot name a rendered anchor */ }
+        }
+      }
+      if (token.children) visit(token.children);
+    }
+  };
+  visit(canonicalParser.parse(markdown, {}));
+  return { anchors, targets };
+}
 export function correctionPublisher(database: DatabaseSync, dependencies: Dependencies) {
   initializeCorrectionQueue(database);
   const { clock } = dependencies;
@@ -135,8 +158,18 @@ export function correctionPublisher(database: DatabaseSync, dependencies: Depend
       for (const edition of Object.keys(editionNames) as Edition[]) {
         let text: string;
         try { text = editionMarkdown(previous, edition); } catch { continue; }
-        if (original.some((entry) => text.includes(escapeMarkdown(entry.claim.text)) || text.includes(`#story-${entry.storyId}`))) affectedEditions.add(edition);
+        if (original.some((entry) => text.includes(escapeMarkdown(entry.claim.text)))) affectedEditions.add(edition);
         sections.push({ edition, sourceVersionId: sectionSource(edition), markdown: text });
+      }
+      const references = sections.map((section) => ({ edition: section.edition, ...sectionReferences(section.markdown) }));
+      // Replacing an Edition removes every old anchor it owned, including other
+      // stories. Expand to a fixed point so no inherited section depends on any
+      // removed section. At most six Editions can be added; unrelated text stays exact.
+      for (let pass = 0; pass < sections.length; pass++) {
+        const removedAnchors = new Set(references.filter((entry) => affectedEditions.has(entry.edition)).flatMap((entry) => [...entry.anchors]));
+        const dependent = references.filter((entry) => !affectedEditions.has(entry.edition) && [...entry.targets].some((target) => removedAnchors.has(target)));
+        if (!dependent.length) break;
+        for (const entry of dependent) affectedEditions.add(entry.edition);
       }
       const affected = [...affectedEditions], publishedAtUtc = clock(), version = previous.version.version + 1, versionId = `${date}-v${version}`;
       const stories = result.stories.filter((story) => story.id === input.finding.id || reason === "correction" && story.id === input.replacement?.id);
