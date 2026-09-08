@@ -1,17 +1,29 @@
 # 六栏 HTML 日报：采集接口与一次真实运行
 
-## 当前规则：仅昨天00:00至本次采集开始（2026-09-08更新）
+## 当前GitHub规则：官方每日Trending，不限项目发布日期
 
-当前权威策略为 `previous-day-midnight-v1`，不再采用本文后段历史批次的“近几日/观察快照可进入”规则。采集一开始就冻结 `cutoff`，`windowStart` 为当前北京时间日期的前一天00:00；`completedAt/retrievedAt`只记录操作完成，不能扩大发布范围。日期必须是当前北京时间日期，不通过传旧date伪造补报。
+按Owner最新选择，GitHub栏目只取[GitHub官方Trending每日榜单](https://github.com/trending?since=daily)，默认所有语言。原先新建仓库/近期Release/高星搜索替代来源已移除，Tavily不再为GitHub执行查询。历史已报道项目由编辑层降权，不改变采集榜单的真实名次。
+
+`scripts/daily-github-trending.mjs`导出`collectGitHubTrending()`，返回`{items,check,warnings}`：一次匿名GET、25秒超时、3MiB响应上限、至多50个榜单行，无新依赖、凭据或付费请求。非Trending页面、空榜、条目解析异常、超时/403/429均明确失败，绝不使用搜索结果替代。
+
+条目字段：通用`id/edition/title/url/source/text`；`repositoryUrl`；`evidenceKind:'github-trending'`；`trendPeriod:'daily'`；`trendingUrl`；真实页面顺序`trendingRank`；`observedAt/retrievedAt`；`publishedAt:null`。`stars/starsToday`只取页面可见整数，缺失或舍入缩写为null，并保留`starsText/starsTodayText`。页面的today不是Observer自行计算的北京时间增长口径。
+
+最终资格使用共享`sourceEligible(item,bundle)`布尔结果；GitHub检查当前采集的官方daily快照，不调用项目发布日期规则。其余五栏继续`publicationDecision`。中间轮转只限制候选数量，保留GitHub官方原名次；`enrichDaily`仅在尚未生成且从未取过Trending时补取一次，已有成功/失败记录均不自动重试。
+
+本轮唯一实际匿名读取：2026-09-08T10:40:40.017Z开始、10:40:43.052Z观察到16个项目，1–16名全部解析，stars/starsToday均可读。前3名为ayghri/i-have-adhd、cathrynlavery/diagram-design、openai/skills。本轮不重跑整套collect，不调用模型/SMTP，不执行测试、回归或hash验证。
+
+## 其他五栏规则：仅昨天00:00至本次采集开始（2026-09-08更新）
+
+五个新闻栏目权威策略为 `previous-day-midnight-v1`。采集一开始就冻结 `cutoff`，`windowStart` 为当前北京时间日期的前一天00:00；`completedAt/retrievedAt`只记录操作完成，不能扩大新闻发布范围。GitHub采用上节独立规则。日期必须是当前北京时间日期，不通过传旧date伪造补报。
 
 共享 helper `scripts/daily-window.mjs`：
 
 - `createDailyWindow({date,now})` 返回 `{date,windowStart,cutoff,timeZone,publicationPolicy}`。
 - `publicationDecision(publishedAtOrItem,window)` 返回 `{eligible,publishedAt,precision,reason,precisionNote?}`，供采集、生成、发送引用检查共用。
 - 缺发布日期、缺时区、窗口前、截止后都剔除。日精度保留原 `YYYY-MM-DD`；只接受完整日期落窗（本场景为昨天），今天仅日日期因不能证明早于截止而剔除，不伪造00:00发表时间。日精度的日期归窗按北京时间日历解释，并保留精度说明，不声明有精确发表小时。
-- `warningsByEdition`为每栏可读缺口，`filteredOut`按栏目/原因计数。内部候选可以先补元数据，但最终`items`全部通过同一helper，没有unknown逃生通道，也不以“没凑够7条”为由放宽范围。
+- `warningsByEdition`为每栏可读缺口，`filteredOut`按栏目/原因计数。内部候选可以先补元数据，但最终五个新闻栏目`items`全部通过发布时间helper，没有unknown逃生通道，也不以“没凑够7条”为由放宽范围。GitHub的null发布时间按独立快照规则处理。
 - HN帖子采用`story.time`，抽样评论也要求`comment.time`落窗。知乎热榜只作发现，最多3次匿名公开页面读取尝试找JSON-LD或文章发布日期；EditTime、热榜名次、观察时间均不能代替发表日期。拿不到就剔除，不能把权限成功误报为内容满足日期。
-- GitHub新仓库以`created_at`作为明确标注的创建时间代理，不证明首次公开时刻或项目此前不存在。老仓库只允许窗口内`release.published_at`的新版本说明或有日期的新报道，`pushed_at`仅发现候选。匿名最多8个老仓库取发布列表，只保留版本说明短片段，不下载源码/assets。[官方发布接口](https://docs.github.com/en/rest/releases/releases#list-releases)
+- GitHub旧版新仓库/Release日期规则已被官方Trending规则替代，下文旧批次采集结果仅为历史记录。
 - 本次新增2条AI、1条科技精确查询，所有搜索起点与昨日日期对齐；最终由时间helper兜底，不相信搜索过滤自动保证时间。旧事件可通过窗口内的新报道入选，稿件内历史背景不能冒充本期新发生。
 
 旧目录不重跑、不覆盖。新的严格窗口采集为 `data/daily-html/2026-09-08-editions-02`；具体结果以新目录`acquisition.json`为准。下方真实用量表属于此前合并邮件批次的历史证据，不是新批次用量或当前内容规则。
@@ -33,7 +45,7 @@ const evidence = await collectDaily({ date: '2026-09-08', outputDir: 'data/daily
 
 密钥只从进程环境或 Windows User 环境读入内存：`TAVILY_API_KEY`、`EXA_API_KEY`、`OPENALEX_API_KEY`、`ZHIHU_ACCESS_SECRET`、`ALPHAVANTAGE_API_KEY`；不提取 gh CLI 凭据，不使用 SMTP 或调用模型。HTTP 请求有时限；密钥请求禁止跟随重定向；独立服务失败保留中文说明而不取消其余来源。`outputDir/acquisition.json` 使用新建模式，存在时拒绝覆盖。
 
-常规采集包含公开 RSS、HN 热帖/少量评论、匿名 GitHub 多查询、Tavily 中英文检索、Exa 小量补充、OpenAlex 元数据、Alpha Vantage 新闻、知乎搜索及热榜。Tavily 对已有10个以下的官方/RSS候选补充网页片段，不重新搜索。HN 评论仅最多6个主题、每题2条排序靠前评论，不代表社区全貌。知乎问题标题内包含的断言只是被讨论的说法，不自动成为新闻事实。
+常规采集包含公开 RSS、HN 热帖/少量评论、GitHub官方每日Trending、Tavily中英文检索（不含GitHub）、Exa小量补充、OpenAlex元数据、Alpha Vantage新闻、知乎搜索及热榜。Tavily对已有10个以下的官方/RSS候选补充网页片段，不重新搜索。HN评论仅最多6个主题、每题2条排序靠前评论，不代表社区全貌。知乎问题标题内包含的断言只是被讨论的说法，不自动成为新闻事实。
 
 `supplementSocial`、`enrichDaily` 用于尚未生成任何 edition 文件的证据包定向补充；一旦发现 edition 文件就拒绝修改，不应在生成过程中调用。已完成操作检查避免重复计费。普通每日 `collectDaily` 自动包含同样的评论、热榜和补文，无需日常手工补录。
 

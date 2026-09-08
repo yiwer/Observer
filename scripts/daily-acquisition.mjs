@@ -3,7 +3,8 @@ import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SaxesParser } from 'saxes';
-import { createDailyWindow, publicationDecision } from './daily-window.mjs';
+import { createDailyWindow, publicationDecision, sourceEligible } from './daily-window.mjs';
+import { collectGitHubTrending } from './daily-github-trending.mjs';
 
 const EDITIONS = ['world', 'ai', 'finance', 'frontier', 'social', 'github'];
 const KEY_NAMES = ['TAVILY_API_KEY', 'EXA_API_KEY', 'OPENALEX_API_KEY', 'ZHIHU_ACCESS_SECRET', 'ALPHAVANTAGE_API_KEY'];
@@ -22,7 +23,6 @@ const QUERIES = {
   finance: ['global economy central bank inflation companies earnings financial news', '中国 财经 央行 统计局 上市公司 最新 消息'],
   frontier: ['science breakthrough space semiconductor robotics quantum energy materials latest research', '科技前沿 航天 芯片 机器人 量子 新能源 科研 最新进展', 'semiconductor robotics breakthrough research announced latest official'],
   social: ['Hacker News technology discussion controversy community today', '知乎 今日 热点 讨论 社会议题'],
-  github: ['GitHub open source developer tools AI agents new version release announcement'],
 };
 
 function credentials() {
@@ -132,34 +132,10 @@ export async function collectDaily({ date, outputDir } = {}) {
     return { sampled: ids.length, accepted, balance: 'not-applicable' };
   }));
 
-  jobs.push(() => task('GitHub', 'repository-search', async () => {
-    const day = since.slice(0, 10); let received = 0; let releasesChecked = 0; const limits = []; const reposSeen = new Set();
-    for (const query of [`created:>=${since} stars:>5 archived:false`, `topic:ai-agent stars:>100 pushed:>=${day} archived:false`, `topic:developer-tools stars:>100 pushed:>=${day} archived:false`]) {
-      const response = await request(`https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=8`, { headers: { Accept: 'application/vnd.github+json' } });
-      const data = response.json(); limits.push(response.headers);
-      if (data.incomplete_results) warnings.push('GitHub: 搜索返回incomplete_results，不是完整候选池');
-      for (const repo of data.items ?? []) {
-        if (reposSeen.has(repo.id)) continue; reposSeen.add(repo.id);
-        received++;
-        const metadata = { repositoryId: repo.id, repositoryUrl: repo.html_url, stars: repo.stargazers_count, forks: repo.forks_count, language: repo.language, createdAt: repo.created_at, pushedAt: repo.pushed_at, license: repo.license?.spdx_id ?? null, observedAt: new Date().toISOString() };
-        if (publicationDecision(repo.created_at, window).eligible) {
-          add('github', 'GitHub 官方 API · 新建仓库', { title: repo.full_name, url: repo.html_url, publishedAt: repo.created_at, text: `${repo.description || '未提供描述'}。语言：${repo.language || '未标注'}；stars ${repo.stargazers_count}；forks ${repo.forks_count}。这是观测时总量，不是今日增长。`, metadata: { ...metadata, evidenceKind: 'new-repository-metadata', publicationBasis: 'repository created_at：仓库创建时间代理，不证明首次转为公开的时间，也不证明项目此前不存在' } });
-        } else if (releasesChecked < (query.includes('ai-agent') ? 4 : 8)) {
-          releasesChecked++;
-          await task('GitHub', 'published-release', async () => {
-            const releaseResponse = await request(`https://api.github.com/repos/${repo.full_name}/releases?per_page=5`, { headers: { Accept: 'application/vnd.github+json' } });
-            const releases = releaseResponse.json(); let accepted = 0;
-            for (const release of releases) {
-              if (release.draft || !publicationDecision(release.published_at, window).eligible) continue;
-              add('github', 'GitHub 官方 API · 新发布版本', { title: `${repo.full_name} — ${release.name || release.tag_name}`, url: release.html_url, publishedAt: release.published_at, text: `项目用途：${repo.description || '未提供描述'}。本次版本：${release.tag_name}；${release.prerelease ? '预发布版本' : '正式发布版本'}。发布说明片段：${plain(release.body).slice(0, 1500)}`, metadata: { ...metadata, evidenceKind: 'repository-release', releaseTag: release.tag_name, publicationBasis: 'GitHub release.published_at；不是仓库pushed_at或本次观测时间' } }); accepted++;
-            }
-            return { received: releases.length, accepted, rateLimits: releaseResponse.headers };
-          });
-        } else rejected('github', 'old-repository-no-window-publication');
-      }
-    }
-    return { received, releasesChecked, rateLimits: limits, balance: 'not-applicable', authenticated: false };
-  }));
+  jobs.push(async () => {
+    const result = await collectGitHubTrending();
+    items.push(...result.items); checks.push(result.check); warnings.push(...result.warnings);
+  });
 
   if (hasKey('Tavily', 'TAVILY_API_KEY')) jobs.push(async () => {
     const headers = { Authorization: `Bearer ${keys.TAVILY_API_KEY}` };
@@ -242,7 +218,7 @@ export async function collectDaily({ date, outputDir } = {}) {
     for (const item of items.filter(row => row.edition === edition)) { if (!groups.has(item.source)) groups.set(item.source, []); groups.get(item.source).push(item); }
     let remaining = 40;
     while (remaining > 0 && [...groups.values()].some(group => group.length)) for (const group of groups.values()) if (group.length && remaining > 0) { selected.push(group.shift()); remaining--; }
-    if (!selected.some(item => item.edition === edition)) warnings.push(`${edition}: 本轮没有可用内容，需检查该栏数据源或权限；不会以凑满7条为门槛`);
+    if (!selected.some(item => item.edition === edition)) warnings.push(edition === 'github' ? 'GitHub：本轮未取得官方Trending榜单，不使用替代搜索榜；请查看访问或解析错误。' : `${edition}: 本轮没有可用内容，需检查该栏数据源或权限；不会以凑满7条为门槛`);
   }
   const completedAt = new Date().toISOString();
   const result = { ...window, date, retrievedAt: completedAt, completedAt, discoveryWindowStart: since, items: selected, checks, filteredOut, warnings: [...new Set(warnings)] };
@@ -269,19 +245,25 @@ function enforcePublicationWindow(bundle) {
   bundle.filteredOut ??= Object.fromEntries(EDITIONS.map(e => [e, {}]));
   bundle.warningsByEdition = Object.fromEntries(EDITIONS.map(e => [e, []]));
   bundle.items = bundle.items.filter(item => {
-    const result = publicationDecision(item.publishedAt, bundle);
-    if (!result.eligible) { const counts = bundle.filteredOut[item.edition]; counts[result.reason] = (counts[result.reason] ?? 0) + 1; return false; }
+    const eligible = sourceEligible(item, bundle);
+    const result = item.edition === 'github' ? { reason: 'invalid-official-trending-snapshot' } : publicationDecision(item.publishedAt, bundle);
+    if (!eligible) { const counts = bundle.filteredOut[item.edition]; counts[result.reason] = (counts[result.reason] ?? 0) + 1; return false; }
+    if (item.edition === 'github') return true;
     item.publishedAt = result.publishedAt; item.publicationPrecision = result.precision;
     if (result.precisionNote) item.publicationPrecisionNote = result.precisionNote;
     return true;
   });
   for (const edition of EDITIONS) {
+    if (edition === 'github') {
+      if (!bundle.items.some(item => item.edition === 'github')) bundle.warningsByEdition.github.push('本次没有取得有效的GitHub官方每日Trending快照；这不是项目发布日期不足，不会改用搜索结果凑榜。');
+      continue;
+    }
     const rejected = bundle.filteredOut[edition]; const unknown = (rejected['missing-publication-time'] ?? 0) + (rejected['missing-publication-timezone'] ?? 0); const imprecise = rejected['day-overlaps-cutoff'] ?? 0;
     if (unknown) bundle.warningsByEdition[edition].push(`${unknown}条候选缺少可确认的发布日期/时区，已剔除；观察、编辑或抓取时间不能代替发布。`);
     if (imprecise) bundle.warningsByEdition[edition].push(`${imprecise}条候选只有当日日期、无小时，无法确认早于截止，已剔除。`);
     if (!bundle.items.some(item => item.edition === edition)) bundle.warningsByEdition[edition].push('本次没有取得昨天北京时间00:00至采集截止之间发布的可用资料；未放宽时间范围或凑条数。');
   }
-  bundle.checks.push({ service: '发布日期范围', operation: 'strict-publication-window', status: 'ok', details: { windowStart: bundle.windowStart, cutoff: bundle.cutoff, rejectedByEdition: bundle.filteredOut, description: 'unknown、窗口外及不能确认早于截止的当日日精度条目均不进入生成资料' } });
+  bundle.checks.push({ service: '来源资格', operation: 'edition-source-policy', status: 'ok', details: { windowStart: bundle.windowStart, cutoff: bundle.cutoff, rejectedByEdition: bundle.filteredOut, description: '五个新闻栏目按发布时间过滤；GitHub仅接受当前采集的官方daily Trending快照，不限制项目发布日期' } });
 }
 
 function pagePublicationTime(html) {
@@ -310,6 +292,12 @@ function pagePublicationTime(html) {
 
 async function enrichBundle(bundle, keys) {
   if (bundle.publicationPolicy !== 'previous-day-midnight-v1') throw new Error('legacy-bundle-requires-new-collection');
+  // Existing successful or failed checks prevent retries during collection.
+  if (!bundle.checks.some(check => check.operation === 'official-trending-daily')) {
+    const trending = await collectGitHubTrending();
+    bundle.items = [...bundle.items.filter(item => item.edition !== 'github'), ...trending.items];
+    bundle.checks.push(trending.check); bundle.warnings.push(...trending.warnings);
+  }
   const redact = text => { for (const secret of Object.values(keys)) if (secret) text = text.split(secret).join('[redacted]'); return text; };
   const getJson = async (url, options = {}) => {
     const response = await fetch(url, { ...options, redirect: 'error', signal: AbortSignal.timeout(45000) });
