@@ -4,7 +4,7 @@ import { ObserverError, type Observer } from "./observer.ts";
 import { PrivateApiError } from "./private-access.ts";
 
 type Reader = Pick<Observer, "readReport"> & Partial<Pick<Observer, "readScheduledStatus" | "pairDevice" | "archiveHistory" | "syncArchive" |
-  "readArchive" | "readArchiveReport" | "createDownload" | "readDownload">>;
+  "readArchive" | "readArchiveReport" | "createDownload" | "readDownload" | "readPdf">>;
 async function jsonBody(request: IncomingMessage): Promise<unknown> {
   if (!request.headers["content-type"]?.startsWith("application/json")) throw new PrivateApiError("json-required", 415);
   const chunks: Buffer[] = []; let bytes = 0;
@@ -46,6 +46,12 @@ export async function startPrivateServer(observer: Reader, port = 0) {
         if (attachment) response.setHeader("Content-Disposition", `attachment; filename="${attachment}.md"`);
         response.end(value);
       };
+      const pdf = (value: Buffer, versionId: string) => {
+        response.setHeader("Content-Type", "application/pdf");
+        response.setHeader("Content-Disposition", `attachment; filename="${versionId}.pdf"`);
+        response.setHeader("Content-Length", value.length);
+        response.end(value);
+      };
       if (pair && observer.pairDevice) {
         response.statusCode = 201; response.end(JSON.stringify(observer.pairDevice(await jsonBody(request)))); return;
       }
@@ -57,13 +63,16 @@ export async function startPrivateServer(observer: Reader, port = 0) {
         response.end(JSON.stringify(selector ? observer.readArchiveReport(businessDate!, version ?? "latest", url.searchParams.get("edition"), credential) : observer.readArchive(businessDate!, credential))); return;
       }
       if (downloadRoute && observer.readDownload) {
-        markdown(observer.readDownload(downloadRoute[1]!, downloadRoute[2]!, url.searchParams.get("edition"), url.searchParams.get("token") ?? ""), downloadRoute[1]!); return;
+        const value = observer.readDownload(downloadRoute[1]!, downloadRoute[2]!, url.searchParams.get("edition"), url.searchParams.get("token") ?? "");
+        if (typeof value === "string") markdown(value, downloadRoute[1]!); else pdf(value, downloadRoute[1]!);
+        return;
       }
       if (statusRoute && observer.readScheduledStatus) { response.end(JSON.stringify(observer.readScheduledStatus(statusRoute[1]!, credential))); return; }
       if (reportRoute) {
         if (issueDownload && observer.createDownload) {
           response.end(JSON.stringify(observer.createDownload(reportRoute[1]!, url.searchParams.get("format") ?? "markdown", url.searchParams.get("edition"), credential))); return;
         }
+        if (reportRoute[2] === "pdf" && observer.readPdf) { pdf(observer.readPdf(reportRoute[1]!, credential, url.searchParams.get("edition")), reportRoute[1]!); return; }
         const report = observer.readReport(reportRoute[1]!, credential);
         if (reportRoute[2] === "pdf") throw new PrivateApiError("rendition-not-available", 404);
         if (reportRoute[2] === "markdown") markdown(report.canonicalMarkdown);

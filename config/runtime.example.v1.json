@@ -8,6 +8,7 @@
   "collectionDatabasePath": "../data/collection.sqlite",
   "taskRoot": "../data/agent-tasks",
   "collect": false,
+  "pdf": { "enabled": true },
   "routing": { "schemaVersion": 1, "version": 1, "primary": "codex" },
   "providers": {}
 }

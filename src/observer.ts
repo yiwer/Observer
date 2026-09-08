@@ -36,6 +36,7 @@ import { ScheduleConfigurationSchema, scheduledStore, type ScheduledSnapshot } f
 import { editionContent, permittedLinks, recoveryDeadline, recoveryEditions, revisionWindowOpen } from "./brief-recovery.ts";
 import { privateAccess, PrivateApiError } from "./private-access.ts";
 import { privateArchive, checkedDate, editionMarkdown, parseEdition } from "./private-archive.ts";
+import { pdfRenditions, PdfConfigurationSchema } from "./pdf-rendition.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -60,6 +61,7 @@ export interface ObserverOptions {
   github?: GitHubObservationReader;
   sourcePolicyReader?: () => unknown;
   routing?: RoutingOptions;
+  pdf?: { enabled?: boolean };
   schedule?: { configuration: unknown; runtimeConfiguration: ScheduledSnapshot["configuration"]; versions: Record<string, string> };
 }
 
@@ -182,6 +184,7 @@ export function createObserver(options: ObserverOptions) {
   const schedule = scheduledStore(database, clock);
   const access = privateAccess(database, options.ownerToken, clock);
   const archive = privateArchive(database, access, options.mode);
+  const pdf = pdfRenditions(database, clock, options.mode, PdfConfigurationSchema.parse(options.pdf ?? {}).enabled);
   const activeScheduled = new Map<string, ScheduledSnapshot>();
   function authenticate(credential: string | undefined) {
     try { return access.authenticate(credential); }
@@ -338,7 +341,8 @@ export function createObserver(options: ObserverOptions) {
     },
     createDownload(versionId: string, format: string, edition: string | null, credential: string | undefined) {
       const report = observer.readReport(versionId, credential), selected = parseEdition(edition);
-      if (format !== "markdown") throw new PrivateApiError("rendition-not-available", 404);
+      if (format === "pdf") pdf.read(report, selected);
+      else if (format !== "markdown") throw new PrivateApiError("rendition-not-available", 404);
       if (selected) editionMarkdown(report, selected);
       const grant = access.signDownload(versionId, format, selected, credential);
       const query = new URLSearchParams({ token: grant.token, ...(selected ? { edition: selected } : {}) });
@@ -347,11 +351,18 @@ export function createObserver(options: ObserverOptions) {
     readDownload(versionId: string, format: string, edition: string | null, token: string) {
       const selected = parseEdition(edition);
       access.authorizeDownload(token, versionId, format, selected);
-      if (format !== "markdown") throw new PrivateApiError("rendition-not-available", 404);
+      if (format !== "markdown" && format !== "pdf") throw new PrivateApiError("rendition-not-available", 404);
       // A verified object-bound grant supplies the read authority; current report
       // withdrawal/source permissions are still checked on every download.
       const report = observer.readReport(versionId, options.ownerToken);
+      if (format === "pdf") return pdf.read(report, selected);
       return selected ? editionMarkdown(report, selected) : report.canonicalMarkdown;
+    },
+    readPdf(versionId: string, credential: string | undefined, edition: string | null = null) {
+      return pdf.read(observer.readReport(versionId, credential), parseEdition(edition));
+    },
+    async processPdfRenditions(signal?: AbortSignal): Promise<void> {
+      await pdf.processNext((versionId) => observer.readReport(versionId, options.ownerToken), signal);
     },
     importInterestProfile(filePath: string) { return interest.import(filePath); },
     exportInterestProfile(filePath: string) { return interest.export(filePath); },
@@ -997,7 +1008,7 @@ export function createObserver(options: ObserverOptions) {
       }
       return report;
     },
-    close() { schedule.close(); database.close(); },
+    close() { pdf.close(); schedule.close(); database.close(); },
   };
   return observer;
 }
