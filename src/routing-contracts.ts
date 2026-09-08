@@ -16,17 +16,26 @@ export const RoutingLimitsSchema = z.strictObject({ version: z.literal(1).defaul
 export const RoutingConfigurationSchema = z.strictObject({ schemaVersion: z.literal(1), version: z.number().int().positive(), primary: ProviderSchema,
   limits: RoutingLimitsSchema.default({ version: 1, attemptTimeoutMs: 60000, totalTimeoutMs: 900000, cleanupTimeoutMs: 1000, maxConcurrentProcesses: 2, maxConcurrentExternalRequests: 2, maxModelRequestsPerAttempt: 4, maxExternalRequests: 336, maxAuditBytes: MAX_ROUTING_AUDIT_BYTES,
     maxResearchAttempts: 24, maxVerificationAttempts: 30, maxReviewAttempts: 30, sameProviderRetries: 0, maxObservedTokens: 2000000 }) });
-export const ProviderEligibilitySchema = z.strictObject({ version: z.number().int().positive(), provider: ProviderSchema, enabled: z.boolean(), accountEligible: z.boolean(), regionEligible: z.boolean(),
-  scope: z.enum(["protocol-fixture", "live"]), checkedAtUtc: utc, validUntilUtc: utc, evidenceReference: id });
+export const ProviderEligibilitySchema = z.strictObject({ version: z.number().int().positive(), provider: ProviderSchema, enabled: z.boolean(), accountEligible: z.boolean().nullable(), regionEligible: z.boolean().nullable(),
+  scope: z.enum(["protocol-fixture", "live"]), checkedAtUtc: utc, validUntilUtc: utc, evidenceReference: id,
+  nativeAuthorization: z.literal("owner-approved-existing-login").optional(), regionReview: z.literal("skipped-by-owner").optional() });
+export const NativeCodexAuthorizationSchema = ProviderEligibilitySchema.extend({ provider: z.literal("codex"), scope: z.literal("live"),
+  accountEligible: z.null(), regionEligible: z.null(), nativeAuthorization: z.literal("owner-approved-existing-login"), regionReview: z.literal("skipped-by-owner") });
+export function providerAuthorized(grant: z.infer<typeof ProviderEligibilitySchema>, scope: "live" | "protocol-fixture", now: string, native = false) {
+  if (!grant.enabled || grant.scope !== scope || grant.checkedAtUtc > now || grant.validUntilUtc <= now) return false;
+  if (native) return NativeCodexAuthorizationSchema.safeParse(grant).success;
+  return !grant.nativeAuthorization && !grant.regionReview && grant.accountEligible === true && grant.regionEligible === true;
+}
 export const RoutingResponseUsageSchema = z.strictObject({ request: z.number().int().min(1).max(8), inputTokens: z.number().int().nonnegative().nullable(), outputTokens: z.number().int().nonnegative().nullable(), costUsd: z.number().nonnegative().nullable() });
 export const RoutingAttemptSchema = z.strictObject({ id, edition: z.enum(["world-affairs", "ai", "finance", "frontier-technology", "social-discourse", "github-projects"]),
   role: z.enum(["research", "verification", "review"]), provider: ProviderSchema, status: z.enum(["started", "succeeded", "failed"]), inputSha256: sha, qualificationSha256: sha,
-  startedAtUtc: utc, finishedAtUtc: utc.nullable(), reason: id.nullable(), modelRequests: z.number().int().min(0).max(8),
+  startedAtUtc: utc, finishedAtUtc: utc.nullable(), reason: id.nullable(), modelRequests: z.number().int().min(0).max(8).nullable(),
   execution: AgentExecutionSchema.nullable(), usageSource: z.enum(["cli-turn", "cli-model-tree", "model-responses", "unknown"]),
   observedResponses: z.array(RoutingResponseUsageSchema).max(8),
   usage: z.strictObject({ inputTokens: z.number().int().nonnegative().nullable(), outputTokens: z.number().int().nonnegative().nullable(), costUsd: z.number().nonnegative().nullable() }) });
 export const RoutingReceiptSchema = z.strictObject({ schemaVersion: z.literal(1), rules: z.literal("observer-routing-v1"), runId: id, taskId: id, evidenceBundleId: id, configurationId: id,
   configuration: RoutingConfigurationSchema, configurationSha256: sha, externalRequests: z.number().int().min(0).max(672),
+  nativeProcessStarts: z.number().int().min(0).max(84).optional(), requestAccounting: z.literal("broker-requests-plus-unobserved-native-processes").optional(),
   qualifications: z.array(ProviderEligibilitySchema.extend({ configurationSha256: sha })).max(16),
   qualificationOverflow: ProviderEligibilitySchema.extend({ configurationSha256: sha }).nullable(),
   usageProtection: z.strictObject({ observedTokens: z.string().regex(/^(0|[1-9][0-9]{0,19})$/), unknownAttempts: z.number().int().min(0).max(84), accounting: z.enum(["not-observed", "complete", "incomplete"]), thresholdReached: z.boolean(), exceeded: z.boolean() }),

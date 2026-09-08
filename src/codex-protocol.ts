@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CandidateV2Schema, VerificationSchema, type VerificationInput, type Verification } from "./gate-contracts.ts";
 import type { ProduceRequest } from "./contracts.ts";
 import { CandidateOutput } from "./agent-candidate.ts";
+import { restoreCodexOptionals } from "./codex-output-schema.ts";
 
 export const codexVersion = "codex-cli 0.153.4";
 const count = z.number().int().nonnegative().nullable();
@@ -23,10 +24,10 @@ export function readCodexResult(stdout: string, task: ProduceRequest, edition: s
   });
 }
 
-export function readCodexVerification(stdout: string, input: VerificationInput) {
+export function readCodexVerification(stdout: string, input: VerificationInput, native = false) {
   let verification: Verification | null = null;
   const result = readCodexProtocol(stdout, (value) => {
-    const output = VerificationSchema.parse(value);
+    const output = VerificationSchema.parse(native ? restoreCodexOptionals(value, z.toJSONSchema(VerificationSchema, { target: "draft-7" })) : value);
     if (output.inputSha256 !== input.inputSha256) throw new Error();
     verification = output; return [];
   });

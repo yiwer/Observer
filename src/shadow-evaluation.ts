@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, unlinkSync
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
+import { liveExecutionMatches } from "./agent-execution.ts";
 import { SourceConfigurationSchema, policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
 import { DeletionContractSchema, contentDependencies } from "./retention.ts";
 import { PublishedReportSchema, type PublishedReport } from "./contracts.ts";
@@ -261,9 +262,7 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
         if (run.status !== "completed") continue;
         const result = run.result, execution = result.execution;
         if (result.provider !== provider) throw new Error("shadow-provider-identity-mismatch");
-        const transport = provider === "codex" ? "openai-api" : "anthropic-api";
-        if (owner.scope === "live" && execution && (execution.provenance !== `${provider}-cli` || execution.processKind !== `${provider}-cli` ||
-          ![transport, "not-used"].includes(execution.modelTransport))) throw new Error("shadow-live-execution-required");
+        if (owner.scope === "live" && execution && !liveExecutionMatches(execution, provider)) throw new Error("shadow-live-execution-required");
         if (owner.scope === "protocol-fixture" && execution && (execution.provenance !== "protocol-fixture" || execution.processKind !== "protocol-fixture" ||
           !["model-protocol-fixture", "not-used"].includes(execution.modelTransport))) throw new Error("shadow-fixture-execution-required");
         // A completed Edition can carry an actual failed/cancelled run, including
@@ -271,7 +270,7 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
         if (result.status !== "succeeded") continue;
         if (result.model !== identity.model || result.runnerVersion !== identity.runnerVersion || execution?.cliVersion !== identity.cliVersion) throw new Error("shadow-provider-identity-mismatch");
         if (!execution || execution.terminal !== "completed" || execution.exitCode !== 0) throw new Error("shadow-success-execution-required");
-        if (owner.scope === "live" && (execution.modelTransport !== transport || execution.cleanup !== "removed" || !execution.containerId)) throw new Error("shadow-live-execution-required");
+        if (owner.scope === "live" && !liveExecutionMatches(execution, provider, true)) throw new Error("shadow-live-execution-required");
       }
     }
   }

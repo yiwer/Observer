@@ -1,5 +1,5 @@
 import { readFileSync, statSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import { z } from "zod";
 import { createCollection, SourceConfigurationSchema } from "./collection.ts";
 import { createObserver } from "./observer.ts";
@@ -11,7 +11,7 @@ import { createOpenAIModelTransport } from "./codex-model-transport.ts";
 import { createAnthropicModelTransport } from "./claude-model-transport.ts";
 import { codexVersion } from "./codex-protocol.ts";
 import { claudeVersion } from "./claude-protocol.ts";
-import { ProviderEligibilitySchema, RoutingConfigurationSchema } from "./routing-contracts.ts";
+import { NativeCodexAuthorizationSchema, ProviderEligibilitySchema, providerAuthorized, RoutingConfigurationSchema } from "./routing-contracts.ts";
 import type { RoutingOptions } from "./provider-routing.ts";
 import { createGitHubObserver } from "./github-observations.ts";
 import { GitHubConfigurationSchema, DevelopmentConfigurationSchema } from "./github-contracts.ts";
@@ -23,8 +23,13 @@ import { EmailConfigurationSchema } from "./email-contracts.ts";
 import { createQqEmailTransport } from "./qq-email-transport.ts";
 import { PatrolConfigurationSchema } from "./correction-patrol.ts";
 import { runtimeSecret } from "./runtime-secrets.ts";
+import { nativeCodexModel, nativeCodexReasoningEffort, nativeCodexStatus } from "./codex-native.ts";
 
 const provider = z.strictObject({ enabled: z.boolean().default(false), image: z.string().min(1), eligibility: ProviderEligibilitySchema });
+const nativeCodex = z.strictObject({ kind: z.literal("codex-native"), enabled: z.boolean().default(false),
+  executable: z.string().min(1).refine(isAbsolute, "native-executable-must-be-absolute"),
+  model: z.literal(nativeCodexModel).default(nativeCodexModel), reasoningEffort: z.literal(nativeCodexReasoningEffort).default(nativeCodexReasoningEffort),
+  eligibility: NativeCodexAuthorizationSchema });
 export const ProductionConfigurationSchema = z.strictObject({
   schemaVersion: z.literal(1), configurationId: z.string().min(1).max(200),
   schedule: ScheduleConfigurationSchema,
@@ -32,7 +37,7 @@ export const ProductionConfigurationSchema = z.strictObject({
   databasePath: z.string().default("../data/observer.sqlite"), collectionDatabasePath: z.string().default("../data/collection.sqlite"),
   taskRoot: z.string().default("../data/agent-tasks"), collect: z.boolean().default(false),
   routing: RoutingConfigurationSchema,
-  providers: z.strictObject({ codex: provider.optional(), claude: provider.optional() }).default({}),
+  providers: z.strictObject({ codex: z.union([provider, nativeCodex]).optional(), claude: provider.optional() }).default({}),
   pdf: PdfConfigurationSchema.default({ enabled: true }),
   email: EmailConfigurationSchema.default({ enabled: false }),
   corrections: z.strictObject({ enabled: z.boolean().default(false) }).default({ enabled: false }),
@@ -50,8 +55,8 @@ function availableSecret(name: string): string | undefined {
   try { return runtimeSecret(name); } catch { return undefined; }
 }
 
-// Only explicitly enabled providers read their dedicated environment credential.
-// The existing isolated CLI + broker boundary owns every actual model invocation.
+// Native Codex uses the CLI's saved login. API containers retain their dedicated
+// credential/broker path; construction never starts either kind of model work.
 export function createProductionRuntime(configurationPath: string, ownerToken: string, clock = () => new Date().toISOString()) {
   const configuration = ProductionConfigurationSchema.parse(readJson(configurationPath));
   if (configuration.correctionPatrol.enabled && !configuration.corrections.enabled) throw new Error("patrol-requires-corrections-enabled");
@@ -67,17 +72,35 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   const suppressedSources = new Set<string>();
   const mastodon = configuration.discourse ? createMastodonAdapter({ clock }) : undefined;
   const credentialStates = new Map<string, "available" | "unavailable">();
+  const connectivity = new Map<string, { state: "succeeded" | "failed"; atUtc: string }>();
+  const observeResult = (name: string, value: unknown) => {
+    const result = value as { status?: string };
+    connectivity.set(name, { state: result?.status === "succeeded" ? "succeeded" : "failed", atUtc: clock() });
+    return value;
+  };
   for (const name of ["codex", "claude"] as const) {
     const entry = configuration.providers[name];
-    if ((!configuration.schedule.enabled && !configuration.corrections.enabled) || !entry?.enabled) continue;
+    if (!entry?.enabled) continue;
+    const native = "kind" in entry && entry.kind === "codex-native";
+    if (!native && !configuration.schedule.enabled && !configuration.corrections.enabled) continue;
     if (entry.eligibility.provider !== name || entry.eligibility.scope !== "live") throw new Error("invalid-live-provider-qualification");
-    if (!entry.eligibility.enabled || !entry.eligibility.accountEligible || !entry.eligibility.regionEligible || entry.eligibility.checkedAtUtc > clock() || entry.eligibility.validUntilUtc <= clock()) continue;
-    const key = availableSecret(name === "codex" ? "OBSERVER_OPENAI_API_KEY" : "OBSERVER_ANTHROPIC_API_KEY");
-    credentialStates.set(name, key ? "available" : "unavailable");
-    if (!key) continue; // Routing records runner-unavailable and publishes explicit gaps.
+    if (!providerAuthorized(entry.eligibility, "live", clock(), native)) continue;
     const common = { taskRoot: path(configuration.taskRoot), timeoutMs: configuration.routing.limits.attemptTimeoutMs,
       maxModelRequests: configuration.routing.limits.maxModelRequestsPerAttempt, clock };
     const editions: Partial<Record<keyof typeof editionNames, AgentRunner>> = {};
+    if ("kind" in entry && entry.kind === "codex-native") {
+      const options = { ...common, model: entry.model, runtime: { kind: "codex-native" as const, executable: entry.executable } };
+      for (const edition of Object.keys(editionNames) as Array<keyof typeof editionNames>) {
+        const runner = createCodexRunner({ ...options, edition });
+        editions[edition] = { async run(input, controls) { return observeResult(name, await runner.run(input, controls)); } };
+      }
+      const verifier = createCodexVerifier(options);
+      providers.codex = { editions, executionKind: "codex-native", verifier: { async verify(input, controls) { return observeResult(name, await verifier.verify(input, controls)); } } };
+      continue;
+    }
+    const key = availableSecret(name === "codex" ? "OBSERVER_OPENAI_API_KEY" : "OBSERVER_ANTHROPIC_API_KEY");
+    credentialStates.set(name, key ? "available" : "unavailable");
+    if (!key) continue; // Routing records runner-unavailable and publishes explicit gaps.
     if (name === "codex") {
       const options = { ...common, model: "gpt-5.6-sol", runtime: { kind: "codex-cli" as const, image: entry.image }, transport: createOpenAIModelTransport(key) };
       for (const edition of Object.keys(editionNames) as Array<keyof typeof editionNames>) editions[edition] = createCodexRunner({ ...options, edition });
@@ -88,6 +111,8 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
       providers.claude = { editions, verifier: createClaudeVerifier(options) };
     }
   }
+  const routing: RoutingOptions = { configuration: configuration.routing, executionScope: "live", providers, clock,
+    eligibility: () => Object.entries(configuration.providers).flatMap(([name, entry]) => entry ? [{ ...entry.eligibility, provider: name, enabled: entry.enabled && entry.eligibility.enabled }] : []) };
   const github = configuration.github ? createGitHubObserver({ databasePath: path(configuration.github.databasePath),
     configuration: () => configuration.github!.configuration, policies: () => sources().sources.filter((source) => !suppressedSources.has(source.sourceId)),
     credential: () => configuration.schedule.enabled && configuration.collect && configuration.github?.credentialExpiresAtUtc ? {
@@ -107,8 +132,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
       ...(github ? { compactGitHub: (published, ids) => github.maintainRetention(published, ids) } : {}),
       ...(configuration.retention.restoreContractPath ? { restoreContract: readJson(path(configuration.retention.restoreContractPath)) } : {}) },
     ...(mastodon ? { discourse: { configuration: configuration.discourse, adapter: mastodon } } : {}),
-    routing: { configuration: configuration.routing, executionScope: "live", providers, clock,
-      eligibility: () => Object.entries(configuration.providers).flatMap(([name, entry]) => entry ? [{ ...entry.eligibility, provider: name, enabled: entry.enabled && entry.eligibility.enabled }] : []) },
+    routing,
     schedule: { configuration: configuration.schedule, runtimeConfiguration: z.json().parse(JSON.parse(JSON.stringify(configuration))),
       versions: { application: process.env.OBSERVER_RELEASE_ID ?? "0.1.0", scheduler: "observer-scheduled-v1", recovery: "observer-recovery-v1", node: process.versions.node, codex: codexVersion, claude: claudeVersion,
         providerRuntime: JSON.stringify(configuration.providers) } },
@@ -118,7 +142,8 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   let collectionState = collection.status();
   let lastCollectionAtUtc: string | null = null, failedCollectionComponents = 0;
   return {
-    observer, enabled: configuration.schedule.enabled,
+    observer, collection, configuration, routing, enabled: configuration.schedule.enabled,
+    requiresContainerNode: Object.values(configuration.providers).some((entry) => entry?.enabled && !("kind" in entry)),
     databasePath: path(configuration.databasePath),
     taskRoot: path(configuration.taskRoot),
     storageDirectories: [...new Set([configuration.databasePath, configuration.collectionDatabasePath,
@@ -131,11 +156,16 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
         limits: { routing: configuration.routing.limits, schedule: configuration.schedule, patrol: configuration.correctionPatrol },
         providers: (["codex", "claude"] as const).map((name) => {
           const entry = configuration.providers[name], eligibility = entry?.eligibility;
-          const state = !entry?.enabled ? "disabled" : !eligibility?.enabled || !eligibility.accountEligible || !eligibility.regionEligible || eligibility.scope !== "live" ? "ineligible" :
+          const native = !!entry && "kind" in entry && entry.kind === "codex-native";
+          const state = !entry?.enabled ? "disabled" : !eligibility || !providerAuthorized(eligibility, "live", now, native) ? "ineligible-or-authorization-expired" :
             eligibility.checkedAtUtc > now || eligibility.validUntilUtc <= now ? "qualification-expired-or-future" :
-            !configuration.schedule.enabled && !configuration.corrections.enabled ? "work-disabled" : credentialStates.get(name) !== "available" ? "credential-unavailable" : "runner-configured";
+            native ? "runner-configured" : !configuration.schedule.enabled && !configuration.corrections.enabled ? "work-disabled" : credentialStates.get(name) !== "available" ? "credential-unavailable" : "runner-configured";
           return { provider: name, state, checkedAtUtc: eligibility?.checkedAtUtc ?? null, validUntilUtc: eligibility?.validUntilUtc ?? null,
-            credential: credentialStates.get(name) ?? "not-loaded", actualConnectivity: "not-probed" };
+            credential: native ? "cli-managed-not-read" : credentialStates.get(name) ?? "not-loaded",
+            actualConnectivity: connectivity.get(name)?.state ?? "not-probed", lastAttemptAtUtc: connectivity.get(name)?.atUtc ?? null,
+            ...(native ? { processKind: "codex-native", modelTransport: "codex-saved-login", authSource: "cli-managed-chatgpt-login",
+              regionReview: "skipped-by-owner", accountEligibility: "not-reviewed", model: nativeCodexModel, reasoningEffort: nativeCodexReasoningEffort,
+              requestLimits: "process-only;per-model-request-unobservable", native: nativeCodexStatus() } : {}) };
         }),
         collection: { active: collecting, lastCycleAtUtc: lastCollectionAtUtc, failedComponents: failedCollectionComponents,
           pendingProposals: collectionState.proposals.length, coverageGaps: collectionState.coverageGaps.map(({ sourceId, reason }) => ({ sourceId, reason })) },
