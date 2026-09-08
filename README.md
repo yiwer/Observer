@@ -39,7 +39,7 @@ npm run smoke
 
 先运行 `npm run build`，再通过环境设置 `OBSERVER_OWNER_TOKEN`（至少 32 字节的 Owner 随机密钥）。可选 `OBSERVER_DATABASE_PATH` 默认 `data/observer.sqlite`，`OBSERVER_PORT` 默认 `3000`；然后 `npm start`。不要把密钥提交到 Git、放在 URL 或写进报告。
 
-监听地址固定为 `127.0.0.1`。V1-17 已提供设备配对/撤销、持久增量同步、完整历史与短期签名下载；本地管理命令和稳定 API 见 [V1-17](docs/implementation/v1-17.md)，无 GMS 客户端可参考 [HTTP 样例](examples/device-sync.mjs)。远程 TLS 接入和公网部署仍未执行。
+原生监听默认 `127.0.0.1`；容器部署可显式设置 `OBSERVER_BIND_HOST=0.0.0.0`，不要直接向公网发布应用端口。可用 `OBSERVER_OWNER_TOKEN_FILE` 指向受控秘密文件，配置后读取失败不回退旧环境值。V1-17 已提供设备配对/撤销、持久增量同步、完整历史与短期签名下载；本地管理命令和稳定 API 见 [V1-17](docs/implementation/v1-17.md)，无 GMS 客户端可参考 [HTTP 样例](examples/device-sync.mjs)。[单节点 Linux 部署与 HTTPS 入口](docs/implementation/v1-23.md)已交付，实际容器启动、远程 TLS 和公网部署仍未执行。
 
 原精确报告 GET 路由继续保留，要求 `Authorization: Bearer <Owner 或设备凭证>` 并返回 `Cache-Control: no-store`；支持 vN，新增归档/同步路由见 V1-17：
 
@@ -62,6 +62,7 @@ npm run smoke
 - [更正与可读撤稿版本](docs/implementation/v1-20.md)：给定信号经过独立证据门后生成新版本，撤销失效旧正文访问，复用 PDF 和重大更正通知；不提供人工编辑界面。
 - [最近七日来源巡检](docs/implementation/v1-21.md)：复查已报道的获准精确 URL，持久记录任务、缺口与候选信号；正常页面变化或 404 不自动判作事实错误。默认06:00–07:15巡查，保护07:30冻结及08:30可读时段；排队不代表已完成纠错。
 - [到期清理与来源撤销](docs/implementation/v1-22.md)：清理关联正文、PDF、缓存与任务，保留允许的墓碑和邮件去重身份；GitHub 历史压缩保留发布依赖。提供受控维护与删除契约导出/应用命令，实际 Owner 数据尚未运行清理。
+- [单节点 Linux 运行与运维](docs/implementation/v1-23.md)：应用/HTTPS 部署配置、秘密文件、受控状态命令、有界 Agent 与看门狗、升级回滚。app 的 Docker socket 是高权限管理面，不交给 Agent；资源预算尚未实测，节点外备份由下一票完成。
 
 技术选择见 [ADR-0004](docs/adr/0004-start-with-typescript-and-atomic-sqlite-report-archive.md)，公共契约及证据见 [V1-01 实现说明](docs/implementation/v1-01.md)。
 

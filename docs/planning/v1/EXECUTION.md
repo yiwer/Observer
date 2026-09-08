@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- 2026-09-08 #23已接受并本地集成 `a24e9a3`（候选 `62252cc`，base `3bb7461`）。一次短静态 Standards/Spec 各0；作者唯一typecheck发现base的retention收窄错误，窄修仅静态、未复跑，不能标类型PASS。见[#23接受记录](acceptance/23-single-node-runtime.md)。已交付部署/HTTPS/秘密边界、状态、限额和回滚入口，未运行Docker或部署。下一票#24节点外一致性备份与恢复；无hash验收/新夹具/逐步或集成回归，代码未push。下方为历史状态。
+
 - #22已实际读回CLOSED（2026-09-08T04:41:00Z）；#23 OPEN已派发fresh-context `/root/implement_v1_23`，专属 `O:/GenesisCode/Observer-worktrees/v1-23` / `ticket/v1-23`，base `3bb7461`。补齐单节点Linux容器化运行、HTTPS/秘密隔离、持久运维状态与升级回滚入口；实际VPS/节点外存储/模型与SMTP不在本票操作。继续整块实现、最少必要块末检查、Root短静态review，无hash验收、夹具矩阵或逐步/集成回归。
 
 - 2026-09-08 #22已接受并本地集成 `f7cd014`（功能 `aa6d1ff`，集中修复 `3143e19`，base `69f5d97`）。短静态 Standards1、Spec2已修，最终修复仅静态核对；功能块末类型/一次微型删除路径发生在最终修复之前。见[#22接受记录](acceptance/22-retention-and-rights-removal.md)。无hash验收、追加夹具或逐步/集成回归，没有对Owner数据执行清理。下一票#23单节点运行；代码未push，真实环境未验收。下方为历史状态。
