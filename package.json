@@ -14,6 +14,7 @@
     "check": "npm run typecheck && npm test",
     "start": "node dist/main.js",
     "collect": "node dist/collect-main.js",
+    "devices": "node src/device-admin.ts",
     "prepare:codex": "node scripts/prepare-codex-runtime.mjs",
     "prepare:claude": "node scripts/prepare-claude-runtime.mjs"
   },

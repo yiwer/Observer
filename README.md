@@ -28,9 +28,9 @@ npm run build
 
 先运行 `npm run build`，再通过环境设置 `OBSERVER_OWNER_TOKEN`（至少 32 字节的 Owner 随机密钥）。可选 `OBSERVER_DATABASE_PATH` 默认 `data/observer.sqlite`，`OBSERVER_PORT` 默认 `3000`；然后 `npm start`。不要把密钥提交到 Git、放在 URL 或写进报告。
 
-监听地址固定为 `127.0.0.1`。远程 TLS 接入、短期签名链接、完整配对和撤销将在后续票实现；本票没有公网部署。
+监听地址固定为 `127.0.0.1`。V1-17 已提供设备配对/撤销、持久增量同步、完整历史与短期签名下载；本地管理命令和稳定 API 见 [V1-17](docs/implementation/v1-17.md)，无 GMS 客户端可参考 [HTTP 样例](examples/device-sync.mjs)。远程 TLS 接入和公网部署仍未执行。
 
-当前只提供两个 GET 路由，均要求 `Authorization: Bearer <Owner 密钥>` 并返回 `Cache-Control: no-store`：
+原精确报告 GET 路由继续保留，要求 `Authorization: Bearer <Owner 或设备凭证>` 并返回 `Cache-Control: no-store`；支持 vN，新增归档/同步路由见 V1-17：
 
 | 路由 | 返回 |
 |---|---|

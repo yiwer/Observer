@@ -34,6 +34,8 @@ import { MAX_ROUTING_AUDIT_BYTES, RoutingReceiptSchema, RoutingConfigurationSche
 import { finalizeRoutedRecord, routedMarkdown } from "./routed-publication.ts";
 import { ScheduleConfigurationSchema, scheduledStore, type ScheduledSnapshot } from "./scheduled-publication.ts";
 import { editionContent, permittedLinks, recoveryDeadline, recoveryEditions, revisionWindowOpen } from "./brief-recovery.ts";
+import { privateAccess, PrivateApiError } from "./private-access.ts";
+import { privateArchive, checkedDate, editionMarkdown, parseEdition } from "./private-archive.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -178,7 +180,13 @@ export function createObserver(options: ObserverOptions) {
   const clock = options.clock ?? (() => new Date().toISOString());
   const scheduleConfiguration = options.schedule ? ScheduleConfigurationSchema.parse(options.schedule.configuration) : undefined;
   const schedule = scheduledStore(database, clock);
+  const access = privateAccess(database, options.ownerToken, clock);
+  const archive = privateArchive(database, access, options.mode);
   const activeScheduled = new Map<string, ScheduledSnapshot>();
+  function authenticate(credential: string | undefined) {
+    try { return access.authenticate(credential); }
+    catch { throw new ObserverError("unauthorized"); }
+  }
 
   function storedRun(runId: string) {
     if (!database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='routing_runs'").get()) throw new ObserverError("not-found");
@@ -293,6 +301,58 @@ export function createObserver(options: ObserverOptions) {
   }
 
   const observer = {
+    // Local management only: HTTP intentionally exposes consumption, never issuance.
+    issueDevicePairing() { return access.issuePairing(); },
+    pairDevice(input: unknown) { return access.pair(input); },
+    listDevices() { return access.listDevices(); },
+    revokeDevice(deviceId: string) { return access.revokeDevice(deviceId); },
+    recordArchiveChange(input: unknown) { return archive.recordRevisionChange(input); },
+    archiveHistory(input: { cursor?: string; limit?: number }, credential: string | undefined) {
+      authenticate(credential); return archive.history(input);
+    },
+    syncArchive(input: { cursor?: string; limit?: number }, credential: string | undefined) {
+      authenticate(credential); return archive.sync(input);
+    },
+    readArchive(businessDate: string, credential: string | undefined) {
+      authenticate(credential); return archive.view(checkedDate(businessDate));
+    },
+    readArchiveReport(businessDate: string, requestedVersion: string, edition: string | null, credential: string | undefined) {
+      authenticate(credential);
+      const view = archive.view(checkedDate(businessDate)), selected = parseEdition(edition);
+      if (requestedVersion !== "latest" && !/^[1-9]\d*$/.test(requestedVersion)) throw new PrivateApiError("invalid-version");
+      const versionId = requestedVersion === "latest" ? view.latestVersionId : `${businessDate}-v${requestedVersion}`;
+      if (!versionId) throw new PrivateApiError("not-found", 404);
+      const report = observer.readReport(versionId, credential);
+      if (!selected) return { schemaVersion: 1, archive: view, report };
+      let source = view.versions.find((entry) => entry.version.id === versionId)!;
+      while (source.version.revisionReason === "completion" && source.version.previousVersionId && !source.completedEditions.includes(selected)) {
+        const parent = view.versions.find((entry) => entry.version.id === source.version.previousVersionId);
+        if (!parent) break;
+        source = parent;
+      }
+      const version = view.versions.find((entry) => entry.version.id === versionId)!;
+      return { schemaVersion: 1, businessDate, latestVersionId: view.latestVersionId, version: report.version, edition: selected,
+        canonicalMarkdown: editionMarkdown(report, selected), contentSourceVersionId: source.version.id,
+        researchAvailable: version.availableEditions.includes(selected), coverageGaps: version.coverageGaps.filter((gap) => gap.edition === selected),
+        delivery: view.delivery, fullReportPath: `/v1/reports/${versionId}` };
+    },
+    createDownload(versionId: string, format: string, edition: string | null, credential: string | undefined) {
+      const report = observer.readReport(versionId, credential), selected = parseEdition(edition);
+      if (format !== "markdown") throw new PrivateApiError("rendition-not-available", 404);
+      if (selected) editionMarkdown(report, selected);
+      const grant = access.signDownload(versionId, format, selected, credential);
+      const query = new URLSearchParams({ token: grant.token, ...(selected ? { edition: selected } : {}) });
+      return { schemaVersion: 1, versionId, format, edition: selected, expiresAtUtc: grant.expiresAtUtc, path: `/v1/downloads/${versionId}/${format}?${query}` };
+    },
+    readDownload(versionId: string, format: string, edition: string | null, token: string) {
+      const selected = parseEdition(edition);
+      access.authorizeDownload(token, versionId, format, selected);
+      if (format !== "markdown") throw new PrivateApiError("rendition-not-available", 404);
+      // A verified object-bound grant supplies the read authority; current report
+      // withdrawal/source permissions are still checked on every download.
+      const report = observer.readReport(versionId, options.ownerToken);
+      return selected ? editionMarkdown(report, selected) : report.canonicalMarkdown;
+    },
     importInterestProfile(filePath: string) { return interest.import(filePath); },
     exportInterestProfile(filePath: string) { return interest.export(filePath); },
     freezeScheduled(input: unknown) {
@@ -338,7 +398,7 @@ export function createObserver(options: ObserverOptions) {
       return schedule.outbox();
     },
     readScheduledStatus(businessDate: string, credential: string | undefined) {
-      if (!credential || !timingSafeEqual(Buffer.from(digest(credential)), Buffer.from(digest(options.ownerToken)))) throw new ObserverError("unauthorized");
+      authenticate(credential);
       const value = schedule.status(businessDate);
       if (!value) throw new ObserverError("not-found");
       return value;
@@ -856,11 +916,10 @@ export function createObserver(options: ObserverOptions) {
       return storedRun(runId);
     },
     readReport(versionId: string, credential: string | undefined): PublishedReport {
-      if (!credential || !timingSafeEqual(Buffer.from(digest(credential)), Buffer.from(digest(options.ownerToken)))) {
-        throw new ObserverError("unauthorized");
-      }
+      authenticate(credential);
       const row = database.prepare(`SELECT ${reportColumns} FROM reports WHERE id = ?`).get(versionId);
       if (!row) throw new ObserverError("not-found");
+      archive.assertReadable(versionId);
       const report = storedReport(row);
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
       if (!consistentArchive(report, versionId)) throw new ObserverError("canonical-integrity-failed");
