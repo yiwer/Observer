@@ -170,7 +170,7 @@ export function correctionPatrol(database: DatabaseSync, dependencies: Dependenc
       }
       taskSignal.throwIfAborted(); originals(target);
       const affected = original.claims.map((claim, index) => ({ referenceId: `original-${index + 1}`, versionId: target.sourceVersionId, storyId: target.storyId, claimId: claim.id }));
-      const materialId = inputDigest([affected.map(({ versionId, storyId, claimId }) => [versionId, storyId, claimId]), evidence.map((entry) => [entry.sourceId, entry.url, entry.policySha256, entry.contentSha256]).sort()]);
+      const materialId = inputDigest([target.expectedCurrentVersionId, affected.map(({ versionId, storyId, claimId }) => [versionId, storyId, claimId]), evidence.map((entry) => [entry.sourceId, entry.url, entry.policySha256, entry.contentSha256]).sort()]);
       const previous = database.prepare("SELECT signal_id FROM correction_patrol_materials WHERE id=?").get(materialId);
       if (previous) {
         database.prepare("UPDATE correction_patrol_tasks SET state='queued',material_id=?,signal_id=?,observed_at_utc=?,reason='patrol-repeated-material',owner=NULL,lease_until_utc=NULL WHERE id=? AND owner=?").run(materialId, String(previous.signal_id), clock(), String(row.id), owner);

@@ -138,27 +138,38 @@ export function createCollection(options: CollectionOptions) {
     CREATE TABLE IF NOT EXISTS correction_source_evidence (id TEXT PRIMARY KEY, source TEXT NOT NULL, payload TEXT NOT NULL, candidate_date TEXT);
     PRAGMA application_id = 1329746755; PRAGMA user_version = 1;
   `);
-  for (const source of sources) {
-    const previous = database.prepare("SELECT version, digest FROM policies WHERE source = ?").get(source.sourceId);
-    if (previous && (Number(previous.version) > source.version || Number(previous.version) === source.version && previous.digest !== policyDigest(source))) { database.close(); throw new Error("policy-version-conflict"); }
+  // Constructor and live reads share the same durable policy high-water mark.
+  // Removed sources keep their last identity, so removal cannot authorize rollback.
+  function admitPolicies(current: SourcePolicy[]) {
+    if (new Set(current.map((source) => source.sourceId)).size !== current.length) throw new Error("duplicate-source-id");
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      for (const source of current) {
+        const previous = database.prepare("SELECT version, digest FROM policies WHERE source = ?").get(source.sourceId);
+        if (previous && (Number(previous.version) > source.version || Number(previous.version) === source.version && previous.digest !== policyDigest(source))) throw new Error("policy-version-conflict");
+      }
+      for (const row of database.prepare("SELECT source, digest FROM policies").all()) {
+        const source = current.find((source) => source.sourceId === row.source);
+        if (!source || source.review.status !== "approved" || !source.collection.enabled || policyDigest(source) !== row.digest) {
+          database.prepare("DELETE FROM evidence WHERE source = ?").run(row.source!);
+          database.prepare("DELETE FROM correction_source_evidence WHERE source = ?").run(row.source!);
+          database.prepare("DELETE FROM source_state WHERE source = ?").run(row.source!);
+          database.prepare("DELETE FROM source_gaps WHERE source = ?").run(row.source!);
+        }
+      }
+      for (const source of current) database.prepare("INSERT INTO policies VALUES (?, ?, ?) ON CONFLICT(source) DO UPDATE SET version=excluded.version,digest=excluded.digest WHERE excluded.version>policies.version").run(source.sourceId, source.version, policyDigest(source));
+      database.exec("COMMIT");
+      return current;
+    } catch (error) { database.exec("ROLLBACK"); throw error; }
   }
-  database.exec("BEGIN IMMEDIATE");
-  for (const row of database.prepare("SELECT source, digest FROM policies").all()) {
-    const source = sources.find((source) => source.sourceId === row.source);
-    if (!source || source.review.status !== "approved" || !source.collection.enabled || policyDigest(source) !== row.digest) {
-      database.prepare("DELETE FROM evidence WHERE source = ?").run(row.source!);
-      database.prepare("DELETE FROM source_state WHERE source = ?").run(row.source!);
-      database.prepare("DELETE FROM source_gaps WHERE source = ?").run(row.source!);
-    }
-  }
-  for (const source of sources) database.prepare("INSERT OR REPLACE INTO policies VALUES (?, ?, ?)").run(source.sourceId, source.version, policyDigest(source));
-  database.exec("COMMIT");
+  function currentPolicies() { return admitPolicies(options.policyReader ? SourcePolicySchema.array().max(100).parse(options.policyReader()) : sources); }
+  try { admitPolicies(sources); } catch (error) { database.close(); throw error; }
   let lastGaps: CoverageGap[] = database.prepare("SELECT payload FROM source_gaps ORDER BY rowid").all().map((row) => JSON.parse(String(row.payload)) as CoverageGap);
   let lastOutcomes: Array<{ sourceId: string; reason: string }> = [];
   function purge() {
+    const current = currentPolicies();
     database.prepare("DELETE FROM evidence WHERE json_extract(payload, '$.expiresAtUtc') <= ?").run(clock());
     database.prepare("DELETE FROM correction_source_evidence WHERE json_extract(payload, '$.expiresAtUtc') <= ?").run(clock());
-    const current = options.policyReader ? SourcePolicySchema.array().parse(options.policyReader()) : sources;
     for (const row of database.prepare("SELECT id,source,payload FROM correction_source_evidence").all()) {
       const source = current.find((entry) => entry.sourceId === row.source);
       const item = JSON.parse(String(row.payload)) as CollectedEvidence;
@@ -174,9 +185,8 @@ export function createCollection(options: CollectionOptions) {
     // No validators: a feed 304 cannot stand in for a historical article observation.
     async rereadCorrection(target: { sourceId: string; url: string; title: string }, signal?: AbortSignal): Promise<CollectedEvidence> {
       purge();
-      const current = () => options.policyReader ? SourcePolicySchema.array().parse(options.policyReader()) : sources;
       const authorize = () => {
-        const source = current().find((entry) => entry.sourceId === target.sourceId);
+        const source = currentPolicies().find((entry) => entry.sourceId === target.sourceId);
         if (!source || source.review.status !== "approved" || !source.collection.enabled || !source.collection.readBody) throw new SourceReadError("patrol-read-forbidden");
         if (source.edition === "social-discourse" || source.edition === "github-projects") throw new SourceReadError("patrol-specialized-evidence-uncovered");
         if (!source.storage.retainRecordKeys || !source.storage.retentionHours || !["url", "title", "content", "contentSha256"].every((field) => source.collection.fields.includes(field as "url") && source.storage.fields.includes(field as "url"))) throw new SourceReadError("patrol-storage-forbidden");
@@ -314,7 +324,7 @@ export function createCollection(options: CollectionOptions) {
     },
     bundle(window: Pick<CollectedBundle, "businessDate" | "configurationId" | "windowStartUtc" | "cutoffUtc">, stage: "storage" | "model" | "distribution") {
       purge();
-      const bundleSources = options.policyReader ? SourcePolicySchema.array().parse(options.policyReader()) : sources;
+      const bundleSources = currentPolicies();
       const gaps = structuredClone(lastGaps);
       const evidence = [...database.prepare("SELECT payload FROM evidence ORDER BY rowid").all(), ...database.prepare("SELECT payload FROM correction_source_evidence WHERE candidate_date=? ORDER BY rowid").all(window.businessDate)].map((row) => JSON.parse(String(row.payload)) as CollectedEvidence)
         .filter((item) => {
