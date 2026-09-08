@@ -29,7 +29,11 @@ function parseTrending(html, observedAt) {
     const repositoryUrl = `https://github.com${path}`;
     const anchor = [...row.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)].find(([, href]) => href === `${path}/stargazers`);
     const starsText = anchor ? text(anchor[2]) : null;
-    const starsTodayText = text(row).match(/([\d,.]+(?:[kKmM])?)\s+stars?\s+today\b/)?.[1] ?? null;
+    // Only GitHub's right-aligned counter; a repository description may itself
+    // contain "N stars today" and must never supply the metric.
+    const counters = [...row.matchAll(/<span\b[^>]*class=["'][^"']*\bfloat-sm-right\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi)]
+      .map(([, content]) => text(content).match(/^([\d,.]+(?:[kKmM])?)\s+stars?\s+today$/)?.[1]).filter(Boolean);
+    const starsTodayText = counters.length === 1 ? counters[0] : null;
     const description = text(row.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1]).slice(0, 1400);
     const language = text(row.match(/<span\b[^>]*itemprop=["']programmingLanguage["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]) || null;
     const stars = count(starsText); const starsToday = count(starsTodayText);
