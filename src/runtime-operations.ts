@@ -12,6 +12,7 @@ export function operationalStorage(databasePath: string, businessDate: string) {
     const exists = (name: string) => !!database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name);
     const counts = (table: string) => exists(table) ? database.prepare(`SELECT state,COUNT(*) AS count FROM ${table} GROUP BY state`).all() : [];
     return {
+      recoverySnapshotId: exists("recovery_snapshot") ? database.prepare("SELECT snapshot_id FROM recovery_snapshot WHERE id=1").get()?.snapshot_id ?? null : null,
       scheduled: exists("scheduled_tasks") ? database.prepare(`SELECT business_date AS businessDate,state,attempts,
         frozen_at_utc AS frozenAtUtc,completed_at_utc AS completedAtUtc,latest_version_id AS latestVersionId,
         latest_readable_at_utc AS latestReadableAtUtc,content_state AS content,timing_state AS timing,

@@ -1,0 +1,52 @@
+services:
+  backup:
+    image: ${OBSERVER_APP_IMAGE:?Set the retained matching release image}
+    pull_policy: never
+    profiles: [backup]
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 2g
+    cpus: 2
+    restart: "no"
+    entrypoint: [node, dist/backup-admin.js]
+    command: [--config, /etc/observer/backup/config.json, status]
+    volumes:
+      - type: bind
+        source: ${OBSERVER_DATA_DIR:?Set persistent data directory}
+        target: /var/lib/observer
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_CONFIG_DIR:?Set reviewed config directory}
+        target: /etc/observer/config
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_BACKUP_CONFIG_DIR:?Set backup config directory}
+        target: /etc/observer/backup
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_BACKUP_AUTHORITY_DIR:?Set latest independent rights authority directory}
+        target: /etc/observer/backup-authority
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_BACKUP_SECRETS_DIR:?Set independently recoverable backup secret directory}
+        target: /run/backup-secrets
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_BACKUP_CONTROL_DIR:?Set private backup control directory}
+        target: /var/lib/observer-backup
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_RESTORE_DIR:?Set new isolated restore root}
+        target: /var/lib/observer-restores
+        bind: {create_host_path: false}
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m,uid=10001,gid=10001,mode=700
+    networks: [private, outbound]
+    logging: {driver: local, options: {max-size: 5m, max-file: "2"}}

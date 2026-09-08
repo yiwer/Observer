@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Observer publication and snapshot backup every minute
+
+[Timer]
+OnBootSec=90s
+OnUnitInactiveSec=60s
+AccuracySec=5s
+Unit=observer-backup.service
+
+[Install]
+WantedBy=timers.target
