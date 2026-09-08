@@ -305,3 +305,11 @@ Root核134/135完整before/after一致与实际日志SHA，亲读两个新增公
 高风险world在原研究Codex因AI违规被隔离后，由Claude主核验，reviewProvider=null、review-unavailable、零review attempt；canonical Markdown明确single-provider/review-unavailable，不把同一Provider或已隔离Provider当独立复核。资格前置四例分别enabled=false、accountEligible=false、regionEligible=false、过期，实际attempt全部Claude且四普通栏保留。另一例在Codex Runner开始时撤销资格版本，返回结果不采纳，唯一Codex attempt为failed/provider-ineligible，合格备份继续完成四栏。
 
 该例覆盖派发前与Runner返回采纳时资格，不代替排队醒后、逐broker派发、已选Provider最终发表前撤销或完整安全资格收据。当前固定Owned资格不证明Owner实际地区/账户资格；#14仍未冻结、未整票验收。
+
+## 资格快照与attempt绑定136–138
+
+Root核136–138完整before/after一致及实际日志SHA，亲读公开鉴权读取/重启用例与资格快照接线。136真实RED为缺少qualifications审计字段，SHA `8dd369879f40e7b8435a28e29b7f57fdf22841b93f332696f78f3477f4706e30`；137排除两Audit后43/43、0skip/0cancelled、exit0，SHA `ec4505ba686578f41657f77dd6c57645f8165d75f9f2788a13348c53bddfb8b0`；138类型exit0。
+
+Codex资格v1 enabled=true与后续v2撤销均保留，每个attempt通过qualificationSha256关联到同Provider且已启用、账户/地域合格、明确protocol-fixture范围的安全快照；无Provider配置重启run完整相等。快照按完整内容hash去重，不按provider/version掩盖同版本变动；输入资格数组最多2，快照最多16，并纳入审计转义字节预留与attempt摘要空间。
+
+Root要求第17个不同可信快照、同版本内容变化及终态后变化有明确派发前拒绝/审计结果；当前实现有qualification-capacity-exceeded/qualification-changed保护，但本片未直接验证这些容量分支，不计通过。普通快照绑定亦不能代替逐broker资格撤销、队列醒后复查及实际CLI身份/资格验证。作者继续原完整矩阵，当前无Docker或重型测试窗口在途。
