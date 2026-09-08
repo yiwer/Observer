@@ -12,12 +12,16 @@
 # 每次明确重采使用新的 run ID，日期必须为北京时间今天。
 node scripts/daily-html.mjs collect YYYY-MM-DD-update-01
 node scripts/daily-html.mjs generate YYYY-MM-DD-update-01
+# 仅需要更新未发稿排版时使用 render，不再调用模型：
+node scripts/daily-html.mjs render YYYY-MM-DD-update-01
 # 查看 data/daily-html/<run ID>/daily.html 后再明确发信：
 node scripts/daily-html.mjs send YYYY-MM-DD-update-01
 node scripts/daily-html.mjs status YYYY-MM-DD-update-01
 ```
 
 输出在 Git 忽略的 `data/daily-html/<run ID>/`。`acquisition.json` 包含来源片段、时间及脱敏权限检查；单栏结果可恢复复用；`report.json`、`daily.html`、`daily.md` 是本次实际生成稿。HTML 为邮件主正文，纯文本备选，不附 MD/PDF，无图片或跟踪资源，链接由实际采集记录提供而非模型自行生成。
+
+新闻发表时间检索上界与平台快照观察完成时间分别展示。知乎热榜没有发帖日期并不妨碍报告“今日观察到的话题”，但不能据此将题干主张当成今日已证实事件。`render` 只重新排版尚未尝试发送的报告；一旦有 SMTP 尝试记录就拒绝改动。
 
 搜索与元数据并不等于已阅读全文；模型提示要求保留厂商归因、论文阶段、日期不确定性。社交热度仅代表所采平台样本；GitHub 首次快照不是每日增长。已发新流程报告及旧流程导出记录中的 GitHub URL 作为重复报道降权输入，此处是编辑选题提示，不宣称沿用了旧生产排名公式。
 
