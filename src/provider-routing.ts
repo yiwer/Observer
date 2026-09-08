@@ -109,6 +109,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
   };
   const eligible = (provider: Provider) => !isolatedProviders.has(provider) && qualificationEligible(provider);
   const selected = new Map<Edition, Provider>();
+  const withdrawn = new Set<Edition>();
   const roleAvailable = (role: "research" | "verification" | "review") => receipt.attempts.filter((entry) => entry.role === role).length <
     configuration.limits[role === "research" ? "maxResearchAttempts" : role === "verification" ? "maxVerificationAttempts" : "maxReviewAttempts"];
   const attemptEvidence = new Map<string, string[]>();
@@ -214,6 +215,16 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
   };
   return {
     receipt: () => structuredClone(receipt),
+    publicationFailure(edition: Edition): string | null {
+      if (withdrawn.has(edition)) return "provider-ineligible";
+      const provider = selected.get(edition);
+      if (provider && !qualificationEligible(provider)) {
+        withdrawn.add(edition); selected.delete(edition);
+        decide(edition, provider, "provider-disabled");
+        return "provider-ineligible";
+      }
+      return null;
+    },
     freeze() { receipt.status = "ready"; receipt.collection = collection(); receipt.outcome = selected.size ? "research-available" : `agents-unavailable-collection-${receipt.collection.status}`; save(); return structuredClone(receipt); },
     authorize(hasPublishedContent = false) {
       authorizeAssembly();

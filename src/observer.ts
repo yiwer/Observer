@@ -7,7 +7,7 @@ import {
   editionNames, type AgentRunner, type AgentResult, type PublishedReport, type ReportRecord, type EditionRunner, type EditionResearch,
 } from "./contracts.ts";
 import { SourcePolicySchema, policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
-import type { Claim, SemanticVerifier } from "./gate-contracts.ts";
+import type { Claim, CandidateV2, SemanticVerifier } from "./gate-contracts.ts";
 import { evaluatePublication, gatedMarkdown } from "./publication-gate.ts";
 import { evaluateBatchedPublication } from "./batched-publication-gate.ts";
 import { arrangeEditions, sixEditionMarkdown, consistentRecord } from "./six-edition.ts";
@@ -569,6 +569,7 @@ export function createObserver(options: ObserverOptions) {
           ...(request.schemaVersion === 4 || request.schemaVersion === 5 || (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? { recordVerifierDispatch: true } : {}),
           ...(request.schemaVersion === 5 || (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? { domainRules: true } : {}),
           ...(discourse ? { beforeVerification: discourse.refresh, afterVerification: discourse.refresh, claimEligibility: discourse.claimEligibility, semanticEligibility: discourse.semanticEligibility } : {}),
+          ...(routing ? { claimEligibility: (story: CandidateV2, claim: Claim) => routing.publicationFailure(story.edition) ?? discourse?.claimEligibility(story, claim) ?? null } : {}),
           clock: options.clock ?? (() => new Date().toISOString()), modelPolicyCheck, publicationPolicyCheck: policyCheck });
         publishedAtUtc = completedAtUtc;
         const finalPolicyFailures = new Set<string>();
@@ -577,8 +578,9 @@ export function createObserver(options: ObserverOptions) {
           publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
           gated.publicationGate.checkedAtUtc = publishedAtUtc;
           for (const decision of gated.publicationGate.decisions) {
-            const claim = stories.find((story) => story.id === decision.storyId)?.claims.find((claim) => claim.id === decision.claimId);
-            const failure = discourse.modelFailure(decision.evidenceIds) ?? (decision.outcome !== "quarantined" && claim ? policyCheck(decision.evidenceIds, claim, publishedAtUtc) : null);
+            const story = stories.find((story) => story.id === decision.storyId);
+            const claim = story?.claims.find((claim) => claim.id === decision.claimId);
+            const failure = (story ? routing?.publicationFailure(story.edition) : null) ?? discourse.modelFailure(decision.evidenceIds) ?? (decision.outcome !== "quarantined" && claim ? policyCheck(decision.evidenceIds, claim, publishedAtUtc) : null);
             if (failure) { finalPolicyFailures.add(JSON.stringify([decision.storyId, decision.claimId])); decision.outcome = "quarantined"; decision.reason = failure; decision.policy = { status: "failed", reason: failure }; decision.semantic = { status: "not-evaluated", reason: "policy-failed" }; }
           }
           gated.stories = gated.stories.flatMap((story) => { const claims = story.claims.filter((claim) => gated.publicationGate.decisions.some((decision) => decision.storyId === story.id && decision.claimId === claim.id && decision.outcome === "published")); return claims.length ? [{ ...story, claims, title: claims.find((claim) => claim.kind === "fact")?.text ?? "陈述级核验" }] : []; });
