@@ -247,6 +247,12 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
           database.prepare("UPDATE email_delivery_events SET reason='rights-removed',provider_message_id=NULL WHERE delivery_id=?").run(delivery.id!);
           database.prepare("UPDATE email_reconciliations SET payload='{}' WHERE delivery_id=?").run(delivery.id!);
         }
+        if (has("owner_email_deliveries")) for (const delivery of database.prepare("SELECT request_id,state FROM owner_email_deliveries WHERE version_id=?").all(report.id)) {
+          if (["sending", "unknown", "accepted"].includes(String(delivery.state))) database.prepare("INSERT OR IGNORE INTO rights_email_scope VALUES(?,?,?,?)")
+            .run(`owner:${String(delivery.request_id)}`, report.id, "email-markdown-and-pdf-possibly-delivered-cannot-remote-erase", clock());
+          database.prepare("UPDATE owner_email_deliveries SET state=CASE WHEN state='sending' THEN 'unknown' WHEN state='pending' THEN 'failed' ELSE state END,reason='rights-removed',updated_at_utc=? WHERE request_id=?")
+            .run(clock(), delivery.request_id!);
+        }
         if (has("archive_events")) database.prepare("UPDATE archive_events SET kind='rights-removed',payload=? WHERE version_id=?")
           .run(JSON.stringify({ rightsRemoved: true, reason: "source-rights", version, retainVersionAudit: allow }), report.id);
         if (has("archive_revision_changes")) database.prepare("UPDATE archive_revision_changes SET reason_reference='rights-removed' WHERE version_id=? OR replacement_version_id=?").run(report.id, report.id);

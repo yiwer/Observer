@@ -266,10 +266,15 @@ export const BriefRecoverySchema = z.strictObject({
   links: z.array(z.strictObject({ evidenceId: id, edition, sourceId: id, policyVersion: z.number().int().positive(), policySha256: sha256,
     attribution: z.string().min(1), title: z.string().min(1), url: z.url({ protocol: /^https?$/ }), publishedAtUtc: utc.nullable() })),
 });
-export const RoutedRecordSchema = GitHubRepromotionRecordSchema.extend({ schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), routing: RoutingReceiptSchema, finalEditor: FinalEditorReceiptSchema, publicationMode: z.literal("scheduled").optional(), recovery: BriefRecoverySchema.optional() });
+export const OwnerPublicationSchema = z.strictObject({
+  contract: z.literal("observer-owner-publication-v1"), requestId: z.string().regex(/^[A-Za-z0-9:_-]{1,120}$/),
+  requestedAtUtc: utc, frozenAtUtc: utc, deadlineUtc: utc,
+  timing: z.literal("not-scheduled"), window: z.literal("rolling-24-hours"),
+});
+export const RoutedRecordSchema = GitHubRepromotionRecordSchema.extend({ schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), routing: RoutingReceiptSchema, finalEditor: FinalEditorReceiptSchema, publicationMode: z.enum(["scheduled", "owner-requested"]).optional(), recovery: BriefRecoverySchema.optional(), ownerPublication: OwnerPublicationSchema.optional() });
 export const CorrectionRecordSchema = GatedReportRecordSchema.omit({ agentResult: true }).extend({
   schemaVersion: z.literal(12), editorialContract: z.literal("observer-correction-v1"),
-  publicationMode: z.enum(["scheduled", "test-fixture"]),
+  publicationMode: z.enum(["scheduled", "test-fixture", "owner-requested"]),
   revision: z.strictObject({
     signalId: id, previousVersionId: id, revisionReason: z.enum(["correction", "withdrawal"]),
     purpose: z.literal("correction-review"), receivedAtUtc: utc,
@@ -313,7 +318,7 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
   schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v8"), reportRecordSha256: sha256,
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v9"), reportRecordSha256: sha256,
-  provenance: z.enum(["test-fixture", "scheduled"]),
+  provenance: z.enum(["test-fixture", "scheduled", "owner-requested"]),
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), reportRecordSha256: sha256,
   version: z.number().int().positive(), revisionReason: z.enum(["initial", "completion", "correction", "withdrawal"]), previousVersionId: id.nullable(),
@@ -322,7 +327,7 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(12), editorialContract: z.literal("observer-correction-v1"), reportRecordSha256: sha256,
   version: z.number().int().positive(), revisionReason: z.enum(["correction", "withdrawal"]), previousVersionId: id,
-  provenance: z.enum(["test-fixture", "scheduled"]),
+  provenance: z.enum(["test-fixture", "scheduled", "owner-requested"]),
   content: z.enum(["complete", "degraded", "links-only"]), timing: z.enum(["pending", "on-time", "delayed"]),
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;

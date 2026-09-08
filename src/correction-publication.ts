@@ -199,7 +199,7 @@ export function correctionPublisher(database: DatabaseSync, dependencies: Depend
       const coverageGaps = [...(previous.record.schemaVersion === 11 ? previous.record.recovery?.coverageGaps ?? previous.record.coverageGaps : previous.record.coverageGaps).filter((gap) => !affected.includes(gap.edition)),
         ...affected.map((edition) => ({ edition, reason: reason === "withdrawal" ? "withdrawn-unresolved-major-error" : "correction-replaces-affected-edition" }))];
       const previousAvailable = previous.record.schemaVersion === 12 ? previous.record.revision.availableEditions : previous.record.schemaVersion === 11 ? previous.record.recovery?.availableEditions ?? [] : previous.record.stories.map((story) => story.edition);
-      const record = CorrectionRecordSchema.parse({ schemaVersion: 12, editorialContract: "observer-correction-v1", publicationMode: dependencies.mode === "production" ? "scheduled" : "test-fixture", id: `${versionId}-record`, businessDate: date, businessTimezone: "Asia/Shanghai",
+      const record = CorrectionRecordSchema.parse({ schemaVersion: 12, editorialContract: "observer-correction-v1", publicationMode: previous.version.provenance, id: `${versionId}-record`, businessDate: date, businessTimezone: "Asia/Shanghai",
         configurationId: previous.record.configurationId, taskId: task.taskId, applicationVersion: "0.1.0", stories, coverageGaps,
         evidenceBundle: { ...task.evidenceBundle, schemaVersion: 3, sourceBundleSchemaVersion: 2, evidence: retained.map((entry) => {
           const source = policy(entry, publishedAtUtc, "distribution"), { content: _content, expiresAtUtc: _expires, trust: _trust, policyVersion, policySha256, ...metadata } = entry;

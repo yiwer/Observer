@@ -1,7 +1,7 @@
 import { createTransport } from "nodemailer";
 import MarkdownIt from "markdown-it";
 import type { PublishedReport } from "./contracts.ts";
-import { emailBudgets, type NotificationKind } from "./email-contracts.ts";
+import { emailBudgets, QqTransportConfigurationSchema, type NotificationKind } from "./email-contracts.ts";
 
 const escape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
 const markdown = new MarkdownIt("commonmark", { html: false, linkify: false, typographer: false });
@@ -55,4 +55,31 @@ export async function prepareEmail(input: {
   if (result.raw.length > emailBudgets.mimeBytes) throw new Error("email-over-mime-budget");
   // This exact encoded Buffer is sent; it is never composed again by the adapter.
   return result;
+}
+
+/** Full Canonical content in HTML/text, with both full attachments. No download grant. */
+export async function prepareOwnerRequestedEmail(input: {
+  report: PublishedReport; pdf: Buffer; address: string; messageId: string; atUtc: string;
+}) {
+  const { report, pdf } = input;
+  const { address } = QqTransportConfigurationSchema.parse({ enabled: true, transport: "qq-smtp", address: input.address });
+  if (report.version.provenance !== "owner-requested" || !pdf.length || pdf.length > emailBudgets.pdfBytes ||
+    !/^<[A-Za-z0-9._-]+@observer\.invalid>$/.test(input.messageId) || !Number.isFinite(Date.parse(input.atUtc))) throw new Error("email-invalid-owner-attachment-input");
+  todayOverview(report.canonicalMarkdown);
+  const subject = `Observer ${report.version.id} · 今日补发`;
+  const note = "Owner 显式补发，非定时准时交付。完整 Markdown 与 PDF 已附；本邮件不包含私有下载入口。";
+  const body = report.canonicalMarkdown.replace(/^<a id="(?:edition-|story-|v\d+-story-)[A-Za-z0-9:_-]+"><\/a>\r?\n/gm, "");
+  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head><body style="margin:0;background:#f5f5f2;color:#202020;font-family:Arial,sans-serif;line-height:1.7"><main style="max-width:800px;margin:auto;padding:24px"><p>${escape(note)}</p>${markdown.render(body)}</main></body></html>`;
+  const text = `${subject}\n${note}\n\n${report.canonicalMarkdown}`;
+  const md = Buffer.from(report.canonicalMarkdown, "utf8");
+  const composer = createTransport({ streamTransport: true, buffer: true, newline: "windows", disableFileAccess: true, disableUrlAccess: true });
+  const result = await composer.sendMail({ from: { name: "Observer", address }, to: address, subject, text, html,
+    date: new Date(input.atUtc), messageId: input.messageId, disableFileAccess: true, disableUrlAccess: true,
+    attachments: [
+      { filename: `${report.version.id}.md`, content: md, contentType: "text/markdown; charset=utf-8", contentDisposition: "attachment" },
+      { filename: `${report.version.id}.pdf`, content: pdf, contentType: "application/pdf", contentDisposition: "attachment" },
+    ],
+  });
+  if (!Buffer.isBuffer(result.message) || result.message.length > emailBudgets.mimeBytes) throw new Error("email-over-mime-budget");
+  return { raw: result.message, html, markdown: report.canonicalMarkdown, text, attachedPdf: true as const, attachedMarkdown: true as const };
 }

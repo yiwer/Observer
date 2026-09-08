@@ -1,10 +1,16 @@
 import SMTPConnection from "nodemailer/lib/smtp-connection";
-import { EmailConfigurationSchema, emailBudgets, type EmailOutcome, type EmailTransport } from "./email-contracts.ts";
+import { EmailConfigurationSchema, QqTransportConfigurationSchema, emailBudgets, type EmailOutcome, type EmailTransport } from "./email-contracts.ts";
 
 /** Lazy secrets, fixed TLS endpoint, no verify/preflight and no retries or receipts invented. */
 export function createQqEmailTransport(configuration: unknown, readKey: () => string | undefined): EmailTransport {
   const checked = EmailConfigurationSchema.parse(configuration);
   if (!checked.enabled) throw new Error("email-disabled");
+  return createQqAttachmentTransport({ enabled: true, transport: checked.transport, address: checked.address }, readKey);
+}
+
+/** Explicit local attachment delivery requires no externally hosted download URL. */
+export function createQqAttachmentTransport(configuration: unknown, readKey: () => string | undefined): EmailTransport {
+  const checked = QqTransportConfigurationSchema.parse(configuration);
   let closed = false;
   const active = new Set<() => void>();
   return {

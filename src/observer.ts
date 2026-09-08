@@ -38,12 +38,14 @@ import { privateAccess, PrivateApiError } from "./private-access.ts";
 import { privateArchive, checkedDate, editionMarkdown, parseEdition } from "./private-archive.ts";
 import { pdfRenditions, PdfConfigurationSchema } from "./pdf-rendition.ts";
 import { emailDeliveries } from "./email-delivery.ts";
-import { EmailConfigurationSchema, type EmailOptions, type NotificationKind } from "./email-contracts.ts";
+import { EmailConfigurationSchema, type EmailOptions, type EmailTransport, type NotificationKind } from "./email-contracts.ts";
 import { correctionPublisher, type CorrectionOptions } from "./correction-publication.ts";
 import { enqueueCorrection, correctionStatus } from "./correction-queue.ts";
 import { correctionMarkdown } from "./correction-rendering.ts";
 import { correctionPatrol, type PatrolOptions } from "./correction-patrol.ts";
 import { initializeRetention, retentionLifecycle } from "./retention.ts";
+import { OwnerPublishRequestSchema, ownerPublicationMetadata, ownerPublicationStore, ownerPublicationWindow, type OwnerPublication } from "./owner-publication.ts";
+import { ownerEmailDeliveries } from "./owner-email.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -200,10 +202,12 @@ export function createObserver(options: ObserverOptions) {
   initializeRetention(database);
   const scheduleConfiguration = options.schedule ? ScheduleConfigurationSchema.parse(options.schedule.configuration) : undefined;
   const schedule = scheduledStore(database, clock);
+  const ownerPublications = ownerPublicationStore(database, clock);
   const access = privateAccess(database, options.ownerToken, clock);
   const archive = privateArchive(database, access, options.mode);
   const pdf = pdfRenditions(database, clock, options.mode, PdfConfigurationSchema.parse(options.pdf ?? {}).enabled);
   const email = emailDeliveries(database, clock, options.mode, options.email);
+  const ownerEmail = ownerEmailDeliveries(database, clock);
   // Internal, synchronous policy validation of immutable section provenance. Never exposed remotely.
   let historicalReadDepth = 0;
   function correctionSource(versionId: string): PublishedReport {
@@ -212,7 +216,7 @@ export function createObserver(options: ObserverOptions) {
     retention?.assertReadable(versionId, JSON.parse(String(row.payload)));
     const report = storedReport(row);
     if (report.record.schemaVersion === 12) {
-      if (options.mode === "production" && report.version.provenance !== "scheduled") throw new ObserverError("not-found");
+      if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
       if (!consistentArchive(report, versionId)) throw new ObserverError("canonical-integrity-failed");
       for (const evidence of report.record.evidenceBundle.evidence) {
         if (evidence.origin.kind !== "collected") throw new ObserverError("source-policy-invalid");
@@ -237,12 +241,17 @@ export function createObserver(options: ObserverOptions) {
     read: (versionId) => observer.readReport(versionId, options.ownerToken), historical: correctionSource,
     ...(options.routing ? { routing: options.routing } : {}), ...(options.correctionPatrol ? { configuration: options.correctionPatrol } : {}) });
   const activeScheduled = new Map<string, ScheduledSnapshot>();
+  // Unforgeable in-process capability: passing a request ID to produce grants no authority.
+  const activeOwner = new Map<symbol, { publication: OwnerPublication; frozen: ScheduledSnapshot }>();
   retention = retentionLifecycle(database, clock, rawPolicies, { ...options.retention, purgeScheduled: (current) => schedule.purge(current) });
   if (options.retention?.restoreContract) retention.applyContract(options.retention.restoreContract);
   retention.maintenance(true);
   function authenticate(credential: string | undefined) {
     try { return access.authenticate(credential); }
     catch { throw new ObserverError("unauthorized"); }
+  }
+  function authenticateOwner(credential: string | undefined) {
+    if (!credential || !timingSafeEqual(Buffer.from(digest(credential)), Buffer.from(digest(options.ownerToken)))) throw new ObserverError("unauthorized");
   }
 
   function storedRun(runId: string) {
@@ -451,9 +460,57 @@ export function createObserver(options: ObserverOptions) {
     // Trusted local commands only; #20 can use the exported transaction-aware
     // enqueueEmailNotification(database, ...) alongside its Report INSERT.
     enqueueEmailNotification(input: { versionId: string; kind: NotificationKind }) { return email.enqueue(input); },
+    ownerEmailStatus(requestId: string, credential: string | undefined) {
+      authenticateOwner(credential); return ownerEmail.status(requestId);
+    },
+    async sendOwnerRequestedEmail(input: unknown, credential: string | undefined, transport: EmailTransport, signal?: AbortSignal) {
+      authenticateOwner(credential);
+      if (options.mode !== "production") throw new ObserverError("email-owner-production-required");
+      retention!.maintenance();
+      return ownerEmail.send(input, transport, { report: (versionId) => observer.readReport(versionId, options.ownerToken), pdf: (report) => pdf.read(report) }, signal);
+    },
     reconcileEmailDelivery(input: unknown) { return email.reconcile(input); },
     importInterestProfile(filePath: string) { return interest.import(filePath); },
     exportInterestProfile(filePath: string) { return interest.export(filePath); },
+    ownerPublicationStatus(requestId: string, credential: string | undefined) {
+      authenticateOwner(credential);
+      return ownerPublications.status(requestId);
+    },
+    async publishOwnerRequested(input: unknown, credential: string | undefined, signal?: AbortSignal) {
+      authenticateOwner(credential);
+      if (options.mode !== "production" || !options.routing) throw new ObserverError("owner-live-routing-required");
+      const { requestId, request } = OwnerPublishRequestSchema.parse(input);
+      const inputSha256 = digest(JSON.stringify(request));
+      const existing = ownerPublications.status(requestId);
+      if (existing) {
+        if (!ownerPublications.matches(requestId, inputSha256)) throw new ObserverError("owner-request-input-conflict");
+        if (existing.state === "published" && existing.versionId) return observer.readReport(existing.versionId, credential).version;
+        throw new ObserverError(existing.state === "failed" ? "owner-request-failed" : "owner-request-already-running");
+      }
+      retention!.maintenance();
+      const bundle = request.evidenceBundle, now = clock();
+      const window = ownerPublicationWindow(bundle.cutoffUtc);
+      if (bundle.schemaVersion !== 2 || request.businessDate !== window.businessDate || bundle.businessDate !== request.businessDate ||
+        bundle.configurationId !== request.configurationId || bundle.windowStartUtc !== window.windowStartUtc || request.correctionResearch ||
+        bundle.evidence.some((entry) => entry.retrievedAtUtc <= window.windowStartUtc || entry.retrievedAtUtc > window.cutoffUtc ||
+          entry.discoveredAtUtc > entry.retrievedAtUtc || entry.publishedAtUtc && entry.publishedAtUtc > window.cutoffUtc)) throw new ObserverError("invalid-owner-publication-input");
+      const publication = ownerPublicationMetadata(requestId, bundle.cutoffUtc, now);
+      const frozen: ScheduledSnapshot = { schemaVersion: 1, request, policies: currentPolicies(), interest: interest.snapshot(),
+        discourse: DiscourseConfigurationSchema.parse(options.discourse?.configuration ?? { schemaVersion: 1, version: 1, groups: [] }),
+        github: GitHubRepromotionSnapshotSchema.parse(options.github?.repromotionSnapshot?.(bundle.cutoffUtc) ?? {
+          schemaVersion: 1, github: { ...emptyGitHubSnapshot(bundle.cutoffUtc), schemaVersion: 2 }, developments: emptyDevelopments(bundle.cutoffUtc) }),
+        routing: RoutingConfigurationSchema.parse(options.routing.configuration), configuration: options.schedule?.runtimeConfiguration ?? {},
+        versions: options.schedule?.versions ?? {}, frozenAtUtc: bundle.cutoffUtc };
+      ownerPublications.claim(request.businessDate, inputSha256, publication);
+      const key = Symbol("owner-publication");
+      activeOwner.set(key, { publication, frozen });
+      const bounded = AbortSignal.timeout(Math.max(1, Date.parse(publication.deadlineUtc) - Date.parse(clock())));
+      try { return await observer.produce(request, { ownerRequestKey: key, signal: signal ? AbortSignal.any([signal, bounded]) : bounded }); }
+      catch (error) {
+        ownerPublications.failed(requestId, error instanceof ObserverError ? error.code : "owner-publication-failed");
+        throw error;
+      } finally { activeOwner.delete(key); }
+    },
     freezeScheduled(input: unknown) {
       if (!scheduleConfiguration?.enabled || !options.routing) throw new ObserverError("publication-disabled");
       const request = RoutedRequestSchema.parse(input);
@@ -506,9 +563,12 @@ export function createObserver(options: ObserverOptions) {
       if (!value) throw new ObserverError("not-found");
       return value;
     },
-    async produce(input: unknown, runOptions?: { signal?: AbortSignal; scheduledBusinessDate?: string }) {
-      const frozen = runOptions?.scheduledBusinessDate ? activeScheduled.get(runOptions.scheduledBusinessDate) : undefined;
-      if (options.mode !== "test-fixture" && (!scheduleConfiguration?.enabled || !frozen || !schedule.owned(runOptions!.scheduledBusinessDate!))) throw new ObserverError("publication-disabled");
+    async produce(input: unknown, runOptions?: { signal?: AbortSignal; scheduledBusinessDate?: string; ownerRequestKey?: symbol }) {
+      const scheduled = runOptions?.scheduledBusinessDate ? activeScheduled.get(runOptions.scheduledBusinessDate) : undefined;
+      const owner = runOptions?.ownerRequestKey ? activeOwner.get(runOptions.ownerRequestKey) : undefined;
+      const frozen = owner?.frozen ?? scheduled;
+      if (owner && (scheduled || ownerPublications.status(owner.publication.requestId)?.state !== "running" || clock() >= owner.publication.deadlineUtc)) throw new ObserverError("owner-publication-not-active");
+      if (options.mode !== "test-fixture" && !owner && (!scheduleConfiguration?.enabled || !scheduled || !schedule.owned(runOptions!.scheduledBusinessDate!))) throw new ObserverError("publication-disabled");
       const parsedRequest = ProduceRequestSchema.or(SixEditionRequestSchema).or(EventEditionRequestSchema).or(InterestEditionRequestSchema).or(DomainEditionRequestSchema).or(DiscourseEditionRequestSchema).or(GitHubEditionRequestSchema).or(GitHubHeatRequestSchema).or(GitHubRepromotionRequestSchema).or(RoutedRequestSchema).safeParse(input);
       if (!parsedRequest.success) throw new ObserverError("invalid-request");
       const routed = parsedRequest.data.schemaVersion === 10;
@@ -516,7 +576,7 @@ export function createObserver(options: ObserverOptions) {
       const request = parsedRequest.data.schemaVersion === 10 ? { ...parsedRequest.data, schemaVersion: 9 as const } : parsedRequest.data;
       if (routed && !options.routing) throw new ObserverError("routing-unavailable");
       const collectedInput = routed ? structuredClone(request.evidenceBundle) : undefined;
-      const previousVersionId = frozen ? schedule.status(request.businessDate)?.latestVersionId : null;
+      const previousVersionId = scheduled ? schedule.status(request.businessDate)?.latestVersionId : null;
       const previous = previousVersionId ? observer.readReport(previousVersionId, options.ownerToken) : null;
       if (previous?.record.schemaVersion === 12) throw new ObserverError("completion-closed-after-correction");
       const publicationVersion = previous ? previous.version.version + 1 : 1;
@@ -526,9 +586,9 @@ export function createObserver(options: ObserverOptions) {
         request.editions = request.editions.map((entry) => missingEditions.includes(entry.edition) ? entry : { ...entry, evidenceIds: [] });
         if (!missingEditions.includes("social-discourse")) request.discourseSamples = [];
       }
-      const publicationDeadline = frozen ? schedule.status(request.businessDate)!.deadlineUtc : undefined;
+      const publicationDeadline = owner?.publication.deadlineUtc ?? (scheduled ? schedule.status(request.businessDate)!.deadlineUtc : undefined);
       const routingOptions = frozen ? { ...options.routing!, assemblyIdentity: options.routing!, configuration: frozen.routing,
-        publicationDeadlineUtc: new Date(Date.parse(publicationDeadline! > clock() ? publicationDeadline! : recoveryDeadline(request.businessDate)) - frozen.routing.limits.cleanupTimeoutMs - 1000).toISOString(),
+        publicationDeadlineUtc: new Date(Date.parse(owner ? owner.publication.deadlineUtc : publicationDeadline! > clock() ? publicationDeadline! : recoveryDeadline(request.businessDate)) - frozen.routing.limits.cleanupTimeoutMs - 1000).toISOString(),
         executionScope: options.mode === "production" ? "live" as const : "protocol-fixture" as const } : options.routing!;
       const routing = routed && request.schemaVersion === 9 ? createProviderRouting(routingOptions, request, (receipt) => {
         const safe = RoutingReceiptSchema.parse(receipt);
@@ -565,7 +625,7 @@ export function createObserver(options: ObserverOptions) {
         const current = currentPolicies();
         return frozen ? frozen.policies.filter((source) => JSON.stringify(source) === JSON.stringify(current.find((entry) => entry.sourceId === source.sourceId))) : current;
       } catch (error) { if ((request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) return []; throw error; } };
-      const frozenAtUtc = (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? (options.clock ?? (() => new Date().toISOString()))() : undefined;
+      const frozenAtUtc = (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? owner?.publication.frozenAtUtc ?? (options.clock ?? (() => new Date().toISOString()))() : undefined;
       const discourseConfiguration = (request.schemaVersion === 6 || (request.schemaVersion === 7 || request.schemaVersion === 8 || request.schemaVersion === 9)) ? DiscourseConfigurationSchema.parse(frozen?.discourse ?? options.discourse?.configuration ?? { schemaVersion: 1, version: 1, groups: [] }) : undefined;
       const repromotion = request.schemaVersion === 9 ? (() => {
         try { return GitHubRepromotionSnapshotSchema.parse(frozen?.github ?? options.github?.repromotionSnapshot?.(request.evidenceBundle.cutoffUtc) ?? { schemaVersion: 1, github: { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2 }, developments: emptyDevelopments(request.evidenceBundle.cutoffUtc) }); }
@@ -940,9 +1000,14 @@ export function createObserver(options: ObserverOptions) {
         if (frozen && record.schemaVersion !== 1) { publishedAtUtc = clock(); record.publicationGate.checkedAtUtc = publishedAtUtc; }
         routing.authorize(record.stories.length > 0);
         if (record.schemaVersion !== 10) throw new ObserverError("routing-record-invalid");
-        record = finalizeRoutedRecord(record, routing.freeze(), frozen && options.mode === "production" ? "scheduled" : undefined);
+        record = finalizeRoutedRecord(record, routing.freeze(), owner ? "owner-requested" : scheduled && options.mode === "production" ? "scheduled" : undefined);
+        if (owner) {
+          if (clock() >= owner.publication.deadlineUtc) throw new ObserverError("owner-publication-deadline-exceeded");
+          if (!(Object.keys(editionNames) as Array<keyof typeof editionNames>).some((edition) => editionContent(record as Extract<ReportRecord, { schemaVersion: 11 }>, edition) > 0)) throw new ObserverError("no-trustworthy-content");
+          record.ownerPublication = owner.publication;
+        }
       }
-      if (frozen && record.schemaVersion === 11 && collectedInput?.schemaVersion === 2) {
+      if (scheduled && record.schemaVersion === 11 && collectedInput?.schemaVersion === 2) {
         if (!revisionWindowOpen(previous ? "completion" : "initial", request.businessDate, clock())) throw new ObserverError("recovery-window-closed");
         const allAgentsUnavailable = record.routing.outcome.startsWith("agents-unavailable");
         const links = !previous && allAgentsUnavailable ? permittedLinks(collectedInput, requestPolicies(), clock()) : [];
@@ -960,7 +1025,7 @@ export function createObserver(options: ObserverOptions) {
           publishedAtUtc, deadlineUtc, recoveryDeadlineUtc: recoveryDeadline(request.businessDate), timing,
           delayReason: timing === "delayed" ? "首次私有可读确认晚于08:30交付期限" : null,
           content: !hasContent && links.length ? "links-only" : coverageGaps.length ? "degraded" : "complete", coverageGaps, completedEditions, availableEditions,
-          inheritedMarkdown: previous?.canonicalMarkdown ?? null, collectionRecoveredAtUtc: frozen.collectionRecovery?.attachedAtUtc ?? null, links };
+          inheritedMarkdown: previous?.canonicalMarkdown ?? null, collectionRecoveredAtUtc: scheduled.collectionRecovery?.attachedAtUtc ?? null, links };
       }
       record = ReportRecordSchema.parse(record);
       if ((record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) && !consistentRecord(record)) throw new ObserverError("canonical-record-invalid");
@@ -971,7 +1036,7 @@ export function createObserver(options: ObserverOptions) {
           schemaVersion: 1, id: publicationId, briefId: request.businessDate,
           businessDate: request.businessDate, version: publicationVersion,
           publishedAtUtc,
-          revisionReason: "initial", previousVersionId: null, provenance: frozen && options.mode === "production" ? "scheduled" : "test-fixture",
+          revisionReason: "initial", previousVersionId: null, provenance: owner ? "owner-requested" : scheduled && options.mode === "production" ? "scheduled" : "test-fixture",
           reportRecordId: record.id, canonicalMarkdownSha256: digest(canonicalMarkdown),
           ...(record.schemaVersion === 11 || record.schemaVersion === 10 || record.schemaVersion === 9 || record.schemaVersion === 8 || record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7) ? { schemaVersion: record.schemaVersion - 1, editorialContract: record.editorialContract, reportRecordSha256: digest(JSON.stringify(record)) } : {}),
           ...(record.schemaVersion === 11 && record.recovery ? { schemaVersion: 11, revisionReason: record.recovery.revisionReason, previousVersionId: record.recovery.previousVersionId, content: record.recovery.content, timing: record.recovery.timing } : {}),
@@ -980,8 +1045,9 @@ export function createObserver(options: ObserverOptions) {
       });
       if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("BEGIN IMMEDIATE");
       try {
-        if (frozen) {
-          if (!revisionWindowOpen(previous ? "completion" : "initial", request.businessDate, clock())) throw new ObserverError("recovery-window-closed");
+        if (owner && (clock() >= owner.publication.deadlineUtc || runOptions?.signal?.aborted)) throw new ObserverError("owner-publication-deadline-exceeded");
+        if (scheduled || owner) {
+          if (scheduled && !revisionWindowOpen(previous ? "completion" : "initial", request.businessDate, clock())) throw new ObserverError("recovery-window-closed");
           const current = database.prepare("SELECT id FROM reports WHERE json_extract(payload,'$.version.businessDate')=? ORDER BY json_extract(payload,'$.version.version') DESC LIMIT 1").get(request.businessDate)?.id ?? null;
           if (current !== (previous?.version.id ?? null)) throw new ObserverError("publication-current-version-conflict");
           if (previous && observer.readReport(previous.version.id, options.ownerToken).canonicalMarkdown !== previous.canonicalMarkdown) throw new ObserverError("completion-parent-changed");
@@ -1004,7 +1070,8 @@ export function createObserver(options: ObserverOptions) {
           database.prepare("INSERT INTO reports (id,payload,development_capture_sha256) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING").run(report.version.id, JSON.stringify(report), capturedDevelopment);
         if (insertion.changes === 0) throw new ObserverError("version-already-exists");
         if (routing) { routing.authorize(report.record.stories.length > 0); routing.complete(report.version.id); }
-        if (frozen && report.record.schemaVersion === 11 && report.record.recovery) schedule.published(request.businessDate, report.version.id, clock(), report.record.recovery.content,
+        if (owner) ownerPublications.published(owner.publication.requestId, report.version.id);
+        if (scheduled && report.record.schemaVersion === 11 && report.record.recovery) schedule.published(request.businessDate, report.version.id, clock(), report.record.recovery.content,
           recoveryEditions(report).length > 0, scheduleConfiguration!.recoveryRetryDelayMs);
         if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("COMMIT");
       } catch (error) { if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("ROLLBACK"); throw error; }

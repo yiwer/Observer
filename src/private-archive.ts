@@ -113,7 +113,8 @@ export function privateArchive(database: DatabaseSync, access: PrivateAccess, mo
         ...revisions.flatMap((event) => typeof event.snapshot.replacementVersionId === "string" ? [event.snapshot.replacementVersionId] : [])])];
       const pdf = events.findLast((event) => event.kind === "rendition-state" && event.versionId === id)?.snapshot;
       const pdfAvailable = !withdrawn && pdf?.state === "ready";
-      return { ...snapshot, status: rightsRemoved ? "rights-removed" : withdrawn ? "withdrawn" : supersededByVersionIds.length ? "superseded" : "current", retracted: withdrawn,
+      return { ...snapshot, publicationLabel: snapshot.version.provenance === "owner-requested" ? "今日补发 · 非定时准时交付" : snapshot.version.provenance,
+        status: rightsRemoved ? "rights-removed" : withdrawn ? "withdrawn" : supersededByVersionIds.length ? "superseded" : "current", retracted: withdrawn,
         contentSemantics: rightsRemoved ? "rights-tombstone" : snapshot.version.schemaVersion === 12 && snapshot.version.revisionReason === "withdrawal" ? "safe-withdrawal-notice" : "report", supersededByVersionIds,
         changes: revisions.map(({ eventId, kind, snapshot: change }) => ({ eventId, kind, ...change })),
         renditions: { markdown: { available: !withdrawn, path: `/v1/reports/${id}/markdown` },
