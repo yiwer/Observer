@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #25候选 `35634ad`（6文件、+689，base `a976bf8`）已完成一次只读静态审查：Standards 1项P2（来源策略高水位）、Spec 2项P2（失败Agent降级归档、新材料TTL）、Root补充1项P2（人工支持引用须为实际证据ID），集中交原作者窄修，尚未集成/关闭。唯一typecheck失败三处后已静态修正、未复跑；后续亦仅核对窄差异，不新增检查/夹具/hash验收或回归。#26已非阻塞询问Owner首轮使用本机native Codex还是现有独立API入口，未获答复、不触发调用，不影响本票。
+
 - #24已实际读回CLOSED（2026-09-08T05:46:18Z）；#25 OPEN已派发fresh-context `/root/implement_v1_25`，专属 `O:/GenesisCode/Observer-worktrees/v1-25` / `ticket/v1-25`，base `a976bf8`。交付隔离影子评测、事实级核查表及可接续统计工具，不运行真实14日、不代签人工核查。沿完整功能块快速实施；无hash验收、夹具或逐步/集成回归，Root短静态审查。#26环境输入仍待Owner，不阻断本票开发。
 
 - 2026-09-08 #24已接受并本地集成 `24cd94f`（功能 `9925a11`、邮件围栏修复 `dde7b45`，base `8c8c170`）。短静态 Standards 0、Spec 原1项P2已修；唯一typecheck失败后作窄修，最终仅静态、未复跑，不标类型PASS。见[#24接受记录](acceptance/24-off-node-backup-restore.md)。已交付私有节点外备份和受控恢复/演练入口；无hash验收、夹具或逐步/集成回归，未操作真实存储或Owner数据，代码未push。下一票#25评测工具；真实灾备门槛留#26。下方为历史状态。
