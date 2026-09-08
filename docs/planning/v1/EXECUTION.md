@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #26仅完成[最小就绪交接](../../implementation/v1-26-readiness.md)，作者 `5ebd854`、文档集成 `b1cf081`（base `c710c99`）。Root读完49行并静态核对接线/链接，未派新审查轮次、未运行检查或live操作；本票仍OPEN，#27/#28未开始。当前无运行中的实施/验证句柄，安全范围内预检已完成，等待Owner确认native/API方向及国家地区、目标Linux/私有地址、获准真实来源/最新删除契约、私有节点外存储和独立秘密接线路径。不要索要秘密值或重复QQ授权码；不得擅自改造认证路径、购买/部署/发送，亦不能以此文档关闭#26。目标仍未完成。
+
 - #25已实际读回CLOSED（2026-09-08T06:19:54Z），GitHub仅#26–#28开放。#26的fresh-context `/root/implement_v1_26_readiness` 已在 `O:/GenesisCode/Observer-worktrees/v1-26` / `ticket/v1-26`（base `c710c99`）做一次简短只读接入就绪交接；不触发模型、SMTP、部署、存储或检查。Owner的native/API方向及主机地区等输入仍未回复；本门未通过，不会因依赖票完成而自动启用服务。原Codex本机调用/QQ授权与实际证据继续保留，不重新索要秘密。
 
 - 2026-09-08 #25已接受并本地集成 `11b2bd3`（功能 `35634ad`、集中修复 `c0230ac`，base `a976bf8`）。一次静态 Standards 1、Spec 2及Root补充1项P2均已处理，修后只读窄差异，不开新轮、不复跑。唯一typecheck曾失败，最终不标类型PASS。见[#25接受记录](acceptance/25-shadow-evaluation-harness.md)。无hash验收、新夹具或逐步/集成回归，代码未push；真实Provider接线/部署/14日尚未运行。下一门#26需Owner确认首轮native/API方向、主机地区、真实来源及私有节点外存储；已发异步问题未获回复，不把既有QQ授权码列为缺失。下方为历史状态。
