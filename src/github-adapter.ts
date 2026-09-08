@@ -10,8 +10,11 @@ export function githubFailure(error: unknown): GitHubReason {
   const parsed = GitHubReasonSchema.safeParse(error instanceof Error ? error.message : null);
   return parsed.success ? parsed.data : "github-network-failed";
 }
-const CredentialSchema = z.strictObject({ kind: z.literal("fine-grained-pat"), token: z.string().regex(/^github_pat_[A-Za-z0-9_]{10,255}$/),
-  expiresAtUtc: z.iso.datetime({ precision: 3, offset: false }), repositoryAccess: z.literal("public-only"), permissions: z.literal("metadata-read-only") });
+const CredentialSchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("anonymous-public") }),
+  z.strictObject({ kind: z.literal("fine-grained-pat"), token: z.string().regex(/^github_pat_[A-Za-z0-9_]{10,255}$/),
+    expiresAtUtc: z.iso.datetime({ precision: 3, offset: false }), repositoryAccess: z.literal("public-only"), permissions: z.literal("metadata-read-only") }),
+]);
 export interface GitHubAccess { source: SourcePolicy; credential: () => unknown; clock: () => string; authorize: () => GitHubReason | null; signal?: AbortSignal; deadline?: number; }
 export function createGitHubAdapter(options: { read?: (url: string, request: SourceReadRequest) => Promise<SourceResponse> } = {}) {
   const read = options.read ?? createSourceReader();
@@ -22,13 +25,17 @@ export function createGitHubAdapter(options: { read?: (url: string, request: Sou
     if (Date.parse(access.clock()) < cooldownUntil) throw new Error("github-rate-limited");
     const secret = CredentialSchema.safeParse(access.credential());
     if (!secret.success) throw new Error("github-credential-unavailable");
-    if (secret.data.expiresAtUtc <= access.clock()) throw new Error("github-credential-expired");
+    const credential = secret.data;
+    const expired = () => credential.kind === "fine-grained-pat" && credential.expiresAtUtc <= access.clock();
+    if (expired()) throw new Error("github-credential-expired");
+    // Anonymous access is only the public repository metadata path, never release/advisory prose.
+    if (credential.kind === "anonymous-public" && route !== "repository") throw new Error("github-unsafe-route");
     const timeoutMs = Math.min(access.source.limits.timeoutMs, (access.deadline ?? Infinity) - Date.now());
     if (timeoutMs <= 0) throw new Error("github-timeout");
     const search = url.pathname === "/search/repositories";
     const validateUrl = (target: URL) => {
       const failure = access.authorize(); if (failure) throw new Error(failure);
-      if (secret.data.expiresAtUtc <= access.clock()) throw new Error("github-credential-expired");
+      if (expired()) throw new Error("github-credential-expired");
       return target.origin === "https://api.github.com" && !target.username && !target.password && !target.hash &&
         (search || route !== "repository" ? target.href === url.href : /^\/repos\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(target.pathname) && !target.search);
     };
@@ -39,12 +46,12 @@ export function createGitHubAdapter(options: { read?: (url: string, request: Sou
     try {
       if (access.signal?.aborted) throw new Error("github-cancelled");
       const response = await Promise.race([read(url.href, { source: { ...access.source, limits: { ...access.source.limits, maxRedirects: search || route !== "repository" ? 0 : Math.min(access.source.limits.maxRedirects, githubRules.maxRedirects) } },
-        headers: { accept: "application/vnd.github+json", authorization: `Bearer ${secret.data.token}`, "x-github-api-version": githubRules.apiVersion }, signal: controller.signal, validateUrl,
+        headers: { accept: "application/vnd.github+json", ...(credential.kind === "fine-grained-pat" ? { authorization: `Bearer ${credential.token}` } : {}), "x-github-api-version": githubRules.apiVersion }, signal: controller.signal, validateUrl,
         readErrorBody: (status, headers) => status === 403 && !headerLimit(status, headers) }),
       new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("github-timeout")); }, timeoutMs); })]);
       if (access.signal?.aborted) throw new Error("github-cancelled");
       if (access.authorize()) throw new Error(access.authorize()!);
-      if (secret.data.expiresAtUtc <= access.clock()) throw new Error("github-credential-expired");
+      if (expired()) throw new Error("github-credential-expired");
       if (response.finalUrl && !validateUrl(new URL(response.finalUrl))) throw new Error("github-unsafe-route");
       let secondaryLimit = false;
       if (response.status === 403 && !headerLimit(response.status, response.headers)) {
