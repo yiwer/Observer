@@ -42,6 +42,7 @@ import { EmailConfigurationSchema, type EmailOptions, type NotificationKind } fr
 import { correctionPublisher, type CorrectionOptions } from "./correction-publication.ts";
 import { enqueueCorrection, correctionStatus } from "./correction-queue.ts";
 import { correctionMarkdown } from "./correction-rendering.ts";
+import { correctionPatrol, type PatrolOptions } from "./correction-patrol.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -69,6 +70,7 @@ export interface ObserverOptions {
   pdf?: { enabled?: boolean };
   email?: EmailOptions;
   corrections?: CorrectionOptions;
+  correctionPatrol?: PatrolOptions;
   schedule?: { configuration: unknown; runtimeConfiguration: ScheduledSnapshot["configuration"]; versions: Record<string, string> };
 }
 
@@ -224,6 +226,9 @@ export function createObserver(options: ObserverOptions) {
     read: (versionId) => observer.readReport(versionId, options.ownerToken), historical: correctionSource, recordChange: archive.recordRevisionChange,
     ...(options.routing ? { routing: options.routing } : {}), ...(options.verifier ? { verifier: options.verifier } : {}),
     ...(options.corrections ? { configuration: options.corrections } : {}) });
+  const patrol = correctionPatrol(database, { clock, mode: options.mode, policies: currentPolicies,
+    read: (versionId) => observer.readReport(versionId, options.ownerToken), historical: correctionSource,
+    ...(options.routing ? { routing: options.routing } : {}), ...(options.correctionPatrol ? { configuration: options.correctionPatrol } : {}) });
   const activeScheduled = new Map<string, ScheduledSnapshot>();
   function authenticate(credential: string | undefined) {
     try { return access.authenticate(credential); }
@@ -346,6 +351,8 @@ export function createObserver(options: ObserverOptions) {
     enqueueCorrection(input: unknown) { return enqueueCorrection(database, input, clock()); },
     correctionStatus(signalId: string) { return correctionStatus(database, signalId); },
     async processCorrections(signal?: AbortSignal) { return corrections.processNext(signal); },
+    async processCorrectionPatrol(signal?: AbortSignal) { return patrol.tick(signal); },
+    correctionPatrolStatus(businessDate?: string) { return patrol.status(businessDate); },
     // Local management only: HTTP intentionally exposes consumption, never issuance.
     issueDevicePairing() { return access.issuePairing(); },
     pairDevice(input: unknown) { return access.pair(input); },

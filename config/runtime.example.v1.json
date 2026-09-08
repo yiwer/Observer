@@ -10,6 +10,8 @@
   "collect": false,
   "pdf": { "enabled": true },
   "email": { "enabled": false },
+  "corrections": { "enabled": false },
+  "correctionPatrol": { "enabled": false, "startMinute": 360, "deadlineMinute": 435, "maxTasksPerDay": 80, "maxReadsPerDay": 240, "maxAttempts": 3, "retryDelayMs": 60000, "taskTimeoutMs": 120000 },
   "routing": { "schemaVersion": 1, "version": 1, "primary": "codex" },
   "providers": {}
 }
