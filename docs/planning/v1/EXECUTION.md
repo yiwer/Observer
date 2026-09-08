@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #23已实际读回CLOSED（2026-09-08T05:04:05Z）；#24 OPEN已派发fresh-context `/root/implement_v1_24`，专属 `O:/GenesisCode/Observer-worktrees/v1-24` / `ticket/v1-24`，base `8c8c170`。实现节点外私有备份接入、一致快照、秘密独立恢复、持久去重及先应用最新删除契约再开放服务的恢复入口；不购买/连接真实对象存储、不操作Owner数据。继续整块快速交付，无hash验收、新夹具或逐步/集成回归，真实RPO/RTO和私有性留#26。目标主机/地区/对象存储的Owner异步问题尚未回复，不阻断本票开发。
+
 - 2026-09-08 #23已接受并本地集成 `a24e9a3`（候选 `62252cc`，base `3bb7461`）。一次短静态 Standards/Spec 各0；作者唯一typecheck发现base的retention收窄错误，窄修仅静态、未复跑，不能标类型PASS。见[#23接受记录](acceptance/23-single-node-runtime.md)。已交付部署/HTTPS/秘密边界、状态、限额和回滚入口，未运行Docker或部署。下一票#24节点外一致性备份与恢复；无hash验收/新夹具/逐步或集成回归，代码未push。下方为历史状态。
 
 - #22已实际读回CLOSED（2026-09-08T04:41:00Z）；#23 OPEN已派发fresh-context `/root/implement_v1_23`，专属 `O:/GenesisCode/Observer-worktrees/v1-23` / `ticket/v1-23`，base `3bb7461`。补齐单节点Linux容器化运行、HTTPS/秘密隔离、持久运维状态与升级回滚入口；实际VPS/节点外存储/模型与SMTP不在本票操作。继续整块实现、最少必要块末检查、Root短静态review，无hash验收、夹具矩阵或逐步/集成回归。
