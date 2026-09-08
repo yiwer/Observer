@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #15已实际读回CLOSED；#16 OPEN已派发fresh-context `/root/implement_v1_16`，专属`O:/GenesisCode/Observer-worktrees/v1-16` / `ticket/v1-16`，base `27506ad`。直接接通#15运行链的降级链接版、Delayed/Missed、午前Completion Revision及私有可读/幂等，不只做fixture状态接口。沿Owner快速交付：功能块提交、末尾必要轻量验证、Root简短review，无hash验证/逐步回归/测试矩阵扩展。
+
 - 2026-09-08 #15已接受并本地集成`f4e9bf3`（功能`c7d754b`、routing identity修复`1223bbe`）。静态Standards/Spec各0阻断，作者类型与单条生产缺口关键路径通过；未做hash验证或重复回归。默认调度关闭，真实来源/Provider/部署未启用；见[#15接受记录](acceptance/15-scheduled-publication.md)。下一票#16降级/迟到/缺刊/午前补齐，沿功能块快速交付。下方#15实施中状态为历史。
 
 - #14已实际读回CLOSED。#15 OPEN已派发fresh-context `/root/implement_v1_15`，专属`O:/GenesisCode/Observer-worktrees/v1-15` / `ticket/v1-15`，base `0e86227`。按最新Owner策略直接实现持久冻结/调度/原子发布正常链路，不先长提案、不逐步测试审批、不做hash验证；默认不自动启用，末尾必要一次轻量检查，Root简短review后集成。不得把生产调度只做成fixture空接口，也不在开发期间实际运行模型/SMTP或部署。
