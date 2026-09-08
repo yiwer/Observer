@@ -1,28 +1,39 @@
 # Observer
 
-私人 Daily Brief 服务端。V1-15 已接通可配置启用的持久日调度、六栏研究路由、原子归档和私有读取。默认仍关闭调度；没有启用来源或 Provider 的栏目显示 Coverage Gap。生产入口不提供测试归档内容，真实上线与外部质量验收尚未完成。
+私人 Daily Brief 服务端。已接通六栏研究路由、持久日调度、恢复补齐、私有归档/设备同步、中文 PDF 和同版本邮件投递。研究调度与邮件默认关闭；整期无可信内容时不发空刊。生产入口不提供测试归档内容，真实上线与外部质量验收尚未完成；当前实施票见[执行记录](docs/planning/v1/EXECUTION.md)。
 
-## 本地检查
+## 快速开始与检查策略
 
-需要 Node **24.18.0 或较新的 24.x**、npm。完整检查还需要本机 Linux/amd64 Docker Engine、curl、tar、GPG，以及一次显式准备 Codex/Claude 测试运行时；准备脚本不会启动 Docker 或调用模型。锁定依赖已写入 `package-lock.json`。GPG 不在 PATH 时可用 `OBSERVER_GPG_PATH` 指向本机已有程序，详见 [V1-05 实现说明](docs/implementation/v1-05.md)。
+需要 Node **24.18.0 或较新的 24.x**、npm，依赖版本见 `package-lock.json`。安装和构建服务：
 
 ```sh
 npm ci
+npm run build
+```
+
+按 [Owner 最新策略](docs/planning/v1/OWNER-INPUTS.md#v1-快速交付策略覆盖旧测试流程)，V1 按完整功能块实现和简短 review，不做开发验收 hash 校验、不逐小步回归，不默认扩充夹具或运行全量测试。需要时只在块末进行类型检查或一条核心路径验证；未测范围如实记录。类型检查命令为：
+
+```sh
+npm run typecheck
+```
+
+测试与源码都使用显式 `.ts` 导入，构建重写为 `.js`；生产包 `dist/` 不包含 `tests/`。
+
+<details>
+<summary>保留的历史扩展检查（不是当前 V1 交付门槛）</summary>
+
+显式选择扩展检查时，仍需按相应票的旧说明准备本机 Linux/amd64 Docker Engine、curl、tar、GPG 和 Codex/Claude 测试运行时。准备脚本不会启动 Docker 或调用模型；没有运行它们的默认要求。GPG 不在 PATH 时可用 `OBSERVER_GPG_PATH`，详见 [V1-05](docs/implementation/v1-05.md)。
+
+```sh
 npm run prepare:codex
 npm run prepare:claude
 npm run check
 npm run smoke
 ```
 
-`check` 独立执行 `tsc --noEmit`，构建 `dist/`，再运行全部业务测试（包括真实隔离容器和 Codex/Claude CLI，但模型 API 是无凭证协议替身）。`smoke` 是其中 3 个进程／HTTP 测试的子集，不额外增加覆盖数，也不需要 Docker。准备后检查不需要外网或模型凭证；`npm ci` 和首次准备 CLI 依赖需要网络。Codex 包校验 SHA-512；Claude 校验官方 manifest 签名、固定签名指纹及二进制 SHA-256；两者使用固定 Python 基础镜像。Codex 压缩包约 129 MB、镜像约 459 MB；Claude 二进制约 214 MB、镜像约 339 MB。测试用的 `example.org` 来源只作为不可联网的固定出处。
+`check` 执行类型检查、构建和全部业务测试，包括隔离容器/CLI 与无凭证模型替身；`smoke` 是其中的进程/HTTP子集，不等于真实上线验收。现有准备脚本的包签名及完整性功能保留，不作为新的开发取证任务。`npm ci` 和首次准备 CLI 依赖需要网络；测试用 `example.org` 是固定出处，不代表真实新闻来源。
 
-```sh
-npm run typecheck
-node --test tests/brief.test.ts
-npm run build
-```
-
-测试与源码都使用显式 `.ts` 导入，构建重写为 `.js`；生产包 `dist/` 不包含 `tests/`。
+</details>
 
 ## 私有读取启动
 
@@ -37,9 +48,15 @@ npm run build
 | `/v1/reports/YYYY-MM-DD-v1` | 同一版本的 `version`、`record`、`canonicalMarkdown` JSON |
 | `/v1/reports/YYYY-MM-DD-v1/markdown` | 已保存的 Canonical Markdown，UTF-8 |
 
-无有效凭证为 401；未知版本为 404；其他方法为 405。未配置调度时入口只读；生产读取已知 fixture 仍为 404。
+无有效凭证为 401；未知版本为 404；生产读取已知 fixture 仍为 404。未启用研究调度时不会生成新日报，但默认 PDF 后台仍会为已有报告转换并保存产物；这不是纯只读进程。
 
-设置 `OBSERVER_RUNTIME_CONFIG` 指向 [运行配置](config/runtime.example.v1.json)，将其中 `schedule.enabled` 显式设为 `true`，即可在北京时间每天 07:30 冻结并运行。配置中的路径相对于该文件。`collect: false` 只消费已有采集缓存；`collect: true` 启用经 Source Policy 授权的 RSS/Atom、可选 GitHub 与 Mastodon 采集。Provider 需要单独的启用、资格及凭据配置；没有可用 Provider 时生成明确缺口。完整用法与未测范围见 [V1-15](docs/implementation/v1-15.md)。
+设置 `OBSERVER_RUNTIME_CONFIG` 指向 [运行配置](config/runtime.example.v1.json)，将其中 `schedule.enabled` 显式设为 `true`，即可在北京时间每天 07:30 冻结并运行。配置中的路径相对于该文件。`collect: false` 只消费已有采集缓存；`collect: true` 启用经 Source Policy 授权的 RSS/Atom、可选 GitHub 与 Mastodon 采集。Provider 需要单独的启用、资格及凭据配置；有可信材料时可发布缺栏/合规链接降级版，整期为空则有界恢复，不发空刊。调度用法见 [V1-15](docs/implementation/v1-15.md)，午前恢复和 Completion 见 [V1-16](docs/implementation/v1-16.md)。
+
+已交付能力的入口：
+
+- [私有归档、设备配对/撤销和同步](docs/implementation/v1-17.md)：V1 是服务端契约，无 Android UI 或推送。
+- [中文 PDF](docs/implementation/v1-18.md)：只转换同版本已有 Markdown，后台默认开启，失败不影响 MD；部署需保留 `assets/fonts/`。
+- [QQ SMTP 邮件](docs/implementation/v1-19.md)：安全 HTML 总览、有限 PDF 附件、24小时对象下载链接和持久交付状态。默认禁用；实际地址放受控运行配置，授权码仅通过 `QQ_SMTP_KEY` 注入。SMTP受理不等于实际收件，未知结果不自动重发。
 
 技术选择见 [ADR-0004](docs/adr/0004-start-with-typescript-and-atomic-sqlite-report-archive.md)，公共契约及证据见 [V1-01 实现说明](docs/implementation/v1-01.md)。
 
