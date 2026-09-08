@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- 2026-09-08 #16已接受并本地集成`bcfd571`（功能`3c44caf`，交付时效修复`cbb06f5`）。短Standards0、Spec1项P2已处理；类型通过、原单条核心路径通过，最后小修未新增回归，无hash验收。最新交付时效由首次私有可读确定，未确认pending，旧正文不回写；见[#16接受记录](acceptance/16-brief-recovery.md)。下一票#17私有归档/配对/同步API，沿快速功能块交付；下方#16实施中为历史状态。
+
 - #15已实际读回CLOSED；#16 OPEN已派发fresh-context `/root/implement_v1_16`，专属`O:/GenesisCode/Observer-worktrees/v1-16` / `ticket/v1-16`，base `27506ad`。直接接通#15运行链的降级链接版、Delayed/Missed、午前Completion Revision及私有可读/幂等，不只做fixture状态接口。沿Owner快速交付：功能块提交、末尾必要轻量验证、Root简短review，无hash验证/逐步回归/测试矩阵扩展。
 
 - 2026-09-08 #15已接受并本地集成`f4e9bf3`（功能`c7d754b`、routing identity修复`1223bbe`）。静态Standards/Spec各0阻断，作者类型与单条生产缺口关键路径通过；未做hash验证或重复回归。默认调度关闭，真实来源/Provider/部署未启用；见[#15接受记录](acceptance/15-scheduled-publication.md)。下一票#16降级/迟到/缺刊/午前补齐，沿功能块快速交付。下方#15实施中状态为历史。
