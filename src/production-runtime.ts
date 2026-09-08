@@ -36,6 +36,7 @@ export const ProductionConfigurationSchema = z.strictObject({
   email: EmailConfigurationSchema.default({ enabled: false }),
   corrections: z.strictObject({ enabled: z.boolean().default(false) }).default({ enabled: false }),
   correctionPatrol: PatrolConfigurationSchema.prefault({}),
+  retention: z.strictObject({ restoreContractPath: z.string().min(1).optional() }).default({}),
   discourse: DiscourseConfigurationSchema.optional(),
   github: z.strictObject({ databasePath: z.string(), configuration: GitHubConfigurationSchema, developmentConfiguration: DevelopmentConfigurationSchema.optional(),
     credentialExpiresAtUtc: z.iso.datetime({ precision: 3, offset: false }).optional() }).optional(),
@@ -59,6 +60,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   const sourceConfiguration = sources();
   const collection = createCollection({ databasePath: path(configuration.collectionDatabasePath), sources: sourceConfiguration.sources, policyReader: () => sources().sources, clock });
   const providers: RoutingOptions["providers"] = {};
+  const suppressedSources = new Set<string>();
   const mastodon = configuration.discourse ? createMastodonAdapter({ clock }) : undefined;
   for (const name of ["codex", "claude"] as const) {
     const entry = configuration.providers[name];
@@ -81,7 +83,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
     }
   }
   const github = configuration.github ? createGitHubObserver({ databasePath: path(configuration.github.databasePath),
-    configuration: () => configuration.github!.configuration, policies: () => sources().sources,
+    configuration: () => configuration.github!.configuration, policies: () => sources().sources.filter((source) => !suppressedSources.has(source.sourceId)),
     credential: () => configuration.schedule.enabled && configuration.collect && configuration.github?.credentialExpiresAtUtc ? {
       kind: "fine-grained-pat", token: process.env.OBSERVER_GITHUB_TOKEN,
       expiresAtUtc: configuration.github.credentialExpiresAtUtc, repositoryAccess: "public-only", permissions: "metadata-read-only",
@@ -94,6 +96,10 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
       evidence: (ids) => collection.correctionEvidence(ids), deferEvidence: (ids, date) => collection.deferCorrectionEvidence(ids, date) },
     ...(email ? { email } : {}),
     sourcePolicies: sourceConfiguration.sources, sourcePolicyReader: () => sources().sources, ...(github ? { github } : {}),
+    retention: { purgeRaw: (ids) => { ids.forEach((id) => suppressedSources.add(id)); collection.suppressSources(ids); },
+      availableEvidence: (ids) => collection.correctionEvidence(ids).map((entry) => entry.id),
+      ...(github ? { compactGitHub: (published, ids) => github.maintainRetention(published, ids) } : {}),
+      ...(configuration.retention.restoreContractPath ? { restoreContract: readJson(path(configuration.retention.restoreContractPath)) } : {}) },
     ...(mastodon ? { discourse: { configuration: configuration.discourse, adapter: mastodon } } : {}),
     routing: { configuration: configuration.routing, executionScope: "live", providers, clock,
       eligibility: () => Object.entries(configuration.providers).flatMap(([name, entry]) => entry ? [{ ...entry.eligibility, provider: name, enabled: entry.enabled && entry.eligibility.enabled }] : []) },
@@ -106,6 +112,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   return {
     observer, enabled: configuration.schedule.enabled,
     async collect(signal?: AbortSignal) {
+      observer.processRetention();
       if (!configuration.schedule.enabled || !configuration.collect || collecting) return;
       collecting = true;
       try {
@@ -115,7 +122,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
           lastSocialAttempt = Date.parse(now);
           for (const group of configuration.discourse.groups) {
             if (signal?.aborted) break;
-            const sourcePolicy = sources().sources.find((source) => source.sourceId === group.sourceId);
+            const sourcePolicy = sources().sources.find((source) => source.sourceId === group.sourceId && !observer.deletionContract().sources.some((entry) => entry.sourceId === source.sourceId));
             if (!sourcePolicy) continue;
             const sample = await mastodon.capture({ sourcePolicy, configuration: configuration.discourse, groupId: group.id,
               businessDate: date, windowStartUtc: window.windowStartUtc, cutoffUtc: window.cutoffUtc, ...(signal ? { signal } : {}) });
@@ -127,6 +134,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
       finally { collecting = false; }
     },
     async tick(readable: (versionId: string) => Promise<void>, signal?: AbortSignal) {
+      observer.processRetention();
       if (!configuration.schedule.enabled || ticking || signal?.aborted) return;
       ticking = true;
       try {

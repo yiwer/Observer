@@ -1,4 +1,5 @@
 import { readFile, stat } from "node:fs/promises";
+import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout } from "node:timers/promises";
 import { SourceConfigurationSchema, createCollection } from "./collection.ts";
@@ -14,6 +15,10 @@ try {
   const collection = createCollection({
     databasePath: resolve(process.env.OBSERVER_COLLECTION_DATABASE_PATH ?? "data/collection.sqlite"),
     sources: configuration.sources,
+    policyReader: () => {
+      if (statSync(configPath).size > 262144) throw new Error("invalid-source-configuration");
+      return SourceConfigurationSchema.parse(JSON.parse(readFileSync(configPath, "utf8"))).sources;
+    },
   });
   try {
     while (!shutdown.signal.aborted) {

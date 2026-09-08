@@ -31,6 +31,7 @@ export function editionMarkdown(report: PublishedReport, edition: Edition): stri
 /** SQLite triggers keep changes in exactly the transaction that changed the source.
  * Feed snapshots contain public metadata only, never evidence, prompts or secrets. */
 export function privateArchive(database: DatabaseSync, access: PrivateAccess, mode: "production" | "test-fixture") {
+  database.exec("CREATE TABLE IF NOT EXISTS rights_versions(version_id TEXT PRIMARY KEY,removed_at_utc TEXT NOT NULL,retain_version_audit INTEGER NOT NULL)");
   const reportSnapshot = (row: string) => `json_object('version',json_extract(${row}.payload,'$.version'),
     'availableEditions',json(COALESCE(json_extract(${row}.payload,'$.record.revision.availableEditions'),json_extract(${row}.payload,'$.record.recovery.availableEditions'),
       (SELECT json_group_array(DISTINCT json_extract(value,'$.edition')) FROM json_each(${row}.payload,'$.record.stories')))),
@@ -96,19 +97,24 @@ export function privateArchive(database: DatabaseSync, access: PrivateAccess, mo
     checkedDate(businessDate);
     const events = database.prepare(`SELECT * FROM archive_events WHERE business_date=? AND sequence<=?${visible} ORDER BY sequence`).all(businessDate, until).map(asEvent);
     if (!events.length) throw new PrivateApiError("not-found", 404);
-    const publications = events.filter((event) => event.kind === "report-published").map((event) => event.snapshot as unknown as VersionSnapshot)
+    const publications = [...new Map(events.filter((event) => event.kind === "report-published" || event.kind === "rights-removed" && event.snapshot.version)
+      .map((event) => {
+        const snapshot = event.kind === "rights-removed" ? { ...event.snapshot, availableEditions: [], completedEditions: [], linkEditions: [], coverageGaps: [] } : event.snapshot;
+        return [(snapshot.version as ReportVersion).id, snapshot as unknown as VersionSnapshot] as const;
+      })).values()]
       .sort((a, b) => a.version.version - b.version.version);
     const latestVersionId = publications.at(-1)?.version.id ?? null;
     const versions = publications.map((snapshot) => {
       const id = snapshot.version.id;
+      const rightsRemoved = !!database.prepare("SELECT 1 FROM rights_versions WHERE version_id=?").get(id);
       const revisions = events.filter((event) => event.versionId === id && ["withdrawal", "correction"].includes(event.kind));
-      const withdrawn = snapshot.version.revisionReason === "withdrawal" && snapshot.version.schemaVersion !== 12 || revisions.some((event) => event.kind === "withdrawal");
+      const withdrawn = rightsRemoved || snapshot.version.revisionReason === "withdrawal" && snapshot.version.schemaVersion !== 12 || revisions.some((event) => event.kind === "withdrawal");
       const supersededByVersionIds = [...new Set([...publications.filter((entry) => entry.version.previousVersionId === id).map((entry) => entry.version.id),
         ...revisions.flatMap((event) => typeof event.snapshot.replacementVersionId === "string" ? [event.snapshot.replacementVersionId] : [])])];
       const pdf = events.findLast((event) => event.kind === "rendition-state" && event.versionId === id)?.snapshot;
       const pdfAvailable = !withdrawn && pdf?.state === "ready";
-      return { ...snapshot, status: withdrawn ? "withdrawn" : supersededByVersionIds.length ? "superseded" : "current", retracted: withdrawn,
-        contentSemantics: snapshot.version.schemaVersion === 12 && snapshot.version.revisionReason === "withdrawal" ? "safe-withdrawal-notice" : "report", supersededByVersionIds,
+      return { ...snapshot, status: rightsRemoved ? "rights-removed" : withdrawn ? "withdrawn" : supersededByVersionIds.length ? "superseded" : "current", retracted: withdrawn,
+        contentSemantics: rightsRemoved ? "rights-tombstone" : snapshot.version.schemaVersion === 12 && snapshot.version.revisionReason === "withdrawal" ? "safe-withdrawal-notice" : "report", supersededByVersionIds,
         changes: revisions.map(({ eventId, kind, snapshot: change }) => ({ eventId, kind, ...change })),
         renditions: { markdown: { available: !withdrawn, path: `/v1/reports/${id}/markdown` },
           pdf: { ...pdf, scope: "full-report", available: pdfAvailable,
@@ -132,6 +138,7 @@ export function privateArchive(database: DatabaseSync, access: PrivateAccess, mo
     assertReadable(versionId: string) {
       const item = view(versionId.slice(0, 10)).versions.find((entry) => entry.version.id === versionId);
       if (!item) throw new PrivateApiError("not-found", 404);
+      if (item.status === "rights-removed") throw new PrivateApiError("report-rights-removed", 410);
       if (item.status === "withdrawn") throw new PrivateApiError("report-withdrawn", 410);
     },
     history(input: { cursor?: string; limit?: number }) {

@@ -20,6 +20,7 @@ try {
   const inFlight = new Set<Promise<unknown>>();
   const tick = () => {
     if (shutdown.signal.aborted) return;
+    try { observer.processRetention(); } catch { console.error("retention-tick-failed"); return; }
     // Start the daily historical-source scan independently before ordinary daily work.
     // Neither freeze nor readable delivery awaits its network/model work.
     const patrol = observer.processCorrectionPatrol(shutdown.signal).catch(() => console.error("correction-patrol-tick-failed"));

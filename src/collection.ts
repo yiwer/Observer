@@ -136,6 +136,7 @@ export function createCollection(options: CollectionOptions) {
     CREATE TABLE IF NOT EXISTS proposals (source TEXT PRIMARY KEY, payload TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS source_gaps (source TEXT PRIMARY KEY, payload TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS correction_source_evidence (id TEXT PRIMARY KEY, source TEXT NOT NULL, payload TEXT NOT NULL, candidate_date TEXT);
+    CREATE TABLE IF NOT EXISTS source_suppressions(source TEXT PRIMARY KEY);
     PRAGMA application_id = 1329746755; PRAGMA user_version = 1;
   `);
   // Constructor and live reads share the same durable policy high-water mark.
@@ -162,7 +163,8 @@ export function createCollection(options: CollectionOptions) {
       return current;
     } catch (error) { database.exec("ROLLBACK"); throw error; }
   }
-  function currentPolicies() { return admitPolicies(options.policyReader ? SourcePolicySchema.array().max(100).parse(options.policyReader()) : sources); }
+  function currentPolicies() { return admitPolicies(options.policyReader ? SourcePolicySchema.array().max(100).parse(options.policyReader()) : sources)
+    .filter((source) => !database.prepare("SELECT 1 FROM source_suppressions WHERE source=?").get(source.sourceId)); }
   try { admitPolicies(sources); } catch (error) { database.close(); throw error; }
   let lastGaps: CoverageGap[] = database.prepare("SELECT payload FROM source_gaps ORDER BY rowid").all().map((row) => JSON.parse(String(row.payload)) as CoverageGap);
   let lastOutcomes: Array<{ sourceId: string; reason: string }> = [];
@@ -181,6 +183,14 @@ export function createCollection(options: CollectionOptions) {
     .map((source) => ({ sourceId: source.sourceId, feedUrl: source.feedUrl, reason: "Owner review required" }));
   let closed = false;
   return {
+    purge,
+    suppressSources(ids: string[]) {
+      for (const source of ids) {
+        database.prepare("INSERT OR IGNORE INTO source_suppressions VALUES(?)").run(source);
+        for (const table of ["evidence", "correction_source_evidence", "source_state", "source_gaps"]) database.prepare(`DELETE FROM ${table} WHERE source=?`).run(source);
+      }
+      purge();
+    },
     // Internal admission only: caller derives these exact URLs from published Claim provenance.
     // No validators: a feed 304 cannot stand in for a historical article observation.
     async rereadCorrection(target: { sourceId: string; url: string; title: string }, signal?: AbortSignal): Promise<CollectedEvidence> {
@@ -239,11 +249,12 @@ export function createCollection(options: CollectionOptions) {
     },
     async collect() {
       purge();
-      const coverageGaps: CoverageGap[] = sources.filter((source) => source.review.status !== "approved")
+      const liveSources = currentPolicies();
+      const coverageGaps: CoverageGap[] = liveSources.filter((source) => source.review.status !== "approved")
         .map((source) => ({ sourceId: source.sourceId, edition: source.edition, reason: "source-pending" }));
       let added = 0, updated = 0, duplicates = 0;
       const outcomes: typeof lastOutcomes = [];
-      for (const source of sources.filter((source) => source.review.status === "approved")) {
+      for (const source of liveSources.filter((source) => source.review.status === "approved")) {
         if (!source.collection.enabled) { coverageGaps.push({ sourceId: source.sourceId, edition: source.edition, reason: "collection-forbidden" }); continue; }
         const now = clock();
         const state = database.prepare("SELECT next_poll, validators FROM source_state WHERE source = ?").get(source.sourceId);
@@ -255,7 +266,12 @@ export function createCollection(options: CollectionOptions) {
         }
         database.prepare("INSERT INTO source_state (source, next_poll) VALUES (?, ?) ON CONFLICT(source) DO UPDATE SET next_poll = excluded.next_poll").run(source.sourceId, new Date(Date.parse(now) + source.limits.pollIntervalSeconds * 1000).toISOString());
         try {
-        const response = await boundedRead(read, source.feedUrl, source, state ? JSON.parse(String(state.validators)) as Record<string, string> : {});
+        const authorize = () => { const latest = currentPolicies().find((entry) => entry.sourceId === source.sourceId);
+          if (!latest || !latest.collection.enabled || latest.review.status !== "approved" || policyDigest(latest) !== policyDigest(source)) throw new SourceReadError("source-policy-changed"); };
+        const liveRead: NonNullable<CollectionOptions["read"]> = async (url, request) => {
+          authorize(); const result = await read(url, { ...request, validateUrl: () => { authorize(); return true; } }); authorize(); return result;
+        };
+        const response = await boundedRead(liveRead, source.feedUrl, source, state ? JSON.parse(String(state.validators)) as Record<string, string> : {});
         const feedReceivedAtUtc = clock();
         if (response.status === 429) {
           const retry = response.headers["retry-after"] ?? "";
@@ -275,7 +291,7 @@ export function createCollection(options: CollectionOptions) {
           if (!item.link || !/^https?:$/.test(new URL(item.link).protocol)) throw new SourceReadError("invalid-item");
           let content = item.content ?? item.description ?? item.summary;
           if (source.collection.readBody && source.collection.fields.includes("content") && item.link) {
-            const body = await boundedRead(read, new URL(item.link, source.feedUrl).href, source, {});
+            const body = await boundedRead(liveRead, new URL(item.link, source.feedUrl).href, source, {});
             if (body.status !== 200) throw new Error("http-error");
             if (Buffer.byteLength(body.body) > source.limits.maxResponseBytes) throw new SourceReadError("response-too-large");
             content = body.body;

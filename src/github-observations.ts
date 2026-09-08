@@ -16,6 +16,7 @@ import { projectGitHubPublication } from "./github-publication-budget.ts";
 import type { QuotationPolicy } from "./github-quotations.ts";
 import { createMomentumStorage } from "./github-momentum-storage.ts";
 import { createGitHubReadBudget, finishGitHubReadBudget, type GitHubReadBudget } from "./github-read-budget.ts";
+import { githubRetention } from "./github-retention.ts";
 
 export function githubPermission(source: SourcePolicy | undefined, configuration: GitHubConfiguration, atUtc: string, publication = false): boolean {
   return !!source && source.sourceId === configuration.sourceId && source.edition === "github-projects" && source.feedUrl === "https://api.github.com" &&
@@ -256,8 +257,10 @@ export function createGitHubObserver(options: { databasePath: string; configurat
     const identities: GitHubSnapshot["identities"] = [...currentNodes].sort().map((nodeId) => {
       const entries = all.flatMap((run) => run.observations).filter((entry) => entry.nodeId === nodeId);
       const verified = entries.filter(hasVerifiedIdentity);
-      const names = verified.filter((entry, index) => index === 0 || verified[index - 1]!.fullName !== entry.fullName).map(({ fullName, observedAtUtc }) => ({ fullName, observedAtUtc }));
-      return { nodeId, firstSeenAtUtc: entries[0]!.observedAtUtc, historySha256: githubDigest(names), names: names.slice(-8), truncated: names.length > 8 };
+      const compacted = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='github_identity_history'").get() ? db.prepare("SELECT full_name AS fullName,observed_at AS observedAtUtc FROM github_identity_history WHERE source_id=? AND node_id=? AND observed_at<=? ORDER BY observed_at").all(config.sourceId, nodeId, cutoffUtc).map((row) => ({ fullName: String(row.fullName), observedAtUtc: String(row.observedAtUtc) })) : [];
+      const history = [...compacted, ...verified.map(({ fullName, observedAtUtc }) => ({ fullName, observedAtUtc }))].sort((a, b) => a.observedAtUtc.localeCompare(b.observedAtUtc));
+      const names = history.filter((entry, index) => index === 0 || history[index - 1]!.fullName !== entry.fullName);
+      return { nodeId, firstSeenAtUtc: [entries[0]!.observedAtUtc, compacted[0]?.observedAtUtc].filter((entry): entry is string => !!entry).sort()[0]!, historySha256: githubDigest(names), names: names.slice(-8), truncated: names.length > 8 };
     });
     const snapshot: GitHubSnapshot | GitHubRankingSnapshot = { schemaVersion: ranking ? 2 : 1, rulesVersion: githubRules.version, cutoffUtc, configuration: config, configurationSha256: githubDigest(config),
       runs: compatible.map((run) => ({ ...run, observations: run.observations.filter((entry) => currentNodes.has(entry.nodeId)) })), identities, reasons: [], watchItems: [], exclusions: [] };
@@ -279,6 +282,10 @@ export function createGitHubObserver(options: { databasePath: string; configurat
     return (ranking ? GitHubRankingSnapshotSchema : GitHubSnapshotSchema).parse(snapshot);
   }
   return {
+    maintainRetention(published: unknown[], suppressed: string[]) {
+      if (historyReading || active) throw new Error("github-retention-busy");
+      return githubRetention(db, clock(), published, suppressed);
+    },
     async observeDue(input: { signal?: AbortSignal } = {}): Promise<GitHubRun> {
       if (historyReading) throw new Error("github-development-read-scope-invalid");
       if (active) return active;
@@ -339,6 +346,11 @@ export function createGitHubObserver(options: { databasePath: string; configurat
         }
         for (const previous of history().filter((run) => run.configuration.sourceId === config.sourceId).flatMap((run) => run.observations).filter(hasVerifiedIdentity).reverse()) if (!candidates.has(previous.nodeId)) {
           if (candidates.size < candidateLimit) candidates.set(previous.nodeId, previous.fullName); else run.reasons.push("github-candidate-limit");
+        }
+        if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='github_identity_history'").get()) {
+          for (const previous of db.prepare("SELECT node_id,full_name FROM github_identity_history WHERE source_id=? ORDER BY observed_at DESC").all(config.sourceId)) {
+            if (!candidates.has(String(previous.node_id)) && candidates.size < candidateLimit) candidates.set(String(previous.node_id), String(previous.full_name));
+          }
         }
         for (const [nodeId, fullName] of candidates) {
           let observation: GitHubObservation;

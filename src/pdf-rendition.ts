@@ -13,6 +13,7 @@ const maxAttempts = 3, retryDelayMs = 60_000, timeoutMs = 60_000, leaseMs = 120_
 /** Independent, persisted rendition work. Report INSERT queues work atomically;
  * only a complete worker result is committed, never a partial PDF or changed MD. */
 export function pdfRenditions(database: DatabaseSync, clock: () => string, mode: "production" | "test-fixture", enabled: boolean) {
+  database.exec("CREATE TABLE IF NOT EXISTS rights_versions(version_id TEXT PRIMARY KEY,removed_at_utc TEXT NOT NULL,retain_version_audit INTEGER NOT NULL)");
   const time = "strftime('%Y-%m-%dT%H:%M:%fZ','now')";
   const snapshot = (row: string) => `json_object('schemaVersion',1,'format','pdf','scope','full-report','versionId',${row}.version_id,
     'provenance',(SELECT json_extract(payload,'$.version.provenance') FROM reports WHERE id=${row}.version_id),
@@ -35,7 +36,8 @@ export function pdfRenditions(database: DatabaseSync, clock: () => string, mode:
       INSERT INTO pdf_renditions(version_id,canonical_sha256,next_attempt_at,updated_at)
       VALUES (NEW.id,json_extract(NEW.payload,'$.version.canonicalMarkdownSha256'),'0001-01-01T00:00:00.000Z',${time}); END;
     INSERT OR IGNORE INTO pdf_renditions(version_id,canonical_sha256,next_attempt_at,updated_at)
-      SELECT id,json_extract(payload,'$.version.canonicalMarkdownSha256'),'0001-01-01T00:00:00.000Z',${time} FROM reports;
+      SELECT id,json_extract(payload,'$.version.canonicalMarkdownSha256'),'0001-01-01T00:00:00.000Z',${time} FROM reports
+      WHERE COALESCE(json_extract(payload,'$.rightsRemoved'),0)=0 AND NOT EXISTS(SELECT 1 FROM rights_versions WHERE version_id=reports.id);
     COMMIT;`);
   let active: Worker | null = null, processing = false, closed = false;
   const visibility = mode === "production" ? " AND json_extract(r.payload,'$.version.provenance')!='test-fixture'" : "";

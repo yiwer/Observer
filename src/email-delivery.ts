@@ -63,6 +63,7 @@ type Readers = { report(versionId: string): PublishedReport; pdf(report: Publish
   grant(versionId: string, format: "pdf" | "markdown"): { path: string; expiresAtUtc: string } };
 
 export function emailDeliveries(database: DatabaseSync, clock: () => string, mode: "production" | "test-fixture", options?: EmailOptions) {
+  database.exec("CREATE TABLE IF NOT EXISTS rights_email_scope(delivery_id TEXT PRIMARY KEY,version_id TEXT NOT NULL,scope TEXT NOT NULL,recorded_at_utc TEXT NOT NULL)");
   const configuration = EmailConfigurationSchema.parse(options?.configuration ?? { enabled: false });
   if (configuration.enabled && !options?.transport) throw new Error("email-transport-required");
   if (configuration.enabled && mode === "production" && options?.transport.provenance !== "live") throw new Error("email-live-transport-required");
@@ -123,6 +124,7 @@ export function emailDeliveries(database: DatabaseSync, clock: () => string, mod
             .map((entry) => ({ recordedAtUtc: entry.recordedAtUtc, ...JSON.parse(String(entry.payload)) as Record<string, unknown> })),
         }));
       return { schemaVersion: 1, enabled: configuration.enabled, versionId,
+        irretrievableScope: database.prepare("SELECT scope,recorded_at_utc AS recordedAtUtc FROM rights_email_scope WHERE version_id=?").all(versionId),
         notifications: database.prepare("SELECT kind,created_at_utc AS createdAtUtc FROM email_notifications WHERE version_id=? ORDER BY kind").all(versionId), deliveries };
     },
     async processNext(readers: Readers, signal?: AbortSignal) {
@@ -141,7 +143,8 @@ export function emailDeliveries(database: DatabaseSync, clock: () => string, mod
           const visibility = mode === "production" ? " AND json_extract(r.payload,'$.version.provenance')!='test-fixture'" : "";
           const pending = database.prepare(`SELECT n.*,json_extract(r.payload,'$.version.publishedAtUtc') AS published_at_utc
             FROM email_notifications n JOIN reports r ON r.id=n.version_id
-            WHERE substr(n.version_id,1,10)>=? AND NOT EXISTS (SELECT 1 FROM email_deliveries d WHERE d.notification_id=n.id)${visibility}
+            WHERE substr(n.version_id,1,10)>=? AND NOT EXISTS (SELECT 1 FROM rights_versions WHERE version_id=n.version_id)
+            AND NOT EXISTS (SELECT 1 FROM email_deliveries d WHERE d.notification_id=n.id)${visibility}
             ORDER BY n.created_at_utc,n.id LIMIT 25`).all(configuration.startBusinessDate);
           for (const row of pending) {
             const id = randomUUID();
