@@ -1,0 +1,103 @@
+name: observer
+services:
+  app:
+    image: ${OBSERVER_APP_IMAGE:?Set a retained release image}
+    pull_policy: never
+    init: true
+    user: "10001:10001"
+    group_add: ["${OBSERVER_DOCKER_GID:?Set the host Docker socket group id}"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 2g
+    cpus: 2
+    restart: "on-failure:3"
+    stop_grace_period: 40s
+    environment:
+      TZ: UTC
+      OBSERVER_BIND_HOST: 0.0.0.0
+      OBSERVER_PORT: "3000"
+      OBSERVER_RUNTIME_CONFIG: /etc/observer/config/runtime.json
+      OBSERVER_OWNER_TOKEN_FILE: /run/secrets/owner-token
+      OBSERVER_OPENAI_API_KEY_FILE: /run/provider-secrets/openai-api-key
+      OBSERVER_ANTHROPIC_API_KEY_FILE: /run/provider-secrets/anthropic-api-key
+      OBSERVER_GITHUB_TOKEN_FILE: /run/provider-secrets/github-token
+      QQ_SMTP_KEY_FILE: /run/provider-secrets/qq-smtp-key
+      OBSERVER_HEALTH_FILE: /run/observer/health.json
+      OBSERVER_AGENT_CONCURRENCY: "${OBSERVER_AGENT_CONCURRENCY:-2}"
+      OBSERVER_NODE_ID: "${OBSERVER_NODE_ID:?Set a stable node label}"
+      OBSERVER_MIN_FREE_BYTES: "${OBSERVER_MIN_FREE_BYTES:-536870912}"
+      OBSERVER_MIN_FREE_INODES: "${OBSERVER_MIN_FREE_INODES:-1024}"
+    volumes:
+      - type: bind
+        source: ${OBSERVER_DATA_DIR:?Set persistent data directory}
+        target: /var/lib/observer
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_CONFIG_DIR:?Set reviewed config directory}
+        target: /etc/observer/config
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_OWNER_TOKEN_PATH:?Set Owner token file path}
+        target: /run/secrets/owner-token
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_PROVIDER_SECRETS_DIR:?Set the private provider secret directory; it may be empty}
+        target: /run/provider-secrets
+        read_only: true
+        bind: {create_host_path: false}
+      # Management authority only. A read-only bind does NOT make the Docker API read-only.
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+        bind: {create_host_path: false}
+    tmpfs:
+      - /run/observer:rw,noexec,nosuid,size=32m,uid=10001,gid=10001,mode=700
+      - /tmp:rw,noexec,nosuid,size=64m,uid=10001,gid=10001,mode=700
+    networks: [private, outbound]
+    healthcheck:
+      test: [CMD, node, dist/runtime-health.js]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging: {driver: local, options: {max-size: 10m, max-file: "3"}}
+
+  https:
+    image: ${OBSERVER_CADDY_IMAGE:?Set a fixed Caddy image}
+    user: "10002:10002"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.5
+    restart: "on-failure:3"
+    environment:
+      OBSERVER_DOMAIN: ${OBSERVER_DOMAIN:?Set the authorized HTTPS hostname}
+    ports: ["80:8080", "443:8443"]
+    volumes:
+      - type: bind
+        source: ${OBSERVER_DEPLOY_DIR:?Set installed deployment directory}/Caddyfile
+        target: /etc/caddy/Caddyfile
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${OBSERVER_TLS_DIR:?Set private TLS state directory}
+        target: /data
+        bind: {create_host_path: false}
+    tmpfs:
+      - /config:rw,noexec,nosuid,size=16m,uid=10002,gid=10002,mode=700
+      - /tmp:rw,noexec,nosuid,size=16m,uid=10002,gid=10002,mode=700
+    networks: [private, outbound]
+    depends_on:
+      app: {condition: service_healthy}
+    logging: {driver: local, options: {max-size: 5m, max-file: "2"}}
+
+networks:
+  private: {internal: true}
+  outbound: {}

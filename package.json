@@ -19,6 +19,7 @@
     "corrections": "node src/correction-admin.ts",
     "patrol": "node src/correction-patrol-admin.ts",
     "retention": "node src/retention-admin.ts",
+    "ops": "node src/ops-admin.ts",
     "prepare:codex": "node scripts/prepare-codex-runtime.mjs",
     "prepare:claude": "node scripts/prepare-claude-runtime.mjs"
   },

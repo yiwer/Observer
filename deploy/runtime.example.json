@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "configurationId": "observer-linux-v1",
+  "schedule": { "enabled": false, "startBusinessDate": "2026-09-09", "retryDelayMs": 60000, "maxAttempts": 3, "recoveryRetryDelayMs": 300000 },
+  "sourceConfigurationPath": "sources.json",
+  "interestProfilePath": "interest.json",
+  "databasePath": "/var/lib/observer/observer.sqlite",
+  "collectionDatabasePath": "/var/lib/observer/collection.sqlite",
+  "taskRoot": "/run/observer/agent-tasks",
+  "collect": false,
+  "pdf": { "enabled": true },
+  "email": { "enabled": false },
+  "corrections": { "enabled": false },
+  "correctionPatrol": { "enabled": false },
+  "routing": {
+    "schemaVersion": 1, "version": 1, "primary": "codex",
+    "limits": { "attemptTimeoutMs": 60000, "totalTimeoutMs": 900000, "maxConcurrentProcesses": 2,
+      "maxConcurrentExternalRequests": 2, "maxModelRequestsPerAttempt": 4, "maxExternalRequests": 336,
+      "maxResearchAttempts": 24, "maxVerificationAttempts": 30, "maxReviewAttempts": 30, "sameProviderRetries": 0 }
+  },
+  "providers": {}
+}

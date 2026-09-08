@@ -162,12 +162,13 @@ export function retentionLifecycle(database: DatabaseSync, clock: () => string, 
   // An old collected grant cannot silently become a current grant at first boot.
   const initialPolicies = readPolicies();
   if (initialPolicies !== undefined) for (const row of database.prepare("SELECT payload FROM reports WHERE COALESCE(json_extract(payload,'$.rightsRemoved'),0)=0").all()) {
+    const inspectedPolicies = initialPolicies;
     function inspect(value: unknown) {
       if (Array.isArray(value)) { value.forEach(inspect); return; }
       if (!value || typeof value !== "object") return;
       const item = value as Record<string, unknown>, origin = item.origin as Record<string, unknown> | undefined;
       if (typeof item.sourceId === "string" && (typeof item.policyVersion === "number" || origin?.kind === "collected")) {
-        const current = initialPolicies.find((source) => source.sourceId === item.sourceId);
+        const current = inspectedPolicies.find((source) => source.sourceId === item.sourceId);
         const version = item.policyVersion ?? origin?.policyVersion;
         if (!current || current.review.status !== "approved" || !current.collection.enabled || !current.distribution.enabled || !current.distribution.allowPermanentArchive ||
           !current.distribution.allowDerivedText || !current.citation.enabled || current.version !== version)

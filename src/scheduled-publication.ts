@@ -8,6 +8,7 @@ import { DiscourseConfigurationSchema, DiscourseSampleSchema } from "./discourse
 import { GitHubRepromotionSnapshotSchema } from "./github-development-contracts.ts";
 import { RoutingConfigurationSchema } from "./routing-contracts.ts";
 import { recoveryDeadline } from "./brief-recovery.ts";
+import { processIdentity } from "./process-identity.ts";
 
 const utc = z.iso.datetime({ precision: 3, offset: false });
 export const ScheduleConfigurationSchema = z.strictObject({
@@ -48,7 +49,7 @@ export function scheduledStore(database: DatabaseSync, clock: () => string) {
     business_date TEXT NOT NULL,group_id TEXT NOT NULL,payload TEXT NOT NULL,
     PRIMARY KEY(business_date,group_id));`);
   const columns = database.prepare("PRAGMA table_info(scheduled_tasks)").all().map((entry) => entry.name);
-  for (const [name, definition] of Object.entries({ latest_version_id: "TEXT", content_state: "TEXT", timing_state: "TEXT", recovery_state: "TEXT NOT NULL DEFAULT 'open'", missed_at_utc: "TEXT", latest_readable_at_utc: "TEXT" })) {
+  for (const [name, definition] of Object.entries({ process_identity: "TEXT", latest_version_id: "TEXT", content_state: "TEXT", timing_state: "TEXT", recovery_state: "TEXT NOT NULL DEFAULT 'open'", missed_at_utc: "TEXT", latest_readable_at_utc: "TEXT" })) {
     if (!columns.includes(name)) database.exec(`ALTER TABLE scheduled_tasks ADD COLUMN ${name} ${definition}`);
   }
   database.exec("UPDATE scheduled_tasks SET latest_version_id=business_date||'-v1',latest_readable_at_utc=readable_at_utc WHERE latest_version_id IS NULL AND state IN ('published','readable') AND EXISTS (SELECT 1 FROM reports WHERE id=business_date||'-v1')");
@@ -117,12 +118,19 @@ export function scheduledStore(database: DatabaseSync, clock: () => string) {
         if (value.state === "running" && value.pid) {
           let alive = true;
           try { process.kill(Number(value.pid), 0); } catch (error) { alive = (error as NodeJS.ErrnoException).code !== "ESRCH"; }
+          if (alive && value.process_identity) {
+            const current = processIdentity(Number(value.pid));
+            // Unreadable identity is conservative; only a positively different process is reclaimable.
+            if (current !== null && current !== value.process_identity) alive = false;
+          }
           if (alive) { database.exec("COMMIT"); return null; }
         }
         // maxAttempts bounds each short retry cycle; exhausted cycles resume at the
         // configured recovery backoff, and the noon boundary bounds the entire day.
         const snapshot = ScheduledSnapshotSchema.parse(JSON.parse(String(value.snapshot)));
-        database.prepare("UPDATE scheduled_tasks SET state='running',owner=?,pid=?,attempts=attempts+1,failure=NULL WHERE business_date=?").run(instance, process.pid, date);
+        const identity = processIdentity(process.pid);
+        if (process.platform === "linux" && identity === null) throw new Error("process-identity-unavailable");
+        database.prepare("UPDATE scheduled_tasks SET state='running',owner=?,pid=?,process_identity=?,attempts=attempts+1,failure=NULL WHERE business_date=?").run(instance, process.pid, identity, date);
         database.exec("COMMIT"); return snapshot;
       } catch (error) { database.exec("ROLLBACK"); throw error; }
     },
