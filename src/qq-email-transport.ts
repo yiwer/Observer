@@ -9,15 +9,19 @@ export function createQqEmailTransport(configuration: unknown, readKey: () => st
 }
 
 /** Explicit local attachment delivery requires no externally hosted download URL. */
-export function createQqAttachmentTransport(configuration: unknown, readKey: () => string | undefined): EmailTransport {
+export function createQqAttachmentTransport(configuration: unknown, readKey: () => string | undefined, recipientAddresses?: readonly string[]): EmailTransport {
   const checked = QqTransportConfigurationSchema.parse(configuration);
+  // Explicit per-run recipient allowlist; existing callers remain sender-to-self.
+  const recipients = new Set((recipientAddresses ?? [checked.address]).map(address =>
+    QqTransportConfigurationSchema.parse({ enabled: true, transport: "qq-smtp", address }).address));
+  if (!recipients.size) throw new Error("email-recipients-missing");
   let closed = false;
   const active = new Set<() => void>();
   return {
     name: "qq-smtp", provenance: "live",
     async send(message, signal) {
       if (closed || signal?.aborted) return { state: "retryable", reason: "smtp-before-submit-failed" };
-      if (message.from !== checked.address || message.to !== checked.address || message.raw.length > emailBudgets.mimeBytes)
+      if (message.from !== checked.address || !recipients.has(message.to) || message.raw.length > emailBudgets.mimeBytes)
         return { state: "rejected", reason: "smtp-before-submit-failed" };
       // Read only after the enabled, complete configuration and bounded MIME are validated.
       const key = readKey();
