@@ -367,7 +367,9 @@ export async function restoreBackup(config: BackupConfiguration, drillId: string
     try {
       if (JSON.stringify(reports.prepare("SELECT id FROM reports ORDER BY id").all().map((row) => String(row.id))) !== JSON.stringify(manifest.reportIds)) throw new Error("backup-report-inventory-mismatch");
       for (const name of ["private_access_meta", "devices", "device_pairings"]) if (table(reports, name) && reports.prepare(`SELECT COUNT(*) AS count FROM ${quote(name)}`).get()!.count !== 0) throw new Error("backup-secret-state-forbidden");
-      restoredMailFence(reports, startedAtUtc, manifest.id);
+      const mailFenceAtUtc = utc();
+      restoredMailFence(reports, mailFenceAtUtc, manifest.id);
+      result.mailFenceAtUtc = mailFenceAtUtc;
     } finally { reports.close(); }
     for (const [name, file] of Object.entries(files)) {
       const db = openManaged(file, name.replace(".sqlite", "") as "reports" | "collection" | "github");
