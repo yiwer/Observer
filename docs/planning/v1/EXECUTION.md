@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #20已实际读回CLOSED；#21 OPEN已派发fresh-context `/root/implement_v1_21`，专属 `O:/GenesisCode/Observer-worktrees/v1-21` / `ticket/v1-21`，base `1ca9e3d`。实现最近7天已报道来源的有界持久巡检及更正信号路由，复用#20核验/版本/通知；不以普通feed轮询代替历史URL复查。按完整功能块快速交付，不做hash验收、新夹具或逐步/集成回归；Root短静态review，无真实调用/秘密读取/发送/部署。
+
 - 2026-09-08 #20已接受并本地集成 `3280fb0`（功能 `9f75785`，必要修复 `a412a03`，base `0c32603`）。短静态 Standards 0、Spec 1项锚点引用问题已修；类型及一次注入更正/旧链接撤销/PDF/通知路径通过，最终锚点修复仅静态核对，没有重跑。见[#20接受记录](acceptance/20-correction-and-retraction-versions.md)。无hash验收、新增夹具、逐步/集成回归；默认关闭、未真实调用/发送/部署。下一票#21最近7天来源巡检，代码未push；下方为历史状态。
 
 - 2026-09-08 #19已接受并本地集成 `3453d83`（功能 `8aeccab`，base `88b8c6b`）。短静态 Standards/Spec 各0；类型及一次注入主路径通过，原脚本解码错误修正后通过、末尾字段命名未动态重跑。已接通outbox/同版HTML与PDF/QQ适配器/持久受理状态，unknown不重发；见[#19接受记录](acceptance/19-email-delivery-and-reconciliation.md)。默认禁用，未读秘密或发信；无hash验收、逐步或集成回归。下一票#20给定更正信号的核验/版本/重大通知，自动发现归#21。代码未push，真实上线未验证；下方为历史状态。
