@@ -278,6 +278,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
         decide(edition, provider, provider === providers[0] ? "primary-selected" : "fallback-selected");
         const attempt = begin(edition, "research", { ...input, edition, evidenceIds: assigned.evidenceIds }, provider, assigned.evidenceIds);
         const external = { schemaVersion: 1 as const, taskId: attempt.id, configurationId: input.configurationId, businessDate: input.businessDate,
+          ...(input.correctionResearch ? { correctionResearch: input.correctionResearch } : {}),
           evidenceBundle: { ...input.evidenceBundle, evidence: input.evidenceBundle.evidence.filter((entry) => assigned.evidenceIds.includes(entry.id)) } };
         let result: AgentResult | undefined;
         const cancellation = new AbortController();

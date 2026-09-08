@@ -20,6 +20,10 @@ try {
   const inFlight = new Set<Promise<unknown>>();
   const tick = () => {
     if (shutdown.signal.aborted) return;
+    // Start the daily historical-source scan independently before ordinary daily work.
+    // Neither freeze nor readable delivery awaits its network/model work.
+    const patrol = observer.processCorrectionPatrol(shutdown.signal).catch(() => console.error("correction-patrol-tick-failed"));
+    inFlight.add(patrol); void patrol.finally(() => inFlight.delete(patrol));
     const correction = observer.processCorrections(shutdown.signal).catch(() => console.error("correction-tick-failed"));
     inFlight.add(correction); void correction.finally(() => inFlight.delete(correction));
     const rendition = observer.processPdfRenditions(shutdown.signal).catch(() => console.error("pdf-rendition-tick-failed"));

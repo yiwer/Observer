@@ -7,10 +7,12 @@ import { policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
 import { evaluatePublication, escapeMarkdown, inputDigest } from "./publication-gate.ts";
 import { correctionMarkdown } from "./correction-rendering.ts";
 import { CorrectionSignalSchema, correctionStatus, initializeCorrectionQueue } from "./correction-queue.ts";
-import { createProviderRouting, type RoutingOptions } from "./provider-routing.ts";
+import { createProviderRouting, RoutingBoundaryError, type RoutingOptions } from "./provider-routing.ts";
 import { MAX_ROUTING_AUDIT_BYTES, RoutingReceiptSchema } from "./routing-contracts.ts";
 import { editionMarkdown } from "./private-archive.ts";
 import { enqueueEmailNotification } from "./email-delivery.ts";
+import { correctionSectionSource } from "./correction-scope.ts";
+import { patrolCorrectionDeadline } from "./correction-patrol.ts";
 
 type Edition = keyof typeof editionNames;
 export interface CorrectionOptions { enabled: boolean; evidence(ids: string[]): CollectedEvidence[] }
@@ -68,29 +70,31 @@ export function correctionPublisher(database: DatabaseSync, dependencies: Depend
     const owner = randomUUID();
     let inputId: string | undefined, routing: ReturnType<typeof createProviderRouting> | undefined;
     let routingCompleted = false;
+    let patrolDeadline: string | null = null;
+    let patrolDeadlineSignal: AbortSignal | undefined, plannedPauseDuringVerification = false;
+    const patrolDeadlineReached = () => !!inputId?.startsWith("patrol:") && !!patrolDeadline && (patrolDeadlineSignal?.aborted || clock() >= patrolDeadline);
+    const checkPatrolDeadline = () => { if (patrolDeadlineReached()) fail("patrol-planned-pause"); };
     try {
       database.exec("BEGIN IMMEDIATE");
       let row: Record<string, unknown> | undefined;
       try {
         // A crashed verification may be re-run; no publication/send occurs before the CAS transaction.
         database.prepare("UPDATE correction_signals SET state='pending',owner=NULL,lease_until_utc=NULL WHERE state='processing' AND lease_until_utc<=?").run(clock());
-        row = database.prepare("SELECT * FROM correction_signals WHERE state='pending' AND NOT EXISTS (SELECT 1 FROM correction_signals WHERE state='processing') ORDER BY received_at_utc,rowid LIMIT 1").get();
+        patrolDeadline = patrolCorrectionDeadline(clock());
+        row = database.prepare("SELECT * FROM correction_signals WHERE state='pending' AND (signal_id NOT LIKE 'patrol:%' OR ?=1) AND NOT EXISTS (SELECT 1 FROM correction_signals WHERE state='processing') ORDER BY received_at_utc,rowid LIMIT 1").get(patrolDeadline ? 1 : 0);
         if (row) database.prepare("UPDATE correction_signals SET state='processing',owner=?,lease_until_utc=? WHERE signal_id=?").run(owner, new Date(Date.parse(clock()) + 3700000).toISOString(), String(row.signal_id));
         database.exec("COMMIT");
       } catch (error) { database.exec("ROLLBACK"); throw error; }
       if (!row) return;
       inputId = String(row.signal_id);
+      if (inputId.startsWith("patrol:") && patrolDeadline) {
+        patrolDeadlineSignal = AbortSignal.timeout(Math.max(1, Date.parse(patrolDeadline) - Date.parse(clock())));
+        signal = signal ? AbortSignal.any([signal, patrolDeadlineSignal]) : patrolDeadlineSignal;
+      }
       const input = CorrectionSignalSchema.parse(JSON.parse(String(row.payload))), date = input.expectedCurrentVersionId.slice(0, 10);
       if (latest(date) !== input.expectedCurrentVersionId) fail("stale-current-version");
       const previous = dependencies.read(input.expectedCurrentVersionId);
-      const sectionSource = (edition: Edition) => {
-        if (previous.record.schemaVersion === 12) return previous.record.revision.inherited.find((entry) => entry.edition === edition)?.sourceVersionId ?? previous.version.id;
-        let parent = previous;
-        while (parent.record.schemaVersion === 11 && parent.record.recovery?.revisionReason === "completion" && !parent.record.recovery.completedEditions.includes(edition) && parent.version.previousVersionId) {
-          parent = dependencies.historical(parent.version.previousVersionId);
-        }
-        return parent.version.id;
-      };
+      const sectionSource = (edition: Edition) => correctionSectionSource(previous, edition, dependencies.historical);
       const original = input.affected.map((reference) => {
         const report = dependencies.historical(reference.versionId);
         const story = report.record.stories.find((entry) => entry.id === reference.storyId);
@@ -126,7 +130,7 @@ export function correctionPublisher(database: DatabaseSync, dependencies: Depend
         try { for (const id of ids) { const item = evidence.find((entry) => entry.id === id); if (!item) return "unknown-evidence-reference"; policy(item, at, stage); } return null; }
         catch (error) { return error instanceof CorrectionFailure ? error.message : "source-policy-unavailable"; }
       };
-      if (dependencies.routing) routing = createProviderRouting(dependencies.routing, task, (receipt) => {
+      if (dependencies.routing) routing = createProviderRouting(inputId.startsWith("patrol:") && patrolDeadline ? { ...dependencies.routing, assemblyIdentity: dependencies.routing, publicationDeadlineUtc: patrolDeadline } : dependencies.routing, task, (receipt) => {
         const safe = RoutingReceiptSchema.parse(receipt), payload = JSON.stringify(safe);
         if (Buffer.byteLength(payload) > Math.min(MAX_ROUTING_AUDIT_BYTES, safe.configuration.limits.maxAuditBytes)) fail("routing-audit-capacity-exceeded");
         database.prepare("INSERT INTO routing_runs VALUES (?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload").run(safe.runId, payload);
@@ -135,13 +139,30 @@ export function correctionPublisher(database: DatabaseSync, dependencies: Depend
       }, signal);
       if (dependencies.mode === "production" && (!routing || dependencies.routing?.executionScope !== "live")) fail("correction-routing-unavailable");
       const candidates = [input.finding, ...(input.replacement ? [input.replacement] : [])];
-      const result = await evaluatePublication({ request: { ...task, schemaVersion: 1 }, stories: candidates, verifier: routing ?? dependencies.verifier,
+      const verifier: SemanticVerifier | undefined = routing ? { verify: async (verificationInput) => {
+        try {
+          const result = await routing!.verify(verificationInput);
+          // The optional second-provider review absorbs its own errors. Its
+          // persisted cancellation must also keep the planned pause recoverable.
+          if (patrolDeadlineReached() && routing!.receipt().attempts.some((attempt) => attempt.status === "failed" &&
+            attempt.finishedAtUtc && attempt.finishedAtUtc >= patrolDeadline! && ["cancelled", "total-deadline", "timeout"].includes(attempt.reason ?? ""))) plannedPauseDuringVerification = true;
+          return result;
+        }
+        catch (error) {
+          // Only the planned routing cancellation is resumable; semantic, policy,
+          // qualification and cleanup failures retain their existing terminal result.
+          if (patrolDeadlineReached() && error instanceof RoutingBoundaryError && ["cancelled", "total-deadline", "timeout"].includes(error.message)) plannedPauseDuringVerification = true;
+          throw error;
+        }
+      } } : dependencies.verifier;
+      const result = await evaluatePublication({ request: { ...task, schemaVersion: 1 }, stories: candidates, verifier,
         domainRules: true, recordVerifierDispatch: true, clock,
         revisionContext: { purpose: "correction-review", originalStatements: original.map(({ referenceId, versionId, storyId, claim }) => ({ referenceId, versionId, storyId, claim })), findingStoryId: input.finding.id },
         modelPolicyCheck: (ids, at) => policyCheck(ids, "model", at),
         publicationPolicyCheck: (ids, claim, at) => claim.kind === "quotation" ? "correction-quotation-not-supported" : policyCheck(ids, "distribution", at),
         ...(routing ? { reviewDecision: routing.reviewDecision } : {}),
       });
+      if (plannedPauseDuringVerification) fail("patrol-planned-pause");
       const assessment = result.publicationGate.verification?.assessments.find((entry) => entry.storyId === input.finding.id);
       const judgment = assessment?.revision;
       if (!judgment || judgment.affectedReferenceIds.length !== original.length || new Set(judgment.affectedReferenceIds).size !== original.length || original.some((entry) => !judgment.affectedReferenceIds.includes(entry.referenceId))) fail("revision-judgment-unavailable");
@@ -201,15 +222,18 @@ export function correctionPublisher(database: DatabaseSync, dependencies: Depend
         version, publishedAtUtc, revisionReason: reason, previousVersionId: previous.version.id, provenance: previous.version.provenance,
         reportRecordId: record.id, reportRecordSha256: inputDigest(record), canonicalMarkdownSha256: inputDigestText(canonicalMarkdown),
         content: "degraded", timing: "timing" in previous.version ? previous.version.timing : "pending" }, record, canonicalMarkdown });
+      checkPatrolDeadline();
       routing?.authorize(true);
       routing?.freeze();
       database.exec("BEGIN IMMEDIATE");
       try {
+        checkPatrolDeadline();
         if (signal?.aborted) fail("correction-cancelled");
         if (latest(date) !== previous.version.id) fail("stale-current-version");
         if (!database.prepare("SELECT 1 FROM correction_signals WHERE signal_id=? AND state='processing' AND owner=?").get(inputId, owner)) fail("correction-lease-lost");
         dependencies.read(previous.version.id);
         for (const entry of retained) policy(entry, clock(), "distribution");
+        checkPatrolDeadline();
         routing?.authorize(true);
         database.prepare("INSERT INTO reports(id,payload,development_capture_sha256) VALUES (?,?,NULL)").run(versionId, JSON.stringify(report));
         dependencies.recordChange({ eventId: `correction:${input.signalId}`, kind: reason, versionId: previous.version.id, replacementVersionId: versionId, reasonReference: `correction:${input.signalId}` });
@@ -222,15 +246,17 @@ export function correctionPublisher(database: DatabaseSync, dependencies: Depend
           .run(versionId, date);
         database.prepare("UPDATE correction_signals SET state='published',version_id=?,reason=?,owner=NULL,lease_until_utc=NULL WHERE signal_id=? AND owner=?")
           .run(versionId, reason, inputId, owner);
-        routing?.complete(versionId); routingCompleted = true;
+        checkPatrolDeadline();
+        routing?.complete(versionId);
         database.exec("COMMIT");
+        routingCompleted = true;
       } catch (error) { database.exec("ROLLBACK"); throw error; }
       return correctionStatus(database, inputId);
     } catch (error) {
       const reason = error instanceof CorrectionFailure ? error.message : "correction-processing-failed";
       if (routing && !routingCompleted) { try { routing.complete(null, reason); } catch { /* persisted incomplete run remains diagnostic */ } }
       if (!inputId) throw error;
-      const state = reason === "stale-current-version" || reason === "correction-lease-lost" ? "conflict" : reason === "ordinary-new-development" ? "deferred-next-edition" : reason === "unchanged-factual-content" ? "no-op" : "blocked";
+      const state = reason === "patrol-planned-pause" ? "pending" : reason === "stale-current-version" || reason === "correction-lease-lost" ? "conflict" : reason === "ordinary-new-development" ? "deferred-next-edition" : reason === "unchanged-factual-content" ? "no-op" : "blocked";
       database.prepare("UPDATE correction_signals SET state=?,reason=?,owner=NULL,lease_until_utc=NULL WHERE signal_id=? AND owner=?").run(state, reason, inputId, owner);
       return correctionStatus(database, inputId);
     } finally { processing = false; }

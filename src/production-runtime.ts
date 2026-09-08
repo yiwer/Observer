@@ -21,6 +21,7 @@ import { createMastodonAdapter } from "./mastodon-adapter.ts";
 import { PdfConfigurationSchema } from "./pdf-rendition.ts";
 import { EmailConfigurationSchema } from "./email-contracts.ts";
 import { createQqEmailTransport } from "./qq-email-transport.ts";
+import { PatrolConfigurationSchema } from "./correction-patrol.ts";
 
 const provider = z.strictObject({ enabled: z.boolean().default(false), image: z.string().min(1), eligibility: ProviderEligibilitySchema });
 export const ProductionConfigurationSchema = z.strictObject({
@@ -34,6 +35,7 @@ export const ProductionConfigurationSchema = z.strictObject({
   pdf: PdfConfigurationSchema.default({ enabled: true }),
   email: EmailConfigurationSchema.default({ enabled: false }),
   corrections: z.strictObject({ enabled: z.boolean().default(false) }).default({ enabled: false }),
+  correctionPatrol: PatrolConfigurationSchema.prefault({}),
   discourse: DiscourseConfigurationSchema.optional(),
   github: z.strictObject({ databasePath: z.string(), configuration: GitHubConfigurationSchema, developmentConfiguration: DevelopmentConfigurationSchema.optional(),
     credentialExpiresAtUtc: z.iso.datetime({ precision: 3, offset: false }).optional() }).optional(),
@@ -47,6 +49,7 @@ function readJson(path: string) {
 // The existing isolated CLI + broker boundary owns every actual model invocation.
 export function createProductionRuntime(configurationPath: string, ownerToken: string, clock = () => new Date().toISOString()) {
   const configuration = ProductionConfigurationSchema.parse(readJson(configurationPath));
+  if (configuration.correctionPatrol.enabled && !configuration.corrections.enabled) throw new Error("patrol-requires-corrections-enabled");
   // Lazy credential injection: constructing the adapter neither reads the key
   // nor connects. Missing/invalid enabled configuration fails before this point.
   const email = configuration.email.enabled ? { configuration: configuration.email,
@@ -54,7 +57,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   const path = (value: string) => resolve(dirname(resolve(configurationPath)), value);
   const sources = () => SourceConfigurationSchema.parse(readJson(path(configuration.sourceConfigurationPath)));
   const sourceConfiguration = sources();
-  const collection = createCollection({ databasePath: path(configuration.collectionDatabasePath), sources: sourceConfiguration.sources, clock });
+  const collection = createCollection({ databasePath: path(configuration.collectionDatabasePath), sources: sourceConfiguration.sources, policyReader: () => sources().sources, clock });
   const providers: RoutingOptions["providers"] = {};
   const mastodon = configuration.discourse ? createMastodonAdapter({ clock }) : undefined;
   for (const name of ["codex", "claude"] as const) {
@@ -87,6 +90,8 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   const observer = createObserver({ databasePath: path(configuration.databasePath), ownerToken, mode: "production", clock,
     pdf: configuration.pdf,
     corrections: { enabled: configuration.corrections.enabled, evidence: (ids) => collection.correctionEvidence(ids) },
+    correctionPatrol: { configuration: configuration.correctionPatrol, reread: (target, signal) => collection.rereadCorrection(target, signal),
+      evidence: (ids) => collection.correctionEvidence(ids), deferEvidence: (ids, date) => collection.deferCorrectionEvidence(ids, date) },
     ...(email ? { email } : {}),
     sourcePolicies: sourceConfiguration.sources, sourcePolicyReader: () => sources().sources, ...(github ? { github } : {}),
     ...(mastodon ? { discourse: { configuration: configuration.discourse, adapter: mastodon } } : {}),

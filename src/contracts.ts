@@ -133,6 +133,10 @@ export type AgentResult = z.infer<typeof AgentResultSchema>;
 export const ProduceRequestSchema = z.strictObject({
   schemaVersion: z.literal(1), taskId: id, businessDate: date, configurationId: id,
   evidenceBundle: AnyBundleSchema,
+  correctionResearch: z.strictObject({ purpose: z.literal("seven-day-patrol"),
+    originalCutoffUtc: utc, originalStatements: z.array(z.strictObject({ referenceId: id, text: z.string().min(1).max(4500) })).min(1).max(20),
+    eventClusterId: id,
+  }).optional(),
 });
 export type ProduceRequest = z.infer<typeof ProduceRequestSchema>;
 
