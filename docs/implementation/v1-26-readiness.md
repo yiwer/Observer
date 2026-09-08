@@ -1,5 +1,7 @@
 # V1-26：真实接入最小就绪交接
 
+最新更新（2026-09-08）：Owner 已确认本机 native Codex，并取消项目国家/地区审查；下方“路径/国家地区待确认”仅为旧交接快照，已不再是阻断。按 [ADR-0006](../adr/0006-use-native-codex-for-first-local-validation.md) 继续入口适配与必要的本机真实调用，不再索要地区或独立 API key；云部署/存储/来源等其余能力仍分别未验证。
+
 日期：2026-09-08（Asia/Shanghai）。状态：`WAITING_OWNER_INPUT / LIVE NOT RUN`；#26 保持 OPEN。
 核对基线：`ticket/v1-26`，`c710c9968c126fa3cec2b326cfa4bcf1489f8a1e`。Root 交接 #1–#25 已实现、接受、集成并 CLOSED；本次未访问 GitHub。
 本次按 implement 技能提交文档；Owner 快速 V1 与本次明确范围覆盖技能的测试、全套回归和另派 reviewer 要求。仅阅读必要代码/文档并静态检查提交范围，没有 typecheck、test、build、产品/Provider CLI、模型、SMTP、Docker、S3 或网络探针，也未读取 Owner 数据、秘密、个人认证文件或 `QQ_SMTP_KEY` 值；未做开发 hash 验收。

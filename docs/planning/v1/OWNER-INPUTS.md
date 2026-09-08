@@ -1,6 +1,12 @@
 # Owner 最新运行授权与服务选择
 
-更新日期：2026-09-08（Asia/Shanghai）。本文件记录已确认输入；它不代表这些能力已实际通过。较早票据中的外部未授权状态应结合本记录判断，其他来源许可、安全、地区和生产验收要求不变。
+更新日期：2026-09-08（Asia/Shanghai）。本文件记录已确认输入；它不代表这些能力已实际通过。较早票据中的外部未授权状态应结合本记录判断；来源许可、安全和真实生产验收保持，国家/地区审查已按下述最新指令取消。
+
+## 最新决定：native Codex 与取消国家审查
+
+Owner 已明确回复“确认采用本机已登录 Codex”，随后要求“跳过国家审查”。首轮改走本机 native CLI，由 CLI 自身使用已有登录，不复制/输出认证文件，不要求额外 API key 或新增 API 计费。国家/地区信息不再是项目测试、开发或接入的前置输入，不再询问，不把跳过标为资格审查通过；见 [ADR-0006](../../adr/0006-use-native-codex-for-first-local-validation.md)。
+
+此前本机 Codex 真实测试、不设额度上限的授权继续有效，可以在入口实现后作一次必要有界真实调用；无需重新请求国家信息或调用授权。保留进程超时/取消、秘密保护和准确执行元数据，不修改全局网络/认证设置，不绕过实际服务拒绝。Claude 真实测试仍跳过，目标云部署、节点外存储和真实来源权利仍各自处理，但不阻止 native 入口实现与本机最小调用验证。
 
 ## V1 快速交付策略（覆盖旧测试流程）
 
@@ -18,11 +24,11 @@ Owner 明确批准使用**本机已有 Codex** 做真实测试，**不设置额�
 
 本机重新读取 `codex --version` 为 **0.153.4**，`codex login status` 为 **Logged in using ChatGPT**；只读取登录状态，未输出/复制认证文件、令牌或用户配置。官方[非交互认证文档](https://learn.chatgpt.com/docs/non-interactive-mode#authenticate-in-automation)说明 `codex exec` 可复用已保存的 CLI 认证。使用已有登录应由 CLI 自身处理，不能把认证复制到候选运行环境、公共仓库或日志中。
 
-本机实际运行国家/地区尚待 Owner 提供；现有 ADR-0002 的资格要求未被额度授权取消。登录成功与模型网络连通不等于地区/账户合格，也不证明 Linux 产品 Runner 的隔离。本机 native CLI 预检/实测、隔离适配器实际模型测试、目标 VPS 测试及 14 天影子质量记录分别取证。当前仅完成 version/help/login-status，**未发起真实模型请求**。
+本机国家/地区审查已由 Owner 明确取消，不再阻断或追问；登录/调用结果只证明各自实际观察，不转写地区资格 PASS，也不证明 Linux 容器隔离。本机 native 实测、目标 VPS 测试及 14 天影子质量记录分别记录。最新只读刷新仍为 CLI 0.153.4、Logged in using ChatGPT；截至本次入口派发仅完成 version/help/login-status，**未发起真实模型请求**。
 
 ## 当前产品接入边界（代码事实，不是新增授权）
 
-#23 接通的容器运行入口由 `src/production-runtime.ts` 读取专用 `OBSERVER_OPENAI_API_KEY` / `OBSERVER_ANTHROPIC_API_KEY`（可用对应 `_FILE`），通过受控 API broker 服务真实 CLI；它不复制或复用本机个人 Codex 登录文件。Owner 对本机 Codex 测试的批准和既有登录，不能作为这条部署路径的凭证/资格已就绪或单独 API 计费已授权的证据。#26 须明确实际测试路径和适用授权；若只有本机登录，应说明差异并请求方向，不把 native CLI 结果冒充已部署 Runner 通过。本条不批准读取/转移 OAuth 或订阅凭证，也不新增真实调用授权。
+#23 既有容器入口由 `src/production-runtime.ts` 读取专用 `OBSERVER_OPENAI_API_KEY` / `OBSERVER_ANTHROPIC_API_KEY`（可用对应 `_FILE`），通过受控 API broker 服务真实 CLI；它不复制或复用本机个人 Codex 登录文件。Owner 现已选择另行接通 native 路径，方向不再待确认；该适配尚需实现，不把 native 结果冒充容器/API 路径通过，也不因旧代码需要 API key 而重新要求 Owner 购买。原容器路径保留准确边界，不能读取/转移 OAuth 或订阅凭证。
 
 ## Claude
 
