@@ -86,7 +86,7 @@ export function privateArchive(database: DatabaseSync, access: PrivateAccess, mo
   } catch (error) { database.exec("ROLLBACK"); throw error; }
   const highWater = () => Number(database.prepare("SELECT COALESCE(MAX(sequence),0) AS value FROM archive_events").get()!.value);
   // Production readers preserve the existing prohibition on fixture reports.
-  const visible = mode === "production" ? " AND (kind!='report-published' OR json_extract(payload,'$.version.provenance')!='test-fixture')" : "";
+  const visible = mode === "production" ? " AND (kind NOT IN ('report-published','rendition-state') OR COALESCE(json_extract(payload,'$.version.provenance'),json_extract(payload,'$.provenance'))!='test-fixture')" : "";
   const asEvent = (row: Record<string, unknown>): ArchiveEvent => ({ sequence: String(row.sequence), eventId: String(row.event_id), kind: String(row.kind),
     businessDate: String(row.business_date), versionId: row.version_id as string | null, occurredAtUtc: String(row.occurred_at_utc), snapshot: JSON.parse(String(row.payload)) as Record<string, unknown> });
   function view(businessDate: string, until = highWater()) {
@@ -102,9 +102,13 @@ export function privateArchive(database: DatabaseSync, access: PrivateAccess, mo
       const withdrawn = snapshot.version.revisionReason === "withdrawal" || revisions.some((event) => event.kind === "withdrawal");
       const supersededByVersionIds = [...new Set([...publications.filter((entry) => entry.version.previousVersionId === id).map((entry) => entry.version.id),
         ...revisions.flatMap((event) => typeof event.snapshot.replacementVersionId === "string" ? [event.snapshot.replacementVersionId] : [])])];
+      const pdf = events.findLast((event) => event.kind === "rendition-state" && event.versionId === id)?.snapshot;
+      const pdfAvailable = !withdrawn && pdf?.state === "ready";
       return { ...snapshot, status: withdrawn ? "withdrawn" : supersededByVersionIds.length ? "superseded" : "current", supersededByVersionIds,
         changes: revisions.map(({ eventId, kind, snapshot: change }) => ({ eventId, kind, ...change })),
-        renditions: { markdown: { available: !withdrawn, path: `/v1/reports/${id}/markdown` }, pdf: { available: false, reason: "not-generated" } } };
+        renditions: { markdown: { available: !withdrawn, path: `/v1/reports/${id}/markdown` },
+          pdf: { ...pdf, scope: "full-report", available: pdfAvailable,
+            ...(pdfAvailable ? { path: `/v1/reports/${id}/pdf` } : { reason: withdrawn ? "report-withdrawn" : pdf?.state ?? "not-generated" }) } } };
     });
     return { schemaVersion: 1, businessDate, latestVersionId, latest: versions.at(-1) ?? null, versions,
       delivery: events.findLast((event) => event.kind === "brief-state")?.snapshot ?? null };

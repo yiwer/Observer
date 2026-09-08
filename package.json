@@ -19,12 +19,18 @@
     "prepare:claude": "node scripts/prepare-claude-runtime.mjs"
   },
   "dependencies": {
+    "fontkit": "2.0.4",
     "ipaddr.js": "2.2.0",
+    "markdown-it": "14.1.0",
+    "pdfkit": "0.17.2",
     "saxes": "6.0.0",
     "zod": "4.1.12"
   },
   "devDependencies": {
+    "@types/fontkit": "2.0.8",
+    "@types/markdown-it": "14.1.2",
     "@types/node": "24.10.1",
+    "@types/pdfkit": "0.17.3",
     "typescript": "5.9.3"
   }
 }

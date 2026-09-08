@@ -18,6 +18,7 @@ import { GitHubConfigurationSchema, DevelopmentConfigurationSchema } from "./git
 import { dailyWindow, ScheduleConfigurationSchema, shanghaiDate } from "./scheduled-publication.ts";
 import { DiscourseConfigurationSchema } from "./discourse-contracts.ts";
 import { createMastodonAdapter } from "./mastodon-adapter.ts";
+import { PdfConfigurationSchema } from "./pdf-rendition.ts";
 
 const provider = z.strictObject({ enabled: z.boolean().default(false), image: z.string().min(1), eligibility: ProviderEligibilitySchema });
 export const ProductionConfigurationSchema = z.strictObject({
@@ -28,6 +29,7 @@ export const ProductionConfigurationSchema = z.strictObject({
   taskRoot: z.string().default("../data/agent-tasks"), collect: z.boolean().default(false),
   routing: RoutingConfigurationSchema,
   providers: z.strictObject({ codex: provider.optional(), claude: provider.optional() }).default({}),
+  pdf: PdfConfigurationSchema.default({ enabled: true }),
   discourse: DiscourseConfigurationSchema.optional(),
   github: z.strictObject({ databasePath: z.string(), configuration: GitHubConfigurationSchema, developmentConfiguration: DevelopmentConfigurationSchema.optional(),
     credentialExpiresAtUtc: z.iso.datetime({ precision: 3, offset: false }).optional() }).optional(),
@@ -75,6 +77,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
     } : null, clock,
     ...(configuration.github.developmentConfiguration ? { developmentConfiguration: () => configuration.github!.developmentConfiguration } : {}) }) : undefined;
   const observer = createObserver({ databasePath: path(configuration.databasePath), ownerToken, mode: "production", clock,
+    pdf: configuration.pdf,
     sourcePolicies: sourceConfiguration.sources, sourcePolicyReader: () => sources().sources, ...(github ? { github } : {}),
     ...(mastodon ? { discourse: { configuration: configuration.discourse, adapter: mastodon } } : {}),
     routing: { configuration: configuration.routing, executionScope: "live", providers, clock,

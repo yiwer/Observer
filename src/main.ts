@@ -19,7 +19,10 @@ try {
   const shutdown = new AbortController();
   const inFlight = new Set<Promise<unknown>>();
   const tick = () => {
-    if (!runtime || shutdown.signal.aborted) return;
+    if (shutdown.signal.aborted) return;
+    const rendition = observer.processPdfRenditions(shutdown.signal).catch(() => console.error("pdf-rendition-tick-failed"));
+    inFlight.add(rendition); void rendition.finally(() => inFlight.delete(rendition));
+    if (!runtime) return;
     const work = runtime.tick(async (versionId) => {
       const response = await fetch(`http://127.0.0.1:${server.port}/v1/reports/${versionId}`, {
         headers: { Authorization: `Bearer ${ownerToken}` }, signal: AbortSignal.timeout(10000), redirect: "error",
