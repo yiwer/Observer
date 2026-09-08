@@ -297,3 +297,11 @@ Root批准作者在资格/隔离主线后增加createCodexVerifier/createClaudeV
 router拆出验证绑定后的原receipt交真实Gate，host元数据进入独立attempt安全审计；invalid receipt不能先记核验成功。清理未证实、取消及已知/未知用量不能被Gate catch吞掉；每次respond前资格/来源/额度检查与实际响应观察保持。新增CLI帧状态机分支只由可信工厂选择Verification schema，旧create*Runner/read*Result默认CandidateOutput契约和旧输出字节不变；Claude仅允许原受控StructuredOutput，不增加任意工具、网络或shell。原1MiB输入/2MiB输出约束保留。
 
 首条纵片为固定实际CLI+Owned语义→routing→Gate→鉴权readReport，再对称接通另一Provider并回归旧Candidate协议；Docker另行请求串行窗口。此为接口/TDD准入，不是CLI已通过，不启生产/live，也不取消旧归档、六栏、容量和最终双轴审查要求。
+
+## 高风险隔离与资格回归134–135
+
+Root核134/135完整before/after一致与实际日志SHA，亲读两个新增公开回归。134直接GREEN，排除两Audit后42/42、0skip/0cancelled、exit0，SHA `75152edcbcdcb3877e3cdab93ecd4cc3153e2cdd8f1cd941cf3f5122e39483cd`；135类型exit0，不伪造新RED。
+
+高风险world在原研究Codex因AI违规被隔离后，由Claude主核验，reviewProvider=null、review-unavailable、零review attempt；canonical Markdown明确single-provider/review-unavailable，不把同一Provider或已隔离Provider当独立复核。资格前置四例分别enabled=false、accountEligible=false、regionEligible=false、过期，实际attempt全部Claude且四普通栏保留。另一例在Codex Runner开始时撤销资格版本，返回结果不采纳，唯一Codex attempt为failed/provider-ineligible，合格备份继续完成四栏。
+
+该例覆盖派发前与Runner返回采纳时资格，不代替排队醒后、逐broker派发、已选Provider最终发表前撤销或完整安全资格收据。当前固定Owned资格不证明Owner实际地区/账户资格；#14仍未冻结、未整票验收。
