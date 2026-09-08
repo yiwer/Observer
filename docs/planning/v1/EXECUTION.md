@@ -8,12 +8,14 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 1. 从当前 Git 和 GitHub 实际状态恢复，不从聊天摘要猜测完成。
 2. 每次只推进一张实施票；固定 worktree、起始提交和验收范围，再派发 subagent。
-3. 采用已确认 PRD T1 seam 做 TDD；定期 typecheck、针对性测试，票末运行完整测试。
-4. implement 的 code-review 使用 Standards / Spec 两轴独立审查；orchestrator 另做结果核对和集成基线验收。未解决阻断发现不算完成。
+3. 2026-09-08 Owner改为快速交付：按功能块完成，不做hash验证、不逐小步回归；大幅跳过测试/夹具/容量矩阵，不默认票末全量测试。必要时块末一次类型或关键路径验证。此规则覆盖旧implement/TDD流程要求。
+4. orchestrator做简短代码review和结果核对，聚焦核心功能与明显风险；不再默认独立双轴多轮审查及集成重复验收。未测范围明示，不阻止开发票推进；明确核心功能缺陷需处理。
 5. 票通过后集成提交、记录证据，再关闭 Issue 并推进下一张；外部门槛单独记录，不把开发测试替代实测。
 6. 提交代码不等于 push。当前 GitHub 票已发布，代码是否推送由实际 Git 状态说明。
 
 ## 当前停止点
+
+- 2026-09-08 Owner快速交付指令已下发#14作者：停止新增fixture/capture/hash验证及逐片回归，收敛产品功能并尽快提交；Root轻量review后集成推进#15。下文历史严格测试门槛不再是V1开发票默认要求，详见[最新Owner输入](OWNER-INPUTS.md#v1-快速交付策略覆盖旧测试流程)。
 
 - #14已派发fresh-context `/root/implement_v1_14`，专属`O:/GenesisCode/Observer-worktrees/v1-14` / `ticket/v1-14`，固定base **91e4d8b1d9a0f043201189f4610d597394210a2e**；Root再次实读依赖#4/#5/#9 CLOSED。按implement skill先提交明确路由/资格/仲裁/有界参数/Final Editor及T1提案，Root批准后才产品TDD。作者已确认边界；不默认双份生成，不因Claude live延期而删除双Provider业务契约。Root当前无在途测试，作者任何重型或Docker门仍须协调串行。
 
