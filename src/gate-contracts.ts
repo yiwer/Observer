@@ -9,9 +9,9 @@ const id = z.string().min(1).max(200);
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
 const claimFields = { id, text: z.string().min(1).max(4000), evidenceIds: z.array(id).min(1).max(20) };
 export const ClaimSchema = z.discriminatedUnion("kind", [
-  z.strictObject({ ...claimFields, kind: z.literal("fact") }),
-  z.strictObject({ ...claimFields, kind: z.literal("statement"), publisherSourceId: id }),
-  z.strictObject({ ...claimFields, kind: z.literal("analysis"), mode: z.enum(["explanation", "scenario"]) }),
+  z.strictObject({ ...claimFields, kind: z.literal("fact").describe("Asserts that the underlying event or condition is true, not merely that a source reported it. A citation alone does not make an attributed statement an event fact.") }),
+  z.strictObject({ ...claimFields, kind: z.literal("statement").describe("Reports what the named publisher says, estimates or reports; text must preserve that attribution and uncertainty without asserting the underlying claim as independently established."), publisherSourceId: id.describe("Exact sourceId of the publisher whose statement is reported, from the supplied Evidence Bundle; not an evidenceId.") }),
+  z.strictObject({ ...claimFields, kind: z.literal("analysis").describe("An explicitly framed explanation or scenario grounded in evidence. Do not use analysis to relabel an unsupported factual assertion."), mode: z.enum(["explanation", "scenario"]) }),
   z.strictObject({ ...claimFields, kind: z.literal("quotation"), evidenceIds: z.array(id).length(1), originalText: z.string().min(1).max(4000), translated: z.boolean(), language: z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2,8})?$/) }),
 ]);
 export type Claim = z.infer<typeof ClaimSchema>;
@@ -30,7 +30,7 @@ export const AssessmentSchema = z.strictObject({
   wording: z.enum(["original", "quotation", "unsafe"]),
   evidence: z.array(z.strictObject({
     evidenceId: id, relation: z.enum(["supports", "contradicts", "irrelevant"]),
-    basis: z.enum(["direct-observation", "publisher-statement", "secondary-report"]),
+    basis: z.enum(["direct-observation", "publisher-statement", "secondary-report"]).describe("Classify support for this exact claim: direct-observation documents the underlying event; publisher-statement supports that the publisher made the attributed statement; secondary-report relays another source. Primary sourceType or official status alone does not decide basis or establish independence."),
     reliability: z.enum(["reliable", "unknown"]), upstreamOriginId: id.nullable(),
   })).max(20),
   // A malformed event judgment cannot invalidate otherwise usable claim receipts.
