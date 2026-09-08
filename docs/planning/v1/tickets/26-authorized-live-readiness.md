@@ -46,4 +46,5 @@
 ## External prerequisites
 
 - Owner-authorized environment, accounts, sources, credentials, costs and test recipient
+- 当前 #23 容器入口使用专用 `OBSERVER_OPENAI_API_KEY` / `OBSERVER_ANTHROPIC_API_KEY`（支持 `_FILE`）通过受控 API broker 驱动 CLI，不复用本机个人 Codex 登录。#26 必须区分 native CLI 已登录/本机测试获批与部署 Runner 的 API 凭证、地区及计费授权；不能前者替代后者，也不得复制 OAuth/订阅认证文件。实际测试路径仍需结合 Owner 输入确认，不新增调用许可。
 - 2026-09-08 对齐[Owner 最新输入](../OWNER-INPUTS.md)：本机 Codex 真实测试已批准且不设额度上限；Claude 外部测试延期、由 Owner 后续提供环境。邮件采用 QQ SMTP、同一发件收件邮箱；Owner 已在本机环境变量 `QQ_SMTP_KEY` 配置授权码并批准测试，单封 SMTP 预检已受理，2026-09-06 Owner 已确认实际收件与中文显示。不得再将“授权码未提供”列为已知阻断；也不因此声称产品 HTML/PDF 附件投递、当前进程环境或目标部署已实测。具体地址及秘密不写入本票。本机地区资格与产品实际运行边界仍须独立确认，不能仅因额度获批将本门记 PASS。

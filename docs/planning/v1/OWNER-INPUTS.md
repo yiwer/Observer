@@ -20,6 +20,10 @@ Owner 明确批准使用**本机已有 Codex** 做真实测试，**不设置额�
 
 本机实际运行国家/地区尚待 Owner 提供；现有 ADR-0002 的资格要求未被额度授权取消。登录成功与模型网络连通不等于地区/账户合格，也不证明 Linux 产品 Runner 的隔离。本机 native CLI 预检/实测、隔离适配器实际模型测试、目标 VPS 测试及 14 天影子质量记录分别取证。当前仅完成 version/help/login-status，**未发起真实模型请求**。
 
+## 当前产品接入边界（代码事实，不是新增授权）
+
+#23 接通的容器运行入口由 `src/production-runtime.ts` 读取专用 `OBSERVER_OPENAI_API_KEY` / `OBSERVER_ANTHROPIC_API_KEY`（可用对应 `_FILE`），通过受控 API broker 服务真实 CLI；它不复制或复用本机个人 Codex 登录文件。Owner 对本机 Codex 测试的批准和既有登录，不能作为这条部署路径的凭证/资格已就绪或单独 API 计费已授权的证据。#26 须明确实际测试路径和适用授权；若只有本机登录，应说明差异并请求方向，不把 native CLI 结果冒充已部署 Runner 通过。本条不批准读取/转移 OAuth 或订阅凭证，也不新增真实调用授权。
+
 ## Claude
 
 Owner 将后续提供真实 Claude 环境，当前**跳过真实环境测试**并标为 `owner-deferred / NOT VERIFIED`。不再把当前缺少 Claude 真实凭证当成开发票的等待条件，但也不宣称双 Provider 实测通过。
