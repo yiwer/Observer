@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "configurationId": "observer-native-codex-v1",
+  "schedule": { "enabled": false, "startBusinessDate": "2026-09-09", "retryDelayMs": 60000, "maxAttempts": 3 },
+  "sourceConfigurationPath": "sources.example.v1.json",
+  "interestProfilePath": "interest.example.v1.json",
+  "databasePath": "../data/observer-native.sqlite",
+  "collectionDatabasePath": "../data/collection-native.sqlite",
+  "taskRoot": "../data/agent-tasks",
+  "collect": false,
+  "pdf": { "enabled": true },
+  "email": { "enabled": false },
+  "corrections": { "enabled": false },
+  "correctionPatrol": { "enabled": false },
+  "routing": { "schemaVersion": 1, "version": 1, "primary": "codex", "limits": { "attemptTimeoutMs": 180000, "maxConcurrentProcesses": 2 } },
+  "providers": {
+    "codex": {
+      "kind": "codex-native",
+      "enabled": true,
+      "executable": "C:/Users/16348/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "model": "gpt-6-astra",
+      "reasoningEffort": "medium",
+      "eligibility": {
+        "version": 1,
+        "provider": "codex",
+        "enabled": true,
+        "accountEligible": null,
+        "regionEligible": null,
+        "scope": "live",
+        "checkedAtUtc": "2026-09-08T00:00:00.000Z",
+        "validUntilUtc": "2026-09-09T16:00:00.000Z",
+        "evidenceReference": "owner-native-codex-2026-09-08-adr-0006",
+        "nativeAuthorization": "owner-approved-existing-login",
+        "regionReview": "skipped-by-owner"
+      }
+    }
+  }
+}

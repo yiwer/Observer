@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { liveExecutionMatches } from "./agent-execution.ts";
 import {
   AgentResultSchema, ProduceRequestSchema, PublishedReportSchema, SixEditionRequestSchema, EventEditionRequestSchema, InterestEditionRequestSchema, DomainEditionRequestSchema, DiscourseEditionRequestSchema, GitHubEditionRequestSchema, GitHubHeatRequestSchema, GitHubRepromotionRequestSchema, RoutedRequestSchema, EditionResearchSchema, EditionResearchEnvelopeSchema, ReportRecordSchema,
   editionNames, type AgentRunner, type AgentResult, type PublishedReport, type ReportRecord, type EditionRunner, type EditionResearch,
@@ -682,8 +683,7 @@ export function createObserver(options: ObserverOptions) {
       let publishedAtUtc = (options.clock ?? (() => new Date().toISOString()))();
       const validFixtureRun = (result: AgentResult) => {
         const protocolFixture = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === "protocol-fixture" && verifier;
-        const liveRun = ["codex", "claude"].includes(result.provider) && result.execution?.provenance === `${result.provider}-cli` && result.execution.processKind === `${result.provider}-cli` &&
-          result.execution.modelTransport === (result.provider === "codex" ? "openai-api" : "anthropic-api");
+        const liveRun = ["codex", "claude"].includes(result.provider) && liveExecutionMatches(result.execution, result.provider, result.status === "succeeded");
         return (options.mode === "production" ? liveRun : result.provider === "fixture" || !!protocolFixture) && result.startedAtUtc >= bundle.cutoffUtc &&
           result.startedAtUtc <= result.finishedAtUtc && result.finishedAtUtc <= publishedAtUtc;
       };

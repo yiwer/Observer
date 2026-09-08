@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import { AgentResultSchema, ProduceRequestSchema, editionNames, type AgentResult, type AgentRunner, type AgentRunOptions, type EditionResearch, type SixEditionRequest } from "./contracts.ts";
 import { VerificationSchema, type SemanticVerifier, type VerificationInput, type Verification, type Claim } from "./gate-contracts.ts";
 import { inputDigest } from "./publication-gate.ts";
-import { ProviderEligibilitySchema, RoutingConfigurationSchema, RoutingResponseUsageSchema, type Provider, type RoutingReceipt } from "./routing-contracts.ts";
+import { ProviderEligibilitySchema, providerAuthorized, RoutingConfigurationSchema, RoutingResponseUsageSchema, type Provider, type RoutingReceipt } from "./routing-contracts.ts";
 import { readTrustedSemanticRun } from "./semantic-verifiers.ts";
+import { liveExecutionMatches } from "./agent-execution.ts";
+import { nativeCodexModel } from "./codex-native.ts";
 
 type Edition = keyof typeof editionNames;
 function assessmentDecision(assessment: Verification["assessments"][number]) {
@@ -26,7 +28,7 @@ export interface RoutingOptions {
   publicationDeadlineUtc?: string;
   configuration: unknown;
   eligibility(): unknown;
-  providers: Partial<Record<Provider, { editions: Partial<Record<Edition, AgentRunner>>; verifier: SemanticVerifier }>>;
+  providers: Partial<Record<Provider, { editions: Partial<Record<Edition, AgentRunner>>; verifier: SemanticVerifier; executionKind?: "codex-native" }>>;
   clock?: () => string;
 }
 interface AssemblyState { cleanupUnverified: boolean; active: number; waiters: Set<() => void>; externalActive: number; externalWaiters: Set<() => void>; maxProcesses: number; maxExternal: number }
@@ -109,9 +111,10 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       }
       latestQualification.set(provider, configurationSha256);
     }
-    return matching.length === 1 && matching[0]!.enabled && matching[0]!.accountEligible && matching[0]!.regionEligible && matching[0]!.checkedAtUtc <= now && matching[0]!.validUntilUtc > now && matching[0]!.scope === (options.executionScope ?? "protocol-fixture");
+    return matching.length === 1 && providerAuthorized(matching[0]!, options.executionScope ?? "protocol-fixture", now, options.providers[provider]?.executionKind === "codex-native");
   };
   const eligible = (provider: Provider) => !isolatedProviders.has(provider) && qualificationEligible(provider);
+  const expectedModel = (provider: Provider) => options.providers[provider]?.executionKind === "codex-native" ? nativeCodexModel : provider === "codex" ? "gpt-5.6-sol" : "claude-sonnet-4-6";
   const selected = new Map<Edition, Provider>();
   const withdrawn = new Set<Edition>();
   const roleAvailable = (role: "research" | "verification" | "review") => receipt.attempts.filter((entry) => entry.role === role).length <
@@ -134,7 +137,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
     observeUsage(request, usage) {
       if (receipt.status !== "running" || attempt.status !== "started") return;
       const observation = RoutingResponseUsageSchema.parse({ request, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, costUsd: usage.costUsd });
-      if (request > attempt.modelRequests) throw new RoutingBoundaryError("invalid-usage-request");
+      if (attempt.modelRequests === null || request > attempt.modelRequests) throw new RoutingBoundaryError("invalid-usage-request");
       const previous = attempt.observedResponses.find((entry) => entry.request === request);
       // First observation is immutable, including unknown fields. Equal repeats are idempotent.
       if (previous) { if (inputDigest(previous) !== inputDigest(observation)) throw new RoutingBoundaryError("conflicting-usage-observation"); return; }
@@ -142,6 +145,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       if (receipt.usageProtection.thresholdReached) attemptAborters.get(attempt.id)?.();
     },
     async dispatch(send, signal) {
+      if (options.providers[attempt.provider]?.executionKind === "codex-native") throw new RoutingBoundaryError("native-api-dispatch-forbidden");
       if (receipt.status !== "running" || attempt.status !== "started") throw new RoutingBoundaryError("dispatch-forbidden");
       while (assembly.externalActive >= assembly.maxExternal) {
         if (receipt.status !== "running" || attempt.status !== "started" || signal.aborted || !remaining() || assembly.cleanupUnverified) throw new RoutingBoundaryError("dispatch-forbidden");
@@ -152,12 +156,29 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
         });
       }
       if (receipt.status !== "running" || attempt.status !== "started" || signal.aborted || !remaining() || assembly.cleanupUnverified || !eligible(attempt.provider)) throw new RoutingBoundaryError("dispatch-forbidden");
-      if (attempt.modelRequests >= configuration.limits.maxModelRequestsPerAttempt || receipt.externalRequests >= configuration.limits.maxExternalRequests) throw new RoutingBoundaryError("request-budget-exhausted");
+      if (attempt.modelRequests === null || attempt.modelRequests >= configuration.limits.maxModelRequestsPerAttempt || receipt.externalRequests >= configuration.limits.maxExternalRequests) throw new RoutingBoundaryError("request-budget-exhausted");
       if (receipt.usageProtection.thresholdReached) throw new RoutingBoundaryError("usage-budget-exhausted");
       authorizeEvidence(attemptEvidence.get(attempt.id)!);
       assembly.externalActive++;
       try { attempt.modelRequests++; receipt.externalRequests++; save(); return await send(); }
       finally { assembly.externalActive--; for (const wake of assembly.externalWaiters) wake(); }
+    },
+    async nativeProcess(send, signal) {
+      if (options.providers[attempt.provider]?.executionKind !== "codex-native" || receipt.status !== "running" || attempt.status !== "started" ||
+        attempt.modelRequests === null || signal.aborted || !remaining() || assembly.cleanupUnverified || !eligible(attempt.provider)) throw new RoutingBoundaryError("native-process-forbidden");
+      if (receipt.usageProtection.thresholdReached) throw new RoutingBoundaryError("usage-budget-exhausted");
+      authorizeEvidence(attemptEvidence.get(attempt.id)!);
+      attempt.modelRequests = null;
+      receipt.nativeProcessStarts = (receipt.nativeProcessStarts ?? 0) + 1;
+      receipt.requestAccounting = "broker-requests-plus-unobserved-native-processes";
+      save(); return send();
+    },
+    observeNativeUsage(usage) {
+      if (attempt.modelRequests !== null || receipt.status !== "running" || attempt.status !== "started") return;
+      attempt.usageSource = "cli-turn";
+      attempt.usage = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, costUsd: null };
+      // Turn totals stop later work; they cannot retroactively cap a request.
+      save();
     },
   });
   const semanticAttempt = async (input: VerificationInput, edition: Edition, role: "verification" | "review", provider: Provider) => {
@@ -188,17 +209,18 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       if (!verifier) throw new RoutingBoundaryError("verifier-unavailable");
       let result = await Promise.race([verifier.verify(structuredClone(input), { signal, dispatchControl: dispatchControl(attempt), semanticAttempt: { id: attempt.id, inputSha256: input.inputSha256 } }), cleanupBoundary]);
       const host = readTrustedSemanticRun(result);
-      if (options.executionScope === "live" && (!host || host.execution?.provenance !== `${provider}-cli` || host.execution.processKind !== `${provider}-cli` || host.execution.modelTransport !== (provider === "codex" ? "openai-api" : "anthropic-api"))) throw new RoutingBoundaryError("live-semantic-execution-required");
       if (host) {
         attempt.execution = host.execution ?? null; attempt.usageSource = host.usage?.source ?? "unknown";
         attempt.usage = { inputTokens: host.usage?.inputTokens ?? null, outputTokens: host.usage?.outputTokens ?? null, costUsd: host.usage?.costUsd ?? null };
         if (host.execution?.cleanup === "unverified" || host.status !== "succeeded" && host.failure.category === "cleanup-failed") assembly.cleanupUnverified = true;
-        if (host.taskId !== attempt.id || host.inputSha256 !== input.inputSha256 || host.provider !== provider || host.model !== (provider === "codex" ? "gpt-5.6-sol" : "claude-sonnet-4-6") || host.evidenceBundleId !== input.evidenceBundleId || host.configurationId !== input.configurationId) throw new RoutingBoundaryError("invalid-semantic-binding");
+        if (host.taskId !== attempt.id || host.inputSha256 !== input.inputSha256 || host.provider !== provider || host.model !== expectedModel(provider) || host.evidenceBundleId !== input.evidenceBundleId || host.configurationId !== input.configurationId) throw new RoutingBoundaryError("invalid-semantic-binding");
+        if (options.executionScope === "live" && !liveExecutionMatches(host.execution, provider, host.status === "succeeded")) throw new RoutingBoundaryError("live-semantic-execution-required");
         if (assembly.cleanupUnverified) throw new RoutingBoundaryError("cleanup-unverified");
         if (host.status !== "succeeded" && host.failure.category === "policy-violation") { isolatedProviders.add(provider); decide(edition, provider, "provider-isolated"); }
         if (host.status !== "succeeded") throw new RoutingBoundaryError(host.failure.category);
         result = host.verification;
       }
+      if (options.executionScope === "live" && !host) throw new RoutingBoundaryError("live-semantic-execution-required");
       if (receipt.usageProtection.thresholdReached) throw new RoutingBoundaryError("usage-budget-exhausted");
       if (ownerSignal?.aborted) throw new RoutingBoundaryError("cancelled");
       if (!remaining()) throw new RoutingBoundaryError("total-deadline");
@@ -264,7 +286,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
         if (receipt.usageProtection.thresholdReached) { decide(edition, null, "usage-budget-exhausted"); break; }
         if (!roleAvailable("research")) { decide(edition, null, "attempt-budget-exhausted"); break; }
         if (administrativeBytes > configuration.limits.maxAuditBytes) { decide(edition, null, "audit-budget-exhausted"); break; }
-        if (receipt.externalRequests >= configuration.limits.maxExternalRequests) { decide(edition, null, "request-budget-exhausted"); break; }
+        if (options.providers[provider]?.executionKind !== "codex-native" && receipt.externalRequests >= configuration.limits.maxExternalRequests) { decide(edition, null, "request-budget-exhausted"); break; }
         if (assembly.cleanupUnverified) { decide(edition, null, "cleanup-unverified"); break; }
         if (!remaining()) { decide(edition, null, "deadline-exhausted"); break; }
         if (!eligible(provider)) { decide(edition, provider, "provider-disabled"); continue; }
@@ -301,7 +323,8 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
           attempt.execution = result.execution ?? null;
           attempt.usageSource = result.usage?.source ?? "unknown";
           if (result.execution?.cleanup === "unverified" || result.status !== "succeeded" && result.failure.category === "cleanup-failed") assembly.cleanupUnverified = true;
-          if (result.taskId !== attempt.id || result.provider !== attempt.provider || result.model !== (attempt.provider === "codex" ? "gpt-5.6-sol" : "claude-sonnet-4-6") || result.evidenceBundleId !== input.evidenceBundle.id || result.configurationId !== input.configurationId ||
+          if (options.executionScope === "live" && !liveExecutionMatches(result.execution, attempt.provider, result.status === "succeeded")) throw new RoutingBoundaryError("live-research-execution-required");
+          if (result.taskId !== attempt.id || result.provider !== attempt.provider || result.model !== expectedModel(attempt.provider) || result.evidenceBundleId !== input.evidenceBundle.id || result.configurationId !== input.configurationId ||
             result.status === "succeeded" && result.stories.some((story) => story.schemaVersion !== 2 || story.edition !== edition || story.claims.some((claim) => claim.evidenceIds.some((id) => !assigned.evidenceIds.includes(id))))) throw new RoutingBoundaryError("invalid-output");
           if (!eligible(attempt.provider)) throw new RoutingBoundaryError("provider-ineligible");
         }

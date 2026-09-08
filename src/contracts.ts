@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AgentExecutionSchema } from "./agent-execution.ts";
 import { BatchedPublicationGateSchema, CandidateV2Schema, ClaimSchema, PublicationGateSchema } from "./gate-contracts.ts";
 import { EventClusterSchema, EventSelectionSchema } from "./event-contracts.ts";
 import { InterestSnapshotSchema, InterestSelectionSchema, InterestCoverageSchema } from "./interest-contracts.ts";
@@ -105,16 +106,7 @@ const agentMetadata = {
   provider: z.enum(["fixture", "codex", "claude"]),
   model: id, runnerVersion: id,
   startedAtUtc: utc, finishedAtUtc: utc,
-  execution: z.strictObject({
-    provenance: z.enum(["protocol-fixture", "codex-cli", "claude-cli"]),
-    processKind: z.enum(["protocol-fixture", "codex-cli", "claude-cli"]),
-    modelTransport: z.enum(["not-used", "model-protocol-fixture", "openai-api", "anthropic-api"]),
-    cliVersion: id, durationMs: z.number().int().nonnegative(),
-    exitCode: z.number().int().nullable(),
-    terminal: z.enum(["completed", "failed", "missing", "invalid"]),
-    containerId: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
-    cleanup: z.enum(["removed", "not-created", "unverified"]),
-  }).optional(),
+  execution: AgentExecutionSchema.optional(),
   usage: TokenUsageSchema.partial().extend({
     source: z.enum(["cli-turn", "cli-model-tree", "model-responses", "unknown"]).optional(),
     modelResponses: z.array(ModelUsageReceiptSchema).max(8).optional(),
@@ -189,7 +181,12 @@ export interface AgentRunOptions {
   // Host identity for a semantic process; the model cannot select this value.
   semanticAttempt?: { id: string; inputSha256: string };
   // Trusted host-only control. Never constructed from a CLI/model request body.
-  dispatchControl?: { dispatch<T>(send: () => Promise<T>, signal: AbortSignal): Promise<T>; observeUsage?(request: number, usage: TokenUsage): void };
+  dispatchControl?: {
+    dispatch<T>(send: () => Promise<T>, signal: AbortSignal): Promise<T>;
+    observeUsage?(request: number, usage: TokenUsage): void;
+    nativeProcess?<T>(send: () => Promise<T>, signal: AbortSignal): Promise<T>;
+    observeNativeUsage?(usage: TokenUsage): void;
+  };
 }
 export interface AgentRunner {
   run(task: ProduceRequest, options?: AgentRunOptions): Promise<unknown>;

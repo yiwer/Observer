@@ -32,7 +32,8 @@ try {
   console.log(`Observer listening on http://${host}:${server.port} (scheduled publication ${runtime?.enabled ? "enabled" : "disabled"})`);
   const shutdown = new AbortController();
   const inFlight = new Set<Promise<unknown>>();
-  const recovery = prepareAgentNode(runtime?.taskRoot ?? resolve("data/agent-tasks"), shutdown.signal).then((state) => { agentRecovery = state; });
+  const recovery = (runtime && !runtime.requiresContainerNode ? Promise.resolve("native-no-container-recovery") :
+    prepareAgentNode(runtime?.taskRoot ?? resolve("data/agent-tasks"), shutdown.signal)).then((state) => { agentRecovery = state; });
   inFlight.add(recovery); void recovery.finally(() => inFlight.delete(recovery));
   const launch = (name: string, work: () => Promise<unknown>) => {
     const pending = operations.run(name, work); inFlight.add(pending); void pending.finally(() => inFlight.delete(pending));
