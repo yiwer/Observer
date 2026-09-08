@@ -4,7 +4,7 @@ export const DomainAssessmentSchema = z.strictObject({
   domains: z.array(z.enum(["world-affairs", "finance", "ai", "frontier-technology", "other"])).min(1).max(5),
   risk: z.strictObject({ level: z.enum(["routine", "high", "unknown"]),
     categories: z.array(z.enum(["armed-conflict", "casualty-disaster", "election-count", "public-health-emergency", "finance-sensitive"])).max(5) }),
-  assertion: z.enum(["event-fact", "attributed-statement", "interpretation", "unknown"]),
+  assertion: z.enum(["event-fact", "attributed-statement", "interpretation", "unknown"]).describe("Independently classify the claim's actual wording: event-fact asserts an underlying occurrence or condition; attributed-statement reports a named publisher's statement or estimate; interpretation offers an explanation or scenario. Use unknown when unclear. Do not copy claim.kind to make it pass: a fact label with attributed wording is inconsistent, and interpretation requires analysis wording and kind. Evidence strength and source independence are separate judgments; an official source or a citation does not determine assertion type."),
   materials: z.array(z.strictObject({ evidenceId: z.string().min(1).max(200),
     kind: z.enum(["text", "verified-media-description", "unverified-social-video", "graphic-imagery", "unknown"]),
   })).min(1).max(20),
