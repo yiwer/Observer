@@ -2,7 +2,7 @@
 
 Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 implement skill 实现并提交，由 orchestrator review、验收和集成。此授权不包含资源购买、未经批准的真实付费调用、正式投递或自动跳过人工验收。
 
-最新补充授权见 [Owner 运行输入](OWNER-INPUTS.md)：本机 Codex 真实测试已批准且不设额度上限；Claude 真实环境由 Owner 后续提供、当前跳过但保留未验证；邮件选择 QQ SMTP 授权码、发件收件同一邮箱（具体地址只保存在 ignored 本地配置）。本机地区资格尚待信息，未进行真实模型调用。Owner 已授权读取用户级 `QQ_SMTP_KEY` 并测试；[单封 SMTP 预检](acceptance/qq-smtp-preflight-2026-09-05.md)实际 TLS 1.3、AUTH 235、DATA 250，**2026-09-06 Owner 已确认实际收件与中文显示正常**，未重发；不代表产品投递器或每日发送已启用。
+最新补充授权见 [Owner 运行输入](OWNER-INPUTS.md)：本机 Codex 真实测试已批准且不设额度上限，采用既有登录，默认 `gpt-6-astra` / `medium`，国家审查已取消；Claude 真实环境当前跳过但保留未验证。邮件采用 QQ SMTP，发件收件同一邮箱（地址只保存在 ignored 本地配置），Owner 已授权本机落地后发送今日输出。历史[单封 SMTP 预检](acceptance/qq-smtp-preflight-2026-09-05.md)获 TLS 1.3、AUTH 235、DATA 250，**2026-09-06 Owner 确认实际收件与中文显示正常**；这不代表今天已经发送或每日调度已启用。
 
 ## 接续规则
 
@@ -14,6 +14,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 6. 提交代码不等于 push。当前 GitHub 票已发布，代码是否推送由实际 Git 状态说明。
 
 ## 当前停止点
+
+- 最新增量：Owner 指定 Codex 默认 `gpt-6-astra` / `medium`，已交 native 作者接入。并行 fresh-context `/root/implement_v1_26_manual` 在 `O:/GenesisCode/Observer-worktrees/v1-26-manual` / `ticket/v1-26-manual`（base `28606c7`）实现 Owner 鉴权的一次性今日初刊/附件邮件入口，使用实际冻结时间与独立截止时间，不改变自动日程或把手动补发计入准时影子样本。Root 在集成后执行真实来源采集、成品检查及单次发送；作者不触发模型/SMTP。后台 research 准备第一方许可来源，当前尚未生成或发送今日日报。下面较早的等待国家/接入选择条目为历史，不再构成前置阻断。
 
 - Owner已确认本机已登录Codex，并明确跳过国家审查；旧“方向/地区待确认”阻断解除，不再追问或做地理检查。决定已记 `fe9e7a6` / ADR-0006。fresh-context `/root/implement_v1_26_native` 正在 `O:/GenesisCode/Observer-worktrees/v1-26-native` / `ticket/v1-26-native`（base `fe9e7a6`）接通真实native入口、研究/复核/路由/评测身份及配置；最多块末一次有界本机真实调用，不叠加hash验收、类型/测试矩阵或回归。当前Root仅刷新help/version/login-status，CLI 0.153.4且既有ChatGPT登录；未发起模型调用，不把旧容器/API证明套给native。#26其余live类别与#27/#28仍未通过，但不阻断本次native实现。
 

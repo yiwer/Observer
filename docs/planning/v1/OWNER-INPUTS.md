@@ -20,6 +20,8 @@ Owner 明确要求快速落地、快速验证：V1可以大幅跳过测试、夹
 
 ## Codex
 
+2026-09-08 Owner 指定 Observer 调用 Codex 的默认模型为 **`gpt-6-astra`**，推理强度 **`medium`**；研究与语义复核统一使用。不静默降级到其他模型，不重写历史执行记录。官方[模型说明](https://developers.openai.com/api/docs/models/gpt-6-astra)列明支持 `medium`，但本机账户可用性以实际调用结果为准；native 订阅用量不按 API 价目虚构费用。
+
 Owner 明确批准使用**本机已有 Codex** 做真实测试，**不设置额度上限**。这允许任务所需的模型消耗，不要求购买额外资源、修改全局配置或无限重试；PRD D7 的进程时限、调用轮数、取消、用量记录及防失控边界仍保留。
 
 本机重新读取 `codex --version` 为 **0.153.4**，`codex login status` 为 **Logged in using ChatGPT**；只读取登录状态，未输出/复制认证文件、令牌或用户配置。官方[非交互认证文档](https://learn.chatgpt.com/docs/non-interactive-mode#authenticate-in-automation)说明 `codex exec` 可复用已保存的 CLI 认证。使用已有登录应由 CLI 自身处理，不能把认证复制到候选运行环境、公共仓库或日志中。
@@ -37,6 +39,8 @@ Owner 将后续提供真实 Claude 环境，当前**跳过真实环境测试**�
 这不跳过 #5 的离线适配器实现、协议替身测试、真实固定 CLI + 无凭证模型替身，以及已发现的 SSE/用量 P2 修复和双轴复审。任何实际 Claude 认证/模型调用继续禁用，直至 Owner 提供并授权适合的环境。T3 已允许按可用 Provider 记录单 Provider 范围，不把 Claude 缺项伪装成 PASS。
 
 ## 邮件
+
+2026-09-08 Owner 要求本机落地后，向已确认的私人邮箱发送当天各类日报输出。此为真实发送授权，不是再次预检。当天自动送达与午前补齐时间已过，因此本次必须标明 Owner 触发的手动补发、实际采集/截稿时间；不得伪报按时定时日报。输出包含六个 Edition（无足够真实来源时明确缺口）、以 Canonical MD 派生的 HTML 和 PDF，并附完整 MD/PDF。由于当前未配置公网 HTTPS 归档，此次采用附件模式，不构造虚假下载链接；不因此自动启用每日调度或重复发送。SMTP accepted 与实际收件仍分开记录，unknown 不盲目重发。
 
 Owner 选择 **QQ 邮箱 SMTP + 授权码**，并确认发件与收件使用同一邮箱。#19 的传输要求因此由仅 HTTPS 修订为可替换邮件传输适配器、首个实现采用 SMTP/TLS；具体端口、TLS 模式、附件预算与提供商能力在实施时核对官方资料和实际环境。
 
