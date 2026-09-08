@@ -64,6 +64,7 @@ npm run smoke
 - [到期清理与来源撤销](docs/implementation/v1-22.md)：清理关联正文、PDF、缓存与任务，保留允许的墓碑和邮件去重身份；GitHub 历史压缩保留发布依赖。提供受控维护与删除契约导出/应用命令，实际 Owner 数据尚未运行清理。
 - [单节点 Linux 运行与运维](docs/implementation/v1-23.md)：应用/HTTPS 部署配置、秘密文件、受控状态命令、有界 Agent 与看门狗、升级回滚。app 的 Docker socket 是高权限管理面，不交给 Agent；资源预算尚未实测。
 - [节点外备份与受控恢复](docs/implementation/v1-24.md)：私有对象存储上的单代完整加密快照、秘密独立恢复、最新删除契约优先及历史邮件围栏。提供演练计时入口，尚未实测存储私有性和 RPO/RTO。
+- [影子评测和人工事实核查工具](docs/implementation/v1-25.md)：独立冻结批次、Provider 任务续采、全重点/20%速览抽样、事实级判定、真实可读观察和脱正文统计导出。默认未启用；真实 Provider 接线、批次启动及14天人工评测尚未执行。
 
 技术选择见 [ADR-0004](docs/adr/0004-start-with-typescript-and-atomic-sqlite-report-archive.md)，公共契约及证据见 [V1-01 实现说明](docs/implementation/v1-01.md)。
 

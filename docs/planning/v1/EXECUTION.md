@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- 2026-09-08 #25已接受并本地集成 `11b2bd3`（功能 `35634ad`、集中修复 `c0230ac`，base `a976bf8`）。一次静态 Standards 1、Spec 2及Root补充1项P2均已处理，修后只读窄差异，不开新轮、不复跑。唯一typecheck曾失败，最终不标类型PASS。见[#25接受记录](acceptance/25-shadow-evaluation-harness.md)。无hash验收、新夹具或逐步/集成回归，代码未push；真实Provider接线/部署/14日尚未运行。下一门#26需Owner确认首轮native/API方向、主机地区、真实来源及私有节点外存储；已发异步问题未获回复，不把既有QQ授权码列为缺失。下方为历史状态。
+
 - #25候选 `35634ad`（6文件、+689，base `a976bf8`）已完成一次只读静态审查：Standards 1项P2（来源策略高水位）、Spec 2项P2（失败Agent降级归档、新材料TTL）、Root补充1项P2（人工支持引用须为实际证据ID），集中交原作者窄修，尚未集成/关闭。唯一typecheck失败三处后已静态修正、未复跑；后续亦仅核对窄差异，不新增检查/夹具/hash验收或回归。#26已非阻塞询问Owner首轮使用本机native Codex还是现有独立API入口，未获答复、不触发调用，不影响本票。
 
 - #24已实际读回CLOSED（2026-09-08T05:46:18Z）；#25 OPEN已派发fresh-context `/root/implement_v1_25`，专属 `O:/GenesisCode/Observer-worktrees/v1-25` / `ticket/v1-25`，base `a976bf8`。交付隔离影子评测、事实级核查表及可接续统计工具，不运行真实14日、不代签人工核查。沿完整功能块快速实施；无hash验收、夹具或逐步/集成回归，Root短静态审查。#26环境输入仍待Owner，不阻断本票开发。
