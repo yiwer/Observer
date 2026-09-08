@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "enabled": false,
+  "runtimeConfigurationPath": "/etc/observer/config/runtime.json",
+  "dataDirectory": "/var/lib/observer",
+  "controlDirectory": "/var/lib/observer-backup",
+  "restoreDirectory": "/var/lib/observer-restores",
+  "currentSourcesPath": "/etc/observer/config/sources.json",
+  "latestContractPath": "/etc/observer/backup-authority/rights.json",
+  "encryptionKeyPath": "/run/backup-secrets/encryption-key",
+  "snapshotIntervalHours": 12,
+  "maxSnapshotBytes": 1073741824,
+  "objectStore": {
+    "endpoint": "https://s3.REPLACE_REGION.amazonaws.com",
+    "region": "replace-region",
+    "bucket": "replace-private-observer-bucket",
+    "prefix": "observer-v1",
+    "expectedBucketOwner": "000000000000",
+    "credentialsPath": "/run/backup-secrets/s3.json"
+  }
+}

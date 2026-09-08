@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 umask 077
+exec 8>/run/lock/observer-control.lock
+flock -n 8 || exit 0
 deployment_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 environment_file=${OBSERVER_ENV_FILE:-/etc/observer/deployment.env}
 compose() {

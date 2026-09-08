@@ -1,0 +1,11 @@
+[Unit]
+Description=Observer off-node backup due check and controlled snapshot
+Requires=docker.service
+After=docker.service observer.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/observer/observerctl.sh backup-tick
+TimeoutStartSec=45min
+UMask=0077
