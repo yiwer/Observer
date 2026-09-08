@@ -17,7 +17,10 @@ async function jsonBody(request: IncomingMessage): Promise<unknown> {
   catch { throw new PrivateApiError("invalid-json"); }
 }
 
-export async function startPrivateServer(observer: Reader, port = 0) {
+export async function startPrivateServer(observer: Reader, port = 0, options: {
+  host?: "127.0.0.1" | "0.0.0.0";
+  operations?: (credential: string | undefined) => unknown;
+} = {}) {
   const server = createServer(async (request, response) => {
     response.setHeader("Cache-Control", "no-store");
     response.setHeader("X-Content-Type-Options", "nosniff");
@@ -27,6 +30,10 @@ export async function startPrivateServer(observer: Reader, port = 0) {
       const url = new URL(request.url ?? "/", "http://observer.local"), path = url.pathname;
       const authorization = request.headers.authorization;
       const credential = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
+      if (path === "/v1/ops" && options.operations) {
+        if (request.method !== "GET") throw new PrivateApiError("method-not-allowed", 405);
+        response.end(JSON.stringify(options.operations(credential))); return;
+      }
       const reportRoute = /^\/v1\/reports\/(\d{4}-\d{2}-\d{2}-v[1-9]\d*)(?:\/(markdown|pdf|download-link|email))?$/.exec(path);
       const statusRoute = /^\/v1\/briefs\/(\d{4}-\d{2}-\d{2})$/.exec(path);
       const archiveRoute = /^\/v1\/archive\/(\d{4}-\d{2}-\d{2})(?:\/(latest|versions)(?:\/([1-9]\d*))?)?$/.exec(path);
@@ -91,7 +98,7 @@ export async function startPrivateServer(observer: Reader, port = 0) {
   });
   server.requestTimeout = 15_000;
   server.headersTimeout = 10_000;
-  server.listen(port, "127.0.0.1");
+  server.listen(port, options.host ?? "127.0.0.1");
   await once(server, "listening");
   const address = server.address();
   if (address === null || typeof address === "string") throw new Error("Missing server address");

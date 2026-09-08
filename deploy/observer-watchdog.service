@@ -1,0 +1,11 @@
+[Unit]
+Description=Observer bounded liveness watchdog
+Requires=docker.service
+After=docker.service observer.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/observer/watchdog.sh
+TimeoutStartSec=60
+StandardOutput=journal
+StandardError=journal

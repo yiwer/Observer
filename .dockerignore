@@ -1,0 +1,18 @@
+# Deny by default: local databases, Owner data, auth, .git and IDE files never
+# enter a Docker build context, even when Git ignores them independently.
+**
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!scripts/
+!scripts/copy-runtime-assets.mjs
+!src/
+!src/**
+!assets/
+!assets/fonts/
+!assets/fonts/NotoSansSC-Regular.otf
+!assets/fonts/OFL.txt
+!assets/fonts/README.md
+!deploy/
+!deploy/Dockerfile

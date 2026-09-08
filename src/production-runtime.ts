@@ -22,6 +22,7 @@ import { PdfConfigurationSchema } from "./pdf-rendition.ts";
 import { EmailConfigurationSchema } from "./email-contracts.ts";
 import { createQqEmailTransport } from "./qq-email-transport.ts";
 import { PatrolConfigurationSchema } from "./correction-patrol.ts";
+import { runtimeSecret } from "./runtime-secrets.ts";
 
 const provider = z.strictObject({ enabled: z.boolean().default(false), image: z.string().min(1), eligibility: ProviderEligibilitySchema });
 export const ProductionConfigurationSchema = z.strictObject({
@@ -45,6 +46,9 @@ function readJson(path: string) {
   if (statSync(path).size > 1024 * 1024) throw new Error("configuration-too-large");
   return JSON.parse(readFileSync(path, "utf8")) as unknown;
 }
+function availableSecret(name: string): string | undefined {
+  try { return runtimeSecret(name); } catch { return undefined; }
+}
 
 // Only explicitly enabled providers read their dedicated environment credential.
 // The existing isolated CLI + broker boundary owns every actual model invocation.
@@ -54,7 +58,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   // Lazy credential injection: constructing the adapter neither reads the key
   // nor connects. Missing/invalid enabled configuration fails before this point.
   const email = configuration.email.enabled ? { configuration: configuration.email,
-    transport: createQqEmailTransport(configuration.email, () => process.env.QQ_SMTP_KEY) } : undefined;
+    transport: createQqEmailTransport(configuration.email, () => availableSecret("QQ_SMTP_KEY")) } : undefined;
   const path = (value: string) => resolve(dirname(resolve(configurationPath)), value);
   const sources = () => SourceConfigurationSchema.parse(readJson(path(configuration.sourceConfigurationPath)));
   const sourceConfiguration = sources();
@@ -62,12 +66,14 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   const providers: RoutingOptions["providers"] = {};
   const suppressedSources = new Set<string>();
   const mastodon = configuration.discourse ? createMastodonAdapter({ clock }) : undefined;
+  const credentialStates = new Map<string, "available" | "unavailable">();
   for (const name of ["codex", "claude"] as const) {
     const entry = configuration.providers[name];
     if ((!configuration.schedule.enabled && !configuration.corrections.enabled) || !entry?.enabled) continue;
     if (entry.eligibility.provider !== name || entry.eligibility.scope !== "live") throw new Error("invalid-live-provider-qualification");
     if (!entry.eligibility.enabled || !entry.eligibility.accountEligible || !entry.eligibility.regionEligible || entry.eligibility.checkedAtUtc > clock() || entry.eligibility.validUntilUtc <= clock()) continue;
-    const key = process.env[name === "codex" ? "OBSERVER_OPENAI_API_KEY" : "OBSERVER_ANTHROPIC_API_KEY"];
+    const key = availableSecret(name === "codex" ? "OBSERVER_OPENAI_API_KEY" : "OBSERVER_ANTHROPIC_API_KEY");
+    credentialStates.set(name, key ? "available" : "unavailable");
     if (!key) continue; // Routing records runner-unavailable and publishes explicit gaps.
     const common = { taskRoot: path(configuration.taskRoot), timeoutMs: configuration.routing.limits.attemptTimeoutMs,
       maxModelRequests: configuration.routing.limits.maxModelRequestsPerAttempt, clock };
@@ -85,7 +91,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   const github = configuration.github ? createGitHubObserver({ databasePath: path(configuration.github.databasePath),
     configuration: () => configuration.github!.configuration, policies: () => sources().sources.filter((source) => !suppressedSources.has(source.sourceId)),
     credential: () => configuration.schedule.enabled && configuration.collect && configuration.github?.credentialExpiresAtUtc ? {
-      kind: "fine-grained-pat", token: process.env.OBSERVER_GITHUB_TOKEN,
+      kind: "fine-grained-pat", token: availableSecret("OBSERVER_GITHUB_TOKEN"),
       expiresAtUtc: configuration.github.credentialExpiresAtUtc, repositoryAccess: "public-only", permissions: "metadata-read-only",
     } : null, clock,
     ...(configuration.github.developmentConfiguration ? { developmentConfiguration: () => configuration.github!.developmentConfiguration } : {}) }) : undefined;
@@ -104,13 +110,37 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
     routing: { configuration: configuration.routing, executionScope: "live", providers, clock,
       eligibility: () => Object.entries(configuration.providers).flatMap(([name, entry]) => entry ? [{ ...entry.eligibility, provider: name, enabled: entry.enabled && entry.eligibility.enabled }] : []) },
     schedule: { configuration: configuration.schedule, runtimeConfiguration: z.json().parse(JSON.parse(JSON.stringify(configuration))),
-      versions: { application: "0.1.0", scheduler: "observer-scheduled-v1", recovery: "observer-recovery-v1", node: process.versions.node, codex: codexVersion, claude: claudeVersion,
+      versions: { application: process.env.OBSERVER_RELEASE_ID ?? "0.1.0", scheduler: "observer-scheduled-v1", recovery: "observer-recovery-v1", node: process.versions.node, codex: codexVersion, claude: claudeVersion,
         providerRuntime: JSON.stringify(configuration.providers) } },
   });
   observer.importInterestProfile(path(configuration.interestProfilePath));
   let ticking = false, collecting = false, lastSocialAttempt = 0;
+  let collectionState = collection.status();
+  let lastCollectionAtUtc: string | null = null, failedCollectionComponents = 0;
   return {
     observer, enabled: configuration.schedule.enabled,
+    databasePath: path(configuration.databasePath),
+    taskRoot: path(configuration.taskRoot),
+    storageDirectories: [...new Set([configuration.databasePath, configuration.collectionDatabasePath,
+      ...(configuration.github ? [configuration.github.databasePath] : [])].map((value) => dirname(path(value))))],
+    status() {
+      const now = clock();
+      return { configurationId: configuration.configurationId,
+        enabled: { schedule: configuration.schedule.enabled, collection: configuration.collect, pdf: configuration.pdf.enabled,
+          email: configuration.email.enabled, corrections: configuration.corrections.enabled, patrol: configuration.correctionPatrol.enabled },
+        limits: { routing: configuration.routing.limits, schedule: configuration.schedule, patrol: configuration.correctionPatrol },
+        providers: (["codex", "claude"] as const).map((name) => {
+          const entry = configuration.providers[name], eligibility = entry?.eligibility;
+          const state = !entry?.enabled ? "disabled" : !eligibility?.enabled || !eligibility.accountEligible || !eligibility.regionEligible || eligibility.scope !== "live" ? "ineligible" :
+            eligibility.checkedAtUtc > now || eligibility.validUntilUtc <= now ? "qualification-expired-or-future" :
+            !configuration.schedule.enabled && !configuration.corrections.enabled ? "work-disabled" : credentialStates.get(name) !== "available" ? "credential-unavailable" : "runner-configured";
+          return { provider: name, state, checkedAtUtc: eligibility?.checkedAtUtc ?? null, validUntilUtc: eligibility?.validUntilUtc ?? null,
+            credential: credentialStates.get(name) ?? "not-loaded", actualConnectivity: "not-probed" };
+        }),
+        collection: { active: collecting, lastCycleAtUtc: lastCollectionAtUtc, failedComponents: failedCollectionComponents,
+          pendingProposals: collectionState.proposals.length, coverageGaps: collectionState.coverageGaps.map(({ sourceId, reason }) => ({ sourceId, reason })) },
+      };
+    },
     async collect(signal?: AbortSignal) {
       observer.processRetention();
       if (!configuration.schedule.enabled || !configuration.collect || collecting) return;
@@ -129,7 +159,10 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
             observer.saveScheduledDiscourseSample(sample);
           }
         };
-        await Promise.allSettled([collection.collect(), ...(github ? [github.observeDue(signal ? { signal } : {})] : []), captureSocial()]);
+        const results = await Promise.allSettled([collection.collect(), ...(github ? [github.observeDue(signal ? { signal } : {})] : []), captureSocial()]);
+        lastCollectionAtUtc = clock(); failedCollectionComponents = results.filter((result) => result.status === "rejected").length;
+        collectionState = collection.status();
+        if (failedCollectionComponents) throw new Error("collection-components-failed");
       }
       finally { collecting = false; }
     },

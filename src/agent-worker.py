@@ -1,7 +1,7 @@
 """Trusted container supervisor. Source text is stdin data, never a command.
 
-The host mounts only this program, a generated task and (in tests) the protocol
-substitute. Output files live in a private, noexec tmpfs and never in the host.
+The app supplies this trusted program as argv and task data over stdin. Only
+tests mount a protocol substitute. Output lives in private, noexec tmpfs.
 """
 import json
 import http.server
@@ -10,6 +10,13 @@ import queue
 import subprocess
 import sys
 import threading
+
+# The supervisor is the container's PID 1. If its parent broker vanishes, this
+# independent deadline exits PID 1 and the runtime kills the remaining tree.
+task_seconds = max(1, min(300, int(os.environ["OBSERVER_TASK_TIMEOUT_SECONDS"])))
+deadline = threading.Timer(task_seconds, lambda: os._exit(124))
+deadline.daemon = True
+deadline.start()
 
 output_lock = threading.Lock()
 

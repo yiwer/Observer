@@ -1,0 +1,16 @@
+[Unit]
+Description=Observer single-node service
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/lib/observer/observerctl.sh up
+ExecStop=/usr/local/lib/observer/observerctl.sh stop
+TimeoutStartSec=120
+TimeoutStopSec=100
+
+[Install]
+WantedBy=multi-user.target

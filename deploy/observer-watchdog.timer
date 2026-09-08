@@ -1,0 +1,10 @@
+[Unit]
+Description=Check Observer liveness once per minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+Unit=observer-watchdog.service
+
+[Install]
+WantedBy=timers.target

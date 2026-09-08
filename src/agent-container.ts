@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { StringDecoder } from "node:string_decoder";
 import { fileURLToPath } from "node:url";
@@ -24,6 +24,38 @@ export type RuntimeFailure = "timeout" | "cancelled" | "output-limit" | "input-l
 export class ModelBoundaryError extends Error {
   readonly category: "evidence-expired";
   constructor(category: "evidence-expired") { super(category); this.category = category; }
+}
+let activeContainers = 0;
+let cleanupUnverified = false;
+let nodeAdmission = "ready";
+export function agentContainerStatus() {
+  const limit = Number(process.env.OBSERVER_AGENT_CONCURRENCY ?? "2");
+  if (!Number.isInteger(limit) || limit < 1 || limit > 4) throw new Error("invalid-agent-concurrency");
+  return { active: activeContainers, limit, cleanupUnverified, nodeAdmission };
+}
+export async function prepareAgentNode(taskRoot: string, signal: AbortSignal): Promise<string> {
+  nodeAdmission = "checking";
+  nodeAdmission = await inspectAgentNode(taskRoot, signal);
+  return nodeAdmission;
+}
+async function inspectAgentNode(taskRoot: string, signal: AbortSignal): Promise<string> {
+  const node = process.env.OBSERVER_NODE_ID;
+  if (!node) return "ready";
+  if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(node)) return "invalid-node-id";
+  try {
+    await mkdir(taskRoot, { recursive: true, mode: 0o700 });
+    const deadline = performance.now() + 330000;
+    while (!signal.aborted && performance.now() < deadline) {
+      const result = await docker(["ps", "--quiet", "--no-trunc", "--filter", `label=observer.node=${node}`], taskRoot, { signal });
+      if (result.failure || result.code !== 0) return signal.aborted ? "cancelled" : "daemon-unavailable";
+      if (!result.text.trim()) return "ready";
+      if (!result.text.trim().split(/\s+/).every((id) => /^[a-f0-9]{64}$/.test(id))) return "daemon-unavailable";
+      // Previous app processes cannot broker more model calls. Let their own
+      // independent deadline stop them before admitting this instance's work.
+      await new Promise<void>((done) => setTimeout(done, 1000));
+    }
+    return signal.aborted ? "cancelled" : "orphan-agents-running";
+  } catch { return "daemon-unavailable"; }
 }
 interface CommandResult { text: string; code: number | null; failure?: RuntimeFailure; }
 
@@ -103,13 +135,25 @@ function docker(args: string[], cwd: string, options: { signal?: AbortSignal; ti
 
 // Docker is the external process boundary. Every invocation creates a unique
 // container; its immutable ID owns the complete task process tree.
-export async function runAgentContainer(options: {
+type ContainerOptions = {
   provider: "codex" | "claude";
   taskRoot: string; runtime: AgentRuntime; args: string[]; prompt: string; schema: unknown;
   taskId: string;
   signal?: AbortSignal; timeoutMs: number; maxBytes: number;
   transport?: CodexModelTransport | ClaudeModelTransport; model: string; maxModelRequests: number; outputMode?: "candidate" | "verification";
-}): Promise<ContainerResult> {
+};
+export async function runAgentContainer(options: ContainerOptions): Promise<ContainerResult> {
+  // Includes daily research and correction runners in this one app process.
+  // Fail admission before creating an unbounded second workload.
+  if (nodeAdmission !== "ready" || cleanupUnverified || activeContainers >= agentContainerStatus().limit) return { stdout: "", exitCode: null, containerId: null, cleanup: "not-created", failure: "unavailable" };
+  activeContainers++;
+  try {
+    const result = await executeAgentContainer(options);
+    if (result.cleanup === "unverified") cleanupUnverified = true;
+    return result;
+  } finally { activeContainers--; }
+}
+async function executeAgentContainer(options: ContainerOptions): Promise<ContainerResult> {
   const result: ContainerResult = { stdout: "", exitCode: null, containerId: null, cleanup: "not-created" };
   if (Buffer.byteLength(options.prompt) > 1024 * 1024) return { ...result, failure: "input-limit" };
   if (!/^sha256:[a-f0-9]{64}$/.test(options.runtime.image) || !isAbsolute(options.taskRoot)) return { ...result, failure: "unavailable" };
@@ -136,20 +180,28 @@ export async function runAgentContainer(options: {
     if (options.runtime.kind !== "protocol-fixture" && options.runtime.kind !== `${options.provider}-cli`) throw new Error("unavailable");
     const program = options.runtime.kind === "protocol-fixture" ? ["python3", "/observer-program.py"] : [options.provider === "claude" ? "/opt/claude" : "/opt/codex/bin/codex"];
     const worker = fileURLToPath(new URL("./agent-worker.py", import.meta.url));
+    // Send only trusted, image-shipped program text as argv. No daemon-host bind
+    // path is needed when this application itself runs inside a container.
+    const workerProgram = await readFile(worker, "utf8");
+    if (Buffer.byteLength(workerProgram) > 65536) throw new Error("worker-too-large");
+    const node = process.env.OBSERVER_NODE_ID;
+    if (node && !/^[a-z0-9][a-z0-9-]{0,62}$/.test(node)) throw new Error("invalid-node-id");
     const args = ["create", "--interactive", "--pull=never", "--name", name, "--label", `observer.task=${name}`,
       "--label", `observer.request=${createHash("sha256").update(options.taskId).digest("hex")}`,
       "--log-driver", "none",
       "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges=true",
       "--pids-limit", "32", "--memory", options.provider === "claude" ? "512m" : "256m", "--cpus", "1", "--user", "65534:65534",
       "--tmpfs", "/run/observer:rw,noexec,nosuid,size=16777216,mode=700,uid=65534,gid=65534",
-      "--mount", `type=bind,source=${await realpath(worker)},target=/observer-worker.py,readonly`,
       "--workdir", "/task", "--entrypoint", "/usr/bin/env"];
+    if (node) args.push("--label", `observer.node=${node}`);
     if (options.runtime.kind === "protocol-fixture") {
       if (!options.runtime.program || !isAbsolute(options.runtime.program)) throw new Error("unavailable");
       args.push("--mount", `type=bind,source=${await realpath(options.runtime.program)},target=/observer-program.py,readonly`);
     }
     args.push(options.runtime.image, "-i", "PATH=/usr/local/bin:/usr/bin:/bin", "LANG=C.UTF-8", "HOME=/run/observer",
-      "CODEX_HOME=/run/observer/codex", "TOKIO_WORKER_THREADS=2", "RAYON_NUM_THREADS=2", `OBSERVER_SCENARIO=${options.runtime.scenario ?? "success"}`, "python3", "-u", "/observer-worker.py");
+      "CODEX_HOME=/run/observer/codex", "TOKIO_WORKER_THREADS=2", "RAYON_NUM_THREADS=2",
+      `OBSERVER_TASK_TIMEOUT_SECONDS=${Math.max(1, Math.ceil(options.timeoutMs / 1000))}`,
+      `OBSERVER_SCENARIO=${options.runtime.scenario ?? "success"}`, "python3", "-u", "-c", workerProgram);
     creationAttempted = true;
     const created = await docker(args, directory, { timeoutMs: Math.max(1, deadline - performance.now()), ...(options.signal ? { signal: options.signal } : {}) });
     if (created.failure) { result.failure = created.failure; return result; }

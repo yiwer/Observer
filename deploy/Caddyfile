@@ -1,0 +1,26 @@
+{
+    admin off
+    http_port 8080
+    https_port 8443
+    # Download query grants, headers and bodies must never reach proxy logs.
+    log default {
+        output discard
+    }
+}
+
+{$OBSERVER_DOMAIN} {
+    header Strict-Transport-Security "max-age=31536000"
+    request_body {
+        max_size 4KB
+    }
+    @operations path /v1/ops
+    handle @operations {
+        respond 404
+    }
+    handle /v1/* {
+        reverse_proxy app:3000
+    }
+    handle {
+        respond 404
+    }
+}
