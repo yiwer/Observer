@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CandidateOutput } from "./agent-candidate.ts";
+import { VerificationSchema } from "./gate-contracts.ts";
 import { messageEvents, readMessagesAccounting } from "./claude-usage.ts";
 
 export interface ClaudeModelTransport {
@@ -35,7 +36,7 @@ const InputBlock = z.discriminatedUnion("type", [
   InputText,
   z.object({ type: z.literal("thinking"), thinking: z.string(), signature: z.string() }),
   z.object({ type: z.literal("redacted_thinking"), data: z.string() }),
-  z.object({ type: z.literal("tool_use"), id: z.string().min(1), name: z.literal("StructuredOutput"), input: CandidateOutput }),
+  z.object({ type: z.literal("tool_use"), id: z.string().min(1), name: z.literal("StructuredOutput"), input: z.unknown() }),
   z.object({ type: z.literal("tool_result"), tool_use_id: z.string().min(1), is_error: z.boolean().optional(),
     content: z.union([z.string(), z.array(InputText)]) }),
 ]);
@@ -44,10 +45,11 @@ const ModelInput = z.object({
   system: z.union([z.string(), z.array(InputText)]).optional(),
 });
 
-export function claudeModelRequest(body: Record<string, unknown>, schema: unknown) {
+export function claudeModelRequest(body: Record<string, unknown>, schema: unknown, mode: "candidate" | "verification" = "candidate") {
   // Text and verified data-tool history cannot ask the provider to fetch a URL,
   // read a file ID, or process nested image/document/tool-result attachments.
   const input = ModelInput.parse(body);
+  for (const message of input.messages) if (Array.isArray(message.content)) for (const block of message.content) if (block.type === "tool_use") block.input = (mode === "verification" ? VerificationSchema : CandidateOutput).parse(block.input);
   // Never forward remote MCP, server tools, containers, metadata or beta settings.
   return { model: "claude-sonnet-4-6", ...input, max_tokens: 32_000,
     thinking: { type: "adaptive" }, output_config: { effort: "high" }, stream: true,
@@ -60,21 +62,21 @@ const Block = z.discriminatedUnion("type", [
   z.object({ type: z.literal("redacted_thinking"), data: z.string() }),
   z.object({ type: z.literal("tool_use"), id: z.string().min(1), name: z.literal("StructuredOutput"), input: z.unknown() }),
 ]);
-function completeBlock(value: unknown) {
+function completeBlock(value: unknown, mode: "candidate" | "verification") {
   const block = Block.parse(value);
-  if (block.type === "tool_use") CandidateOutput.parse(block.input);
+  if (block.type === "tool_use") (mode === "verification" ? VerificationSchema : CandidateOutput).parse(block.input);
   return block;
 }
 
 // Validate complete streams before executable provider output can reach the CLI.
 // StructuredOutput is a schema-checked data return, never a shell or MCP tool.
-export function claudeResponseAllowed(body: string): boolean {
+export function claudeResponseAllowed(body: string, mode: "candidate" | "verification" = "candidate"): boolean {
   try {
     if (!readMessagesAccounting(body, "claude-sonnet-4-6").consistent) return false;
     const events = [...messageEvents(body)];
     if (events.length === 1 && events[0]!.type === "message") {
       const message = z.object({ role: z.literal("assistant"), model: z.literal("claude-sonnet-4-6"), content: z.array(z.unknown()), stop_reason: z.string() }).parse(events[0]);
-      message.content.forEach(completeBlock);
+      message.content.forEach((block) => completeBlock(block, mode));
       return true;
     }
     let started = false, ended = false, finalDelta = false;
@@ -106,7 +108,7 @@ export function claudeResponseAllowed(body: string): boolean {
         else return false;
       } else if (event.type === "content_block_stop") {
         if (!active || event.index !== active.index) return false;
-        if (active.block.type === "tool_use") CandidateOutput.parse(active.json ? JSON.parse(active.json) : active.block.input);
+        if (active.block.type === "tool_use") (mode === "verification" ? VerificationSchema : CandidateOutput).parse(active.json ? JSON.parse(active.json) : active.block.input);
         active = undefined;
       } else if (event.type === "message_delta") {
         if (active) return false;

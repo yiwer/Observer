@@ -33,6 +33,7 @@ export function createCodexRunner(options: {
     const transport: CodexModelTransport | undefined = options.transport && {
       provenance: options.transport.provenance,
       respond: async (body, signal) => {
+        const send = async () => {
         // CLI-supplied body/expiry fields cannot extend the trusted Bundle grant.
         if (task.evidenceBundle.schemaVersion === 2 && task.evidenceBundle.evidence.some((evidence) => evidence.expiresAtUtc <= clock())) throw new ModelBoundaryError("evidence-expired");
         const receipt = { request: modelReceipts.length + 1, ...unknownUsage() };
@@ -40,7 +41,10 @@ export function createCodexRunner(options: {
         const response = await options.transport!.respond(body, signal);
         // Retain safe usage before the runtime may reject executable output.
         if (response.status === 200 && Buffer.byteLength(response.body) <= 2 * 1024 * 1024) Object.assign(receipt, readModelUsage(response.body, options.model));
+        runOptions?.dispatchControl?.observeUsage?.(receipt.request, receipt);
         return response;
+        };
+        return runOptions?.dispatchControl ? runOptions.dispatchControl.dispatch(send, signal) : send();
       },
     };
     const process = await runAgentContainer({ provider: "codex", taskRoot: options.taskRoot, taskId: task.taskId, runtime: options.runtime, args, prompt, schema: z.toJSONSchema(CandidateOutput),

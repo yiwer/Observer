@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ProduceRequest } from "./contracts.ts";
 import { CandidateOutput } from "./agent-candidate.ts";
+import { VerificationSchema, type VerificationInput, type Verification } from "./gate-contracts.ts";
 
 export const claudeVersion = "2.1.252 (Claude Code)";
 const Frame = z.discriminatedUnion("kind", [
@@ -15,12 +16,24 @@ const Result = z.object({ type: z.literal("result"), session_id: z.string(), sub
   permission_denials: z.array(z.unknown()), api_error_status: z.number().nullable().optional(), errors: z.array(z.unknown()).optional(),
   structured_output: z.unknown().optional() });
 export function readClaudeResult(stdout: string, task: ProduceRequest, edition: string) {
+  const result = readClaudeProtocol(stdout, CandidateOutput, (output) => {
+    if (output.taskId !== task.taskId || output.evidenceBundleId !== task.evidenceBundle.id || output.configurationId !== task.configurationId || output.stories.some((story) => story.edition !== edition)) throw new Error();
+  });
+  return { valid: result.valid, cliVersion: result.cliVersion, terminal: result.terminal, stories: result.output?.stories ?? [] };
+}
+
+export function readClaudeVerification(stdout: string, input: VerificationInput) {
+  const result = readClaudeProtocol(stdout, VerificationSchema, (output) => { if (output.inputSha256 !== input.inputSha256) throw new Error(); });
+  return { valid: result.valid, cliVersion: result.cliVersion, terminal: result.terminal, verification: result.output as Verification | null };
+}
+
+function readClaudeProtocol<T>(stdout: string, schema: z.ZodType<T>, accept: (value: T) => void) {
   const state = { valid: false, cliVersion: "unknown", terminal: "missing" as "missing" | "invalid" | "completed" | "failed",
-    stories: [] as z.infer<typeof CandidateOutput>["stories"] };
+    output: null as T | null };
   let result: z.infer<typeof Result> | undefined;
   let returned = false;
   let session: string | undefined;
-  const tools = new Map<string, { output: z.infer<typeof CandidateOutput>; completed: boolean }>();
+  const tools = new Map<string, { output: T; completed: boolean }>();
   try {
     for (const line of stdout.trimEnd().split("\n")) {
       const frame = Frame.parse(JSON.parse(line));
@@ -54,7 +67,7 @@ export function readClaudeResult(stdout: string, task: ProduceRequest, edition: 
           const message = z.object({ role: z.literal("assistant"), model: z.literal("claude-sonnet-4-6"), content: z.array(z.object({ type: z.string() }).passthrough()) }).parse(event.message);
           for (const block of message.content) {
             if (block.type === "tool_use") {
-              const tool = z.object({ id: z.string().min(1), name: z.literal("StructuredOutput"), input: CandidateOutput }).parse(block);
+              const tool = z.object({ id: z.string().min(1), name: z.literal("StructuredOutput"), input: schema }).parse(block);
               if (tools.has(tool.id)) throw new Error();
               tools.set(tool.id, { output: tool.input, completed: false });
             } else if (!["text", "thinking", "redacted_thinking"].includes(block.type)) throw new Error();
@@ -75,11 +88,11 @@ export function readClaudeResult(stdout: string, task: ProduceRequest, edition: 
       } else if (frame.kind === "result") {
         returned = true;
         if (frame.exitCode !== 0 || !result || state.terminal === "failed") throw new Error();
-        const output = CandidateOutput.parse(result.structured_output);
+        const output = schema.parse(result.structured_output);
         const completed = [...tools.values()];
         if (!completed.length || completed.some((tool) => !tool.completed) || JSON.stringify(completed.at(-1)!.output) !== JSON.stringify(output)) throw new Error();
-        if (output.taskId !== task.taskId || output.evidenceBundleId !== task.evidenceBundle.id || output.configurationId !== task.configurationId || output.stories.some((story) => story.edition !== edition)) throw new Error();
-        state.stories = output.stories;
+        accept(output);
+        state.output = output;
         state.terminal = "completed";
       }
     }

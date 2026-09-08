@@ -5,8 +5,8 @@ export const candidateOutput = {
     claims: [{ id: "claim-1", kind: "fact", text: "示例观测站新增了 12 个观测点。", evidenceIds: ["evidence-1"] }] }],
 };
 
-export function modelResponseFixture() {
-  const text = JSON.stringify(candidateOutput);
+export function modelResponseFixture(output: unknown = candidateOutput) {
+  const text = JSON.stringify(output);
   const item = { id: "msg_fixture", type: "message", status: "completed", role: "assistant", content: [{ type: "output_text", text, annotations: [] }] };
   const response = { id: "resp_fixture", object: "response", created_at: 1788590000, model: "gpt-5.6-sol", status: "completed", output: [item],
     usage: { input_tokens: 12, input_tokens_details: { cached_tokens: 2 }, output_tokens: 21, output_tokens_details: { reasoning_tokens: 0 }, total_tokens: 33 } };

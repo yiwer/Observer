@@ -28,7 +28,7 @@ export class ModelBoundaryError extends Error {
 interface CommandResult { text: string; code: number | null; failure?: RuntimeFailure; }
 
 function docker(args: string[], cwd: string, options: { signal?: AbortSignal; timeoutMs?: number; input?: string; maxBytes?: number;
-  transport?: CodexModelTransport | ClaudeModelTransport; provider?: "codex" | "claude"; model?: string; schema?: unknown; maxModelRequests?: number } = {}): Promise<CommandResult> {
+  transport?: CodexModelTransport | ClaudeModelTransport; provider?: "codex" | "claude"; model?: string; schema?: unknown; outputMode?: "candidate" | "verification"; maxModelRequests?: number } = {}): Promise<CommandResult> {
   return new Promise((resolveResult) => {
     if (options.signal?.aborted) { resolveResult({ text: "", code: null, failure: "cancelled" }); return; }
     const env = Object.fromEntries(["PATH", "Path", "SystemRoot", "WINDIR", "TEMP", "TMP"].flatMap((key) =>
@@ -76,13 +76,13 @@ function docker(args: string[], cwd: string, options: { signal?: AbortSignal; ti
         // Override provider-requested tool/storage settings at the trusted boundary.
         let modelBody: Record<string, unknown>;
         try {
-          modelBody = options.provider === "claude" ? claudeModelRequest(body, options.schema) :
+          modelBody = options.provider === "claude" ? claudeModelRequest(body, options.schema, options.outputMode) :
             { ...body, model: options.model, tools: [], tool_choice: "none", store: false, stream: true, background: false };
         } catch { stop("policy-violation"); continue; }
         void Promise.resolve().then(() => options.transport!.respond(modelBody, modelAbort.signal)).then((response) => {
           if (modelAbort.signal.aborted) return;
           if (!Number.isInteger(response.status) || response.status < 100 || response.status > 599 || Buffer.byteLength(response.body) > 2 * 1024 * 1024) { stop("output-limit"); return; }
-          if (response.status === 200 && !(options.provider === "claude" ? claudeResponseAllowed(response.body) : modelResponseHasNoTools(response.body))) { stop("policy-violation"); return; }
+          if (response.status === 200 && !(options.provider === "claude" ? claudeResponseAllowed(response.body, options.outputMode) : modelResponseHasNoTools(response.body))) { stop("policy-violation"); return; }
           child.stdin.write(JSON.stringify({ id, status: response.status, body: response.body }) + "\n");
         }).catch((error: unknown) => { if (!modelAbort.signal.aborted) stop(error instanceof ModelBoundaryError ? error.category : "unavailable"); });
       }
@@ -108,7 +108,7 @@ export async function runAgentContainer(options: {
   taskRoot: string; runtime: AgentRuntime; args: string[]; prompt: string; schema: unknown;
   taskId: string;
   signal?: AbortSignal; timeoutMs: number; maxBytes: number;
-  transport?: CodexModelTransport | ClaudeModelTransport; model: string; maxModelRequests: number;
+  transport?: CodexModelTransport | ClaudeModelTransport; model: string; maxModelRequests: number; outputMode?: "candidate" | "verification";
 }): Promise<ContainerResult> {
   const result: ContainerResult = { stdout: "", exitCode: null, containerId: null, cleanup: "not-created" };
   if (Buffer.byteLength(options.prompt) > 1024 * 1024) return { ...result, failure: "input-limit" };
@@ -163,7 +163,7 @@ export async function runAgentContainer(options: {
       ...(options.signal ? { signal: options.signal } : {}),
       input: JSON.stringify({ provider: options.provider, program, args: options.args, prompt: options.prompt, schema: options.schema,
         model: options.model, modelTransport: Boolean(options.transport) }),
-      ...(options.transport ? { transport: options.transport, provider: options.provider, model: options.model, schema: options.schema, maxModelRequests: options.maxModelRequests } : {}),
+      ...(options.transport ? { transport: options.transport, provider: options.provider, model: options.model, schema: options.schema, maxModelRequests: options.maxModelRequests, ...(options.outputMode ? { outputMode: options.outputMode } : {}) } : {}),
     });
     result.stdout = run.text; result.exitCode = run.code;
     if (run.failure) result.failure = run.failure;
