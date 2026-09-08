@@ -2,22 +2,27 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 import { ObserverError, type Observer } from "./observer.ts";
 
-export async function startPrivateServer(observer: Pick<Observer, "readReport">, port = 0) {
+export async function startPrivateServer(observer: Pick<Observer, "readReport"> & Partial<Pick<Observer, "readScheduledStatus">>, port = 0) {
   const server = createServer((request, response) => {
     response.setHeader("Cache-Control", "no-store");
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("Content-Type", "application/json; charset=utf-8");
-    const route = /^\/v1\/reports\/(\d{4}-\d{2}-\d{2}-v1)(\/markdown)?$/.exec(request.url ?? "");
+    const route = /^\/v1\/reports\/(\d{4}-\d{2}-\d{2}-v[1-9]\d*)(\/markdown)?$/.exec(request.url ?? "");
+    const statusRoute = /^\/v1\/briefs\/(\d{4}-\d{2}-\d{2})$/.exec(request.url ?? "");
     if (request.method !== "GET") {
       response.writeHead(405, { Allow: "GET" }).end(JSON.stringify({ error: "method-not-allowed" }));
       return;
     }
-    if (!route) { response.writeHead(404).end(JSON.stringify({ error: "not-found" })); return; }
+    if (!route && !statusRoute) { response.writeHead(404).end(JSON.stringify({ error: "not-found" })); return; }
     try {
       const authorization = request.headers.authorization;
       const credential = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
-      const report = observer.readReport(route[1]!, credential);
-      if (route[2]) {
+      if (statusRoute) {
+        if (!observer.readScheduledStatus) throw new ObserverError("not-found");
+        response.end(JSON.stringify(observer.readScheduledStatus(statusRoute[1]!, credential))); return;
+      }
+      const report = observer.readReport(route![1]!, credential);
+      if (route![2]) {
         response.setHeader("Content-Type", "text/markdown; charset=utf-8");
         response.end(report.canonicalMarkdown);
       } else response.end(JSON.stringify(report));

@@ -23,6 +23,7 @@ function validVerification(value: unknown, context: VerificationInput): Verifica
 export interface RoutingOptions {
   executionScope?: "protocol-fixture" | "live";
   assemblyIdentity?: object;
+  publicationDeadlineUtc?: string;
   configuration: unknown;
   eligibility(): unknown;
   providers: Partial<Record<Provider, { editions: Partial<Record<Edition, AgentRunner>>; verifier: SemanticVerifier }>>;
@@ -36,7 +37,7 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
   collection: () => RoutingReceipt["collection"], authorizeEvidence: (evidenceIds: string[]) => void, initialSignal?: AbortSignal) {
   const configuration = RoutingConfigurationSchema.parse(options.configuration), clock = options.clock ?? (() => new Date().toISOString());
   const deadline = performance.now() + configuration.limits.totalTimeoutMs;
-  const remaining = () => Math.max(0, deadline - performance.now());
+  const remaining = () => Math.max(0, Math.min(deadline - performance.now(), options.publicationDeadlineUtc ? Date.parse(options.publicationDeadlineUtc) - Date.parse(clock()) : Infinity));
   const assemblyIdentity = options.assemblyIdentity ?? options;
   let assembly = assemblyStates.get(assemblyIdentity);
   if (!assembly) { assembly = { cleanupUnverified: false, active: 0, waiters: new Set(), externalActive: 0, externalWaiters: new Set(), maxProcesses: configuration.limits.maxConcurrentProcesses, maxExternal: configuration.limits.maxConcurrentExternalRequests }; assemblyStates.set(assemblyIdentity, assembly); }
@@ -234,7 +235,9 @@ export function createProviderRouting(options: RoutingOptions, task: SixEditionR
       authorizeAssembly();
       if (receipt.qualificationOverflow) throw new RoutingBoundaryError("qualification-capacity-exceeded");
       if (ownerSignal?.aborted) throw new RoutingBoundaryError("cancelled");
-      if (hasPublishedContent && !remaining()) throw new RoutingBoundaryError("total-deadline");
+      // The publication phase may retain already validated content when the
+      // scheduling deadline ends further Agent work. Process/cleanup checks remain.
+      if (hasPublishedContent && !remaining() && !options.publicationDeadlineUtc) throw new RoutingBoundaryError("total-deadline");
       if ([...selected.values()].some((provider) => !qualificationEligible(provider))) throw new Error("provider-ineligible");
     },
     complete(reportVersionId: string | null, failureReason: string | null = null) { receipt.status = reportVersionId ? "published" : "failed"; receipt.reportVersionId = reportVersionId; receipt.failureReason = failureReason; save(); },

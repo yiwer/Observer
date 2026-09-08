@@ -251,7 +251,18 @@ const DiscourseRecordSchema = DomainRecordSchema.extend({ schemaVersion: z.liter
 const GitHubRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(8), editorialContract: z.literal("observer-canonical-v6"), github: GitHubSnapshotSchema });
 const GitHubHeatRecordSchema = DiscourseRecordSchema.extend({ schemaVersion: z.literal(9), editorialContract: z.literal("observer-canonical-v7"), github: GitHubRankingSnapshotSchema, githubRanking: GitHubRankingSchema });
 const GitHubRepromotionRecordSchema = GitHubHeatRecordSchema.extend({ schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v8"), githubDevelopments: DevelopmentSnapshotSchema, githubRepromotion: GitHubRepromotionRankingSchema });
-export const RoutedRecordSchema = GitHubRepromotionRecordSchema.extend({ schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), routing: RoutingReceiptSchema, finalEditor: FinalEditorReceiptSchema, publicationMode: z.literal("scheduled").optional() });
+export const BriefRecoverySchema = z.strictObject({
+  contract: z.literal("observer-recovery-v1"), version: z.number().int().positive(),
+  revisionReason: z.enum(["initial", "completion"]), previousVersionId: id.nullable(),
+  publishedAtUtc: utc, deadlineUtc: utc, recoveryDeadlineUtc: utc,
+  timing: z.enum(["on-time", "delayed"]), delayReason: z.string().nullable(),
+  content: z.enum(["complete", "degraded", "links-only"]),
+  coverageGaps: z.array(z.strictObject({ edition, reason: z.string().min(1) })),
+  completedEditions: z.array(edition), availableEditions: z.array(edition), inheritedMarkdown: z.string().nullable(), collectionRecoveredAtUtc: utc.nullable(),
+  links: z.array(z.strictObject({ evidenceId: id, edition, sourceId: id, policyVersion: z.number().int().positive(), policySha256: sha256,
+    attribution: z.string().min(1), title: z.string().min(1), url: z.url({ protocol: /^https?$/ }), publishedAtUtc: utc.nullable() })),
+});
+export const RoutedRecordSchema = GitHubRepromotionRecordSchema.extend({ schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), routing: RoutingReceiptSchema, finalEditor: FinalEditorReceiptSchema, publicationMode: z.literal("scheduled").optional(), recovery: BriefRecoverySchema.optional() });
 export const ReportRecordSchema = z.union([LegacyReportRecordSchema, GatedReportRecordSchema, SixEditionRecordSchema, EventRecordSchema, InterestRecordSchema, DomainRecordSchema, DiscourseRecordSchema, GitHubRecordSchema, GitHubHeatRecordSchema, GitHubRepromotionRecordSchema, RoutedRecordSchema]);
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
 
@@ -283,6 +294,11 @@ export const ReportVersionSchema = z.discriminatedUnion("schemaVersion", [Legacy
 }), LegacyReportVersionSchema.extend({
   schemaVersion: z.literal(10), editorialContract: z.literal("observer-canonical-v9"), reportRecordSha256: sha256,
   provenance: z.enum(["test-fixture", "scheduled"]),
+}), LegacyReportVersionSchema.extend({
+  schemaVersion: z.literal(11), editorialContract: z.literal("observer-canonical-v9"), reportRecordSha256: sha256,
+  version: z.number().int().positive(), revisionReason: z.enum(["initial", "completion", "correction", "withdrawal"]), previousVersionId: id.nullable(),
+  provenance: z.enum(["test-fixture", "scheduled"]),
+  content: z.enum(["complete", "degraded", "links-only"]), timing: z.enum(["on-time", "delayed"]),
 })]);
 export type ReportVersion = z.infer<typeof ReportVersionSchema>;
 export const PublishedReportSchema = z.strictObject({

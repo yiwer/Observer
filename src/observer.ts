@@ -33,6 +33,7 @@ import { createProviderRouting, RoutingBoundaryError, type RoutingOptions } from
 import { MAX_ROUTING_AUDIT_BYTES, RoutingReceiptSchema, RoutingConfigurationSchema } from "./routing-contracts.ts";
 import { finalizeRoutedRecord, routedMarkdown } from "./routed-publication.ts";
 import { ScheduleConfigurationSchema, scheduledStore, type ScheduledSnapshot } from "./scheduled-publication.ts";
+import { editionContent, permittedLinks, recoveryDeadline, recoveryEditions, revisionWindowOpen } from "./brief-recovery.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -309,12 +310,14 @@ export function createObserver(options: ObserverOptions) {
         configuration: options.schedule!.runtimeConfiguration, versions: options.schedule!.versions, frozenAtUtc: clock() });
     },
     scheduledStatus(businessDate: string) { return schedule.status(businessDate); },
+    recoverScheduledCollection(businessDate: string, input: unknown) { return schedule.recoverCollection(businessDate, input); },
     saveScheduledDiscourseSample(sample: unknown) { schedule.saveDiscourseSample(sample); },
     scheduledDiscourseSamples(businessDate: string) { return schedule.discourseSamples(businessDate); },
-    pendingScheduled() { return schedule.pending(); },
+    pendingScheduled() { schedule.expire(); return schedule.pending(); },
     purgeScheduledEvidence() { schedule.purge(currentPolicies()); },
     async runScheduled(businessDate: string, signal?: AbortSignal) {
       if (!scheduleConfiguration?.enabled) throw new ObserverError("publication-disabled");
+      schedule.expire();
       const snapshot = schedule.claim(businessDate, scheduleConfiguration.maxAttempts);
       if (!snapshot) return null;
       activeScheduled.set(businessDate, snapshot);
@@ -324,7 +327,7 @@ export function createObserver(options: ObserverOptions) {
       } catch (error) {
         schedule.failed(businessDate, error instanceof ObserverError ? error.code : "scheduled-execution-failed", scheduleConfiguration);
         throw error;
-      } finally { activeScheduled.delete(businessDate); }
+      } finally { activeScheduled.delete(businessDate); schedule.expire(); }
     },
     markScheduledReadable(versionId: string, credential: string) {
       observer.readReport(versionId, credential);
@@ -333,6 +336,12 @@ export function createObserver(options: ObserverOptions) {
     pendingDeliveries(credential: string) {
       if (!timingSafeEqual(Buffer.from(digest(credential)), Buffer.from(digest(options.ownerToken)))) throw new ObserverError("unauthorized");
       return schedule.outbox();
+    },
+    readScheduledStatus(businessDate: string, credential: string | undefined) {
+      if (!credential || !timingSafeEqual(Buffer.from(digest(credential)), Buffer.from(digest(options.ownerToken)))) throw new ObserverError("unauthorized");
+      const value = schedule.status(businessDate);
+      if (!value) throw new ObserverError("not-found");
+      return value;
     },
     async produce(input: unknown, runOptions?: { signal?: AbortSignal; scheduledBusinessDate?: string }) {
       const frozen = runOptions?.scheduledBusinessDate ? activeScheduled.get(runOptions.scheduledBusinessDate) : undefined;
@@ -344,7 +353,19 @@ export function createObserver(options: ObserverOptions) {
       const request = parsedRequest.data.schemaVersion === 10 ? { ...parsedRequest.data, schemaVersion: 9 as const } : parsedRequest.data;
       if (routed && !options.routing) throw new ObserverError("routing-unavailable");
       const collectedInput = routed ? structuredClone(request.evidenceBundle) : undefined;
-      const routingOptions = frozen ? { ...options.routing!, assemblyIdentity: options.routing!, configuration: frozen.routing, executionScope: options.mode === "production" ? "live" as const : "protocol-fixture" as const } : options.routing!;
+      const previousVersionId = frozen ? schedule.status(request.businessDate)?.latestVersionId : null;
+      const previous = previousVersionId ? observer.readReport(previousVersionId, options.ownerToken) : null;
+      const publicationVersion = previous ? previous.version.version + 1 : 1;
+      const publicationId = `${request.businessDate}-v${publicationVersion}`;
+      const missingEditions = previous ? recoveryEditions(previous) : [];
+      if (previous && request.schemaVersion === 9) {
+        request.editions = request.editions.map((entry) => missingEditions.includes(entry.edition) ? entry : { ...entry, evidenceIds: [] });
+        if (!missingEditions.includes("social-discourse")) request.discourseSamples = [];
+      }
+      const publicationDeadline = frozen ? schedule.status(request.businessDate)!.deadlineUtc : undefined;
+      const routingOptions = frozen ? { ...options.routing!, assemblyIdentity: options.routing!, configuration: frozen.routing,
+        publicationDeadlineUtc: new Date(Date.parse(publicationDeadline! > clock() ? publicationDeadline! : recoveryDeadline(request.businessDate)) - frozen.routing.limits.cleanupTimeoutMs - 1000).toISOString(),
+        executionScope: options.mode === "production" ? "live" as const : "protocol-fixture" as const } : options.routing!;
       const routing = routed && request.schemaVersion === 9 ? createProviderRouting(routingOptions, request, (receipt) => {
         const safe = RoutingReceiptSchema.parse(receipt);
         const payload = JSON.stringify(safe);
@@ -386,7 +407,7 @@ export function createObserver(options: ObserverOptions) {
         try { return GitHubRepromotionSnapshotSchema.parse(frozen?.github ?? options.github?.repromotionSnapshot?.(request.evidenceBundle.cutoffUtc) ?? { schemaVersion: 1, github: { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2 }, developments: emptyDevelopments(request.evidenceBundle.cutoffUtc) }); }
         catch { return GitHubRepromotionSnapshotSchema.parse({ schemaVersion: 1, github: { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2, reasons: ["github-observation-unavailable"] }, developments: emptyDevelopments(request.evidenceBundle.cutoffUtc) }); }
       })() : undefined;
-      const capturedDevelopment = repromotion ? developmentCapture(`${request.businessDate}-v1`, request.businessDate, request.evidenceBundle.cutoffUtc, repromotion) : null;
+      const capturedDevelopment = repromotion ? developmentCapture(publicationId, request.businessDate, request.evidenceBundle.cutoffUtc, repromotion) : null;
       const github = repromotion?.github ?? ((request.schemaVersion === 7 || request.schemaVersion === 8) ? (() => {
         try {
           return request.schemaVersion === 8 ? GitHubRankingSnapshotSchema.parse(options.github?.rankingSnapshot?.(request.evidenceBundle.cutoffUtc) ?? { ...emptyGitHubSnapshot(request.evidenceBundle.cutoffUtc), schemaVersion: 2 }) :
@@ -479,7 +500,7 @@ export function createObserver(options: ObserverOptions) {
         throw new ObserverError("invalid-bundle-identity");
       }
       if (bundle.windowStartUtc >= bundle.cutoffUtc || bundle.evidence.some((evidence) =>
-        evidence.discoveredAtUtc > evidence.retrievedAtUtc || evidence.retrievedAtUtc > bundle.cutoffUtc ||
+        evidence.discoveredAtUtc > evidence.retrievedAtUtc || evidence.retrievedAtUtc > bundle.cutoffUtc && !(frozen?.collectionRecovery?.evidenceIds.includes(evidence.id) && evidence.retrievedAtUtc <= frozen.collectionRecovery.attachedAtUtc && evidence.publishedAtUtc && evidence.publishedAtUtc > bundle.windowStartUtc && evidence.publishedAtUtc <= bundle.cutoffUtc) ||
         (evidence.publishedAtUtc != null && evidence.publishedAtUtc > bundle.cutoffUtc))) {
         throw new ObserverError("invalid-evidence-window");
       }
@@ -573,7 +594,7 @@ export function createObserver(options: ObserverOptions) {
       if (discourse) await discourse.refresh();
       const story = stories[0];
       const commonRecord = {
-        schemaVersion: 1, id: `${request.businessDate}-v1-record`,
+        schemaVersion: 1, id: `${publicationId}-record`,
         businessDate: request.businessDate, businessTimezone: "Asia/Shanghai",
         configurationId: request.configurationId, taskId: request.taskId, applicationVersion: "0.1.0",
         evidenceBundle: request.evidenceBundle, stories,
@@ -752,9 +773,29 @@ export function createObserver(options: ObserverOptions) {
         }
       }
       if (routing) {
+        if (frozen && record.schemaVersion !== 1) { publishedAtUtc = clock(); record.publicationGate.checkedAtUtc = publishedAtUtc; }
         routing.authorize(record.stories.length > 0);
         if (record.schemaVersion !== 10) throw new ObserverError("routing-record-invalid");
         record = finalizeRoutedRecord(record, routing.freeze(), frozen && options.mode === "production" ? "scheduled" : undefined);
+      }
+      if (frozen && record.schemaVersion === 11 && collectedInput?.schemaVersion === 2) {
+        if (!revisionWindowOpen(previous ? "completion" : "initial", request.businessDate, clock())) throw new ObserverError("recovery-window-closed");
+        const allAgentsUnavailable = record.routing.outcome.startsWith("agents-unavailable");
+        const links = !previous && allAgentsUnavailable ? permittedLinks(collectedInput, requestPolicies(), clock()) : [];
+        const hasContent = Object.keys(editionNames).some((edition) => editionContent(record as Extract<ReportRecord, { schemaVersion: 11 }>, edition as keyof typeof editionNames) > 0);
+        if (!previous && !hasContent && !links.length) throw new ObserverError("no-trustworthy-content");
+        const completedEditions = previous ? missingEditions.filter((edition) => editionContent(record as Extract<ReportRecord, { schemaVersion: 11 }>, edition) > 0) : [];
+        if (previous && !completedEditions.length) throw new ObserverError("completion-no-new-content");
+        const previousGaps = previous?.record.schemaVersion === 11 ? previous.record.recovery?.coverageGaps ?? previous.record.coverageGaps : [];
+        const coverageGaps = previous ? [...previousGaps.filter((gap) => !completedEditions.includes(gap.edition)), ...record.coverageGaps.filter((gap) => completedEditions.includes(gap.edition))] : record.coverageGaps;
+        const deadlineUtc = schedule.status(request.businessDate)!.deadlineUtc;
+        const timing = previous?.version.schemaVersion === 11 ? previous.version.timing : previous ? previous.version.publishedAtUtc <= deadlineUtc ? "on-time" : "delayed" : publishedAtUtc <= deadlineUtc ? "on-time" : "delayed";
+        const availableEditions = [...new Set([...(previous?.record.schemaVersion === 11 ? previous.record.recovery?.availableEditions ?? (Object.keys(editionNames) as Array<keyof typeof editionNames>).filter((edition) => !missingEditions.includes(edition)) : []), ...(Object.keys(editionNames) as Array<keyof typeof editionNames>).filter((edition) => editionContent(record as Extract<ReportRecord, { schemaVersion: 11 }>, edition) > 0)])];
+        record.recovery = { contract: "observer-recovery-v1", version: publicationVersion, revisionReason: previous ? "completion" : "initial", previousVersionId: previous?.version.id ?? null,
+          publishedAtUtc, deadlineUtc, recoveryDeadlineUtc: recoveryDeadline(request.businessDate), timing,
+          delayReason: timing === "delayed" ? "原定08:30发布未完成，午前恢复后按真实时间发布" : null,
+          content: !hasContent && links.length ? "links-only" : coverageGaps.length ? "degraded" : "complete", coverageGaps, completedEditions, availableEditions,
+          inheritedMarkdown: previous?.canonicalMarkdown ?? null, collectionRecoveredAtUtc: frozen.collectionRecovery?.attachedAtUtc ?? null, links };
       }
       record = ReportRecordSchema.parse(record);
       if ((record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) && !consistentRecord(record)) throw new ObserverError("canonical-record-invalid");
@@ -762,17 +803,22 @@ export function createObserver(options: ObserverOptions) {
       const canonicalMarkdown = markdown(record);
       const report = PublishedReportSchema.parse({
         version: {
-          schemaVersion: 1, id: `${request.businessDate}-v1`, briefId: request.businessDate,
-          businessDate: request.businessDate, version: 1,
+          schemaVersion: 1, id: publicationId, briefId: request.businessDate,
+          businessDate: request.businessDate, version: publicationVersion,
           publishedAtUtc,
           revisionReason: "initial", previousVersionId: null, provenance: frozen && options.mode === "production" ? "scheduled" : "test-fixture",
           reportRecordId: record.id, canonicalMarkdownSha256: digest(canonicalMarkdown),
           ...(record.schemaVersion === 11 || record.schemaVersion === 10 || record.schemaVersion === 9 || record.schemaVersion === 8 || record.schemaVersion === 3 || record.schemaVersion === 4 || record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7) ? { schemaVersion: record.schemaVersion - 1, editorialContract: record.editorialContract, reportRecordSha256: digest(JSON.stringify(record)) } : {}),
+          ...(record.schemaVersion === 11 && record.recovery ? { schemaVersion: 11, revisionReason: record.recovery.revisionReason, previousVersionId: record.recovery.previousVersionId, content: record.recovery.content, timing: record.recovery.timing } : {}),
         },
         record, canonicalMarkdown,
       });
       if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("BEGIN IMMEDIATE");
       try {
+        if (frozen) {
+          if (!revisionWindowOpen(previous ? "completion" : "initial", request.businessDate, clock())) throw new ObserverError("recovery-window-closed");
+          if (previous && observer.readReport(previous.version.id, options.ownerToken).canonicalMarkdown !== previous.canonicalMarkdown) throw new ObserverError("completion-parent-changed");
+        }
         if (request.schemaVersion === 8 && (digest(JSON.stringify(githubHistory(request.businessDate, bundle.cutoffUtc))) !== digest(JSON.stringify(rankingHistory)) ||
           report.record.schemaVersion === 9 && report.record.github.runs.length > 0 && options.github?.authorize(report.record.github))) throw new ObserverError("github-publication-input-changed");
         if (request.schemaVersion === 9) developmentHistoryRead((scope) => {
@@ -791,7 +837,8 @@ export function createObserver(options: ObserverOptions) {
           database.prepare("INSERT INTO reports (id,payload,development_capture_sha256) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING").run(report.version.id, JSON.stringify(report), capturedDevelopment);
         if (insertion.changes === 0) throw new ObserverError("version-already-exists");
         if (routing) { routing.authorize(report.record.stories.length > 0); routing.complete(report.version.id); }
-        if (frozen) schedule.published(request.businessDate, report.version.id, clock());
+        if (frozen && report.record.schemaVersion === 11 && report.record.recovery) schedule.published(request.businessDate, report.version.id, clock(), report.record.recovery.content, report.record.recovery.timing,
+          recoveryEditions(report).length > 0, scheduleConfiguration!.recoveryRetryDelayMs);
         if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("COMMIT");
       } catch (error) { if (request.schemaVersion === 8 || request.schemaVersion === 9) database.exec("ROLLBACK"); throw error; }
       return report.version;
@@ -816,6 +863,21 @@ export function createObserver(options: ObserverOptions) {
       const report = storedReport(row);
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
       if (!consistentArchive(report, versionId)) throw new ObserverError("canonical-integrity-failed");
+      if (report.record.schemaVersion === 11 && report.record.recovery) {
+        const recovery = report.record.recovery;
+        if (recovery.previousVersionId) {
+          if (report.version.version < 2 || report.version.version > 7 || recovery.previousVersionId !== `${report.record.businessDate}-v${report.version.version - 1}`) throw new ObserverError("canonical-integrity-failed");
+          const parent = observer.readReport(recovery.previousVersionId, credential);
+          if (parent.canonicalMarkdown !== recovery.inheritedMarkdown || parent.record.evidenceBundle.id !== report.record.evidenceBundle.id || parent.record.evidenceBundle.cutoffUtc !== report.record.evidenceBundle.cutoffUtc) throw new ObserverError("canonical-integrity-failed");
+        }
+        for (const link of recovery.links) {
+          try {
+            const source = checkedPolicy(link);
+            if (!source.distribution.enabled || !source.distribution.allowPermanentArchive || !source.citation.enabled ||
+              !["title", "url", ...(link.publishedAtUtc ? ["publishedAtUtc"] : [])].every((field) => source.distribution.fields.includes(field as "title") && source.storage.fields.includes(field as "title") && source.collection.fields.includes(field as "title"))) throw new Error("revoked");
+          } catch { throw new ObserverError("not-found"); }
+        }
+      }
       if ((report.record.schemaVersion === 8 || report.record.schemaVersion === 9 || (report.record.schemaVersion === 10 || report.record.schemaVersion === 11))) {
         if (!consistentEvents(report.record, historicalReport)) throw new ObserverError("canonical-integrity-failed");
         try {
