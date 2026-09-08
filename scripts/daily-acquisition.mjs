@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { SaxesParser } from 'saxes';
 import { createDailyWindow, publicationDecision, sourceEligible } from './daily-window.mjs';
 import { collectGitHubTrending } from './daily-github-trending.mjs';
+import { collectMarketSnapshot } from './daily-markets.mjs';
 
 const EDITIONS = ['world', 'ai', 'finance', 'frontier', 'social', 'github'];
 const KEY_NAMES = ['TAVILY_API_KEY', 'EXA_API_KEY', 'OPENALEX_API_KEY', 'ZHIHU_ACCESS_SECRET', 'ALPHAVANTAGE_API_KEY'];
@@ -79,6 +80,7 @@ export async function collectDaily({ date, outputDir } = {}) {
   const keys = credentials();
   const redact = value => { let text = String(value ?? ''); for (const secret of Object.values(keys)) if (secret) text = text.split(secret).join('[redacted]'); return text.replace(/(api[_-]?key|access[_-]?secret|authorization)\s*[=:]\s*[^\s&,]+/gi, '$1=[redacted]'); };
   const checks = []; const warnings = []; const items = []; const seen = new Set();
+  let markets;
   const cutoff = Date.parse(window.cutoff);
   const earliest = Date.parse(window.windowStart);
   const since = new Date(earliest).toISOString();
@@ -209,6 +211,10 @@ export async function collectDaily({ date, outputDir } = {}) {
     return { usable: candidates > 0, received: candidates, responseFields: Object.keys(data).slice(0, 15), providerCode: data.Code ?? data.code ?? null, providerMessage: message || null, balance: 'unknown：无已确认余额API，请查看知乎个人中心' };
   }));
 
+  jobs.push(async () => {
+    markets = await collectMarketSnapshot();
+    checks.push(markets.check); warnings.push(...markets.warnings);
+  });
   let next = 0;
   await Promise.all(Array.from({ length: 4 }, async () => { while (next < jobs.length) await jobs[next++](); }));
   // Keep a bounded, source-diverse bundle. No minimum count is a publication gate.
@@ -221,7 +227,7 @@ export async function collectDaily({ date, outputDir } = {}) {
     if (!selected.some(item => item.edition === edition)) warnings.push(edition === 'github' ? 'GitHub：本轮未取得官方Trending榜单，不使用替代搜索榜；请查看访问或解析错误。' : `${edition}: 本轮没有可用内容，需检查该栏数据源或权限；不会以凑满7条为门槛`);
   }
   const completedAt = new Date().toISOString();
-  const result = { ...window, date, retrievedAt: completedAt, completedAt, discoveryWindowStart: since, items: selected, checks, filteredOut, warnings: [...new Set(warnings)] };
+  const result = { ...window, date, retrievedAt: completedAt, completedAt, discoveryWindowStart: since, items: selected, markets, checks, filteredOut, warnings: [...new Set(warnings)] };
   await enrichBundle(result, keys);
   enforcePublicationWindow(result);
   if (outputDir) { await mkdir(outputDir, { recursive: true }); await writeFile(resolve(outputDir, 'acquisition.json'), JSON.stringify(result, null, 2), { flag: 'wx', encoding: 'utf8' }); }
@@ -230,7 +236,7 @@ export async function collectDaily({ date, outputDir } = {}) {
 
 export function sourceWarningsForEdition(bundle, edition) {
   const routes = [...RSS.map(([source, target]) => [source, target]),
-    ['Alpha Vantage', 'finance'], ['OpenAlex', 'frontier'], ['知乎', 'social'],
+    ['Alpha Vantage', 'finance'], ['行情', 'finance'], ['OpenAlex', 'frontier'], ['知乎', 'social'],
     ['Hacker News', 'social'], ['GitHub', 'github'], ...EDITIONS.map(name => [name, name])];
   const relevant = (bundle.sourceWarnings ?? bundle.warnings ?? []).filter(warning => {
     const route = routes.find(([source]) => warning.startsWith(source));
