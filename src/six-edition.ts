@@ -128,7 +128,7 @@ export function sixEditionMarkdown(record: SixRecord): string {
   };
   return [
     `# Observer Daily Brief — ${record.businessDate}`,
-    `版本：${record.businessDate}-v1 · 正文契约：${record.editorialContract}`,
+    `版本：${record.id.replace(/-record$/, "")} · 正文契约：${record.editorialContract}`,
     "> 自动化标注替身产物；未经过真实研究或生产准入。",
     "## Today Overview",
     ...((record.schemaVersion === 5 || (record.schemaVersion === 6 || record.schemaVersion === 7)) ? [`Interest Profile：v${record.interestProfile.profile.version}；本期开始时固定，后续导入仅用于下一次生成。`,

@@ -4,7 +4,7 @@ import { inputDigest } from "./publication-gate.ts";
 
 type EventRecord = Extract<ReportRecord, { schemaVersion: 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 }>;
 export function consistentEvents(record: EventRecord, lookup: (versionId: string) => PublishedReport | undefined): boolean {
-  const versionId = `${record.businessDate}-v1`;
+  const versionId = record.id.replace(/-record$/, "");
   const gate = record.publicationGate;
   const assessments = gate.schemaVersion === 1 ? gate.verification?.assessments ?? [] : gate.batches.flatMap((batch) => batch.verification?.assessments ?? []);
   if (assessments.some((assessment) => assessment.event !== undefined || assessment.eventProjection && !gate.decisions.some((decision) => decision.storyId === assessment.storyId && decision.claimId === assessment.claimId && decision.outcome === "published"))) return false;

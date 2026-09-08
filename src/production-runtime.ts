@@ -80,7 +80,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
     routing: { configuration: configuration.routing, executionScope: "live", providers, clock,
       eligibility: () => Object.entries(configuration.providers).flatMap(([name, entry]) => entry ? [{ ...entry.eligibility, provider: name, enabled: entry.enabled && entry.eligibility.enabled }] : []) },
     schedule: { configuration: configuration.schedule, runtimeConfiguration: z.json().parse(JSON.parse(JSON.stringify(configuration))),
-      versions: { application: "0.1.0", scheduler: "observer-scheduled-v1", node: process.versions.node, codex: codexVersion, claude: claudeVersion,
+      versions: { application: "0.1.0", scheduler: "observer-scheduled-v1", recovery: "observer-recovery-v1", node: process.versions.node, codex: codexVersion, claude: claudeVersion,
         providerRuntime: JSON.stringify(configuration.providers) } },
   });
   observer.importInterestProfile(path(configuration.interestProfilePath));
@@ -126,9 +126,16 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
         for (const businessDate of observer.pendingScheduled()) {
           if (signal?.aborted) break;
           try {
+            const statusBefore = observer.scheduledStatus(businessDate);
+            if (!statusBefore?.latestVersionId && statusBefore?.recovery === "open") {
+              const originalWindow = dailyWindow(businessDate);
+              observer.recoverScheduledCollection(businessDate, collection.bundle({ businessDate, configurationId: configuration.configurationId,
+                windowStartUtc: originalWindow.windowStartUtc, cutoffUtc: clock() }, "storage"));
+            }
             await observer.runScheduled(businessDate, signal);
-            if (observer.scheduledStatus(businessDate)?.state === "published") {
-              const versionId = `${businessDate}-v1`;
+            const status = observer.scheduledStatus(businessDate);
+            if (status?.latestVersionId && !status.latestReadableAtUtc) {
+              const versionId = status.latestVersionId;
               await readable(versionId);
               observer.markScheduledReadable(versionId, ownerToken);
             }

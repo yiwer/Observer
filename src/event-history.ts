@@ -59,7 +59,7 @@ export function arrangeEvents(record: GatedRecord, research: EditionResearch, hi
       label: assessments.find((entry) => entry.storyId === story.id && entry.claimId === claim.id)!.eventProjection! })));
     const labels = facts.map((fact) => fact.label);
     const proposed = labels[0]!.primaryEdition;
-    const versionId = `${record.businessDate}-v1`;
+    const versionId = record.id.replace(/-record$/, "");
     const previous = history.flatMap((old) => old.eventClusters.filter((cluster) => cluster.id === id));
     const last = previous.at(-1);
     const evidenceIds = [...new Set(members.flatMap((story) => story.claims.flatMap((claim) => claim.evidenceIds)))];
