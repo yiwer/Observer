@@ -365,3 +365,13 @@ Root核160–162完整before/after一致及实际日志SHA，亲读公开host控
 四研究已观察120 tokens，首语义response增加40使已知下界160超过150阈值，实际send仅1、仅1语义attempt、usage-budget-exhausted；不等待最终语义receipt才止新send，后续核验不启动、无故事发表，重启run完整一致。observedResponses最多8，序号只允许已派发范围；input/output按每字段broker合计与最终CLI观察取较大值，不相加双计，cache/reasoning子集不再额外加总。
 
 当前规则为首次观察不可覆盖（含unknown→known冲突），相同值幂等，终态观察忽略；Root已要求以公开回归分别验证重复/冲突、未派发序号、迟到冻结和CLI/broker不双计，不能以源码存在替代通过。此片实际Owned host控制，不代表新增observe接线已在固定CLI重跑。作者将增加保存旧Candidate帧的纯parser回归，仍须原Docker Runner suites及票末整套验收，不把轻量回归替代真实CLI旧协议资格。
+
+## 旧协议、观察不可覆盖与实际CLI条件复核163–169b
+
+Root核163–169b各capture完整before/after一致及实际日志SHA。163保存的旧Candidate帧纯parser回归2/2，SHA `13e4e42cd8a9a3a757f915ef791ab8e859c1ff8b249fba6d1ef0d277c80bf55a`；不替代旧Runner完整Docker回归。164排除Audit与CLI后50/50，SHA `5cea1fed3ee7927a9d525a9924e1d155dc5b0830d58db7bb5d4ff51b64e7eda3`；169b同范围50/50，SHA `f27968df7e3c674c642f1f169a60932700d62e3d6b08ed13f9417e84fcadefb6`。Root亲读重复幂等、不同值冲突、未派发序号、冻结后迟到和只读重启断言；169b增加unknown→known冲突，首次null保留、不覆盖。165/166/168/169类型exit0；各GREEN均exit0、0skip/0cancelled。
+
+167实际固定CLI两用例2/2、capture58790.4475ms，SHA `3aa2e21c58a5d8bd67fc6b0f8a80f52bc970ca9ce4c20c470f866ae9d28a912f`。普通主核验Codex四容器、Claude四容器，各轮四故事，已观察tokens=252（研究120+4×33），逐响应与CLI聚合未重复加算。高风险组Codex四主核验+Claude一条件复核，两个Owned独立来源、四故事、一agreed复核，tokens=285；每个实际CLI容器一次Owned响应、input12/output21、exit0/completed/cleanup removed。只读重启run完整相等。十三个完整containerID在日志，窗口归还后Root与未过滤docker ps --all完整ID比对，残留0；既有Exited容器不动。不是live模型/账单/地区资格、完整六栏或整票验收。
+
+恢复裁定：#14不新增启动自动写入、全库abandoned标记、Owner认领或lease。readRun的running/ready仅为last-observed事实，不证明进程存活或清理完成，不据此回收旧槽、接管其他writer或重放发布。受控路径仍须终态，本票补数据库终态防覆盖及只读重启不改遗留run证据；跨实例恢复/fencing留在原#15持久任务重入与#23单节点重启设计，不称已实现。
+
+资格初稿冲突裁定：采用后续137–142已验证的当前可信资格逐次复核、完整内容hash保留、16授权快照+首次overflow锁定；version作为审计标识，本票不追加版本单调或同版本内容不可变约束。要求作者显式更正初稿相反语句；不声称此规则能防可信资格源自身回滚。Root当前再次检查无running容器、两固定镜像ID一致，批准170/171恶意语义CLI串行RED→GREEN窗口；尚未收到结果，不计通过。
