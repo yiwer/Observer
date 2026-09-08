@@ -15,7 +15,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- #17已实际读回CLOSED；#18 OPEN已派发fresh-context `/root/implement_v1_18`，专属 `O:/GenesisCode/Observer-worktrees/v1-18` / `ticket/v1-18`，base `541cbe5`。实现已保存Canonical MD到中文PDF、独立格式状态/有限重试，以及归档与鉴权下载接入；邮件归#19。按完整功能块交付，最多必要类型检查及一次代表性生成/下载/排版检查，不做hash验收、逐小步回归或矩阵。
+- 2026-09-08 #18已接受并本地集成 `13f3668`（功能 `161b2e0`，base `541cbe5`）。短静态 Standards/Spec 各0；最终类型通过，存量Completion全文一次转换/保存/私有下载通过，Root复用两页现成PNG确认代表性排版。无hash验收、逐步或集成回归，见[#18接受记录](acceptance/18-markdown-to-pdf-rendition.md)。下一票#19邮件投递；[QQ SMTP实施预研](../../research/qq-smtp-delivery-preflight-2026-09-08.md)已提交 `9bf8ff5`，未连接SMTP或发送邮件。代码未push，真实部署未验证；下方为历史状态。
 
 - 2026-09-08 #17已接受并本地集成 `f23fccf`（功能 `c244a5e`，base `3049fa2`）。短静态 Standards/Spec 各0，作者类型检查及修正配对 INSERT 后唯一核心路径1/1；Root未重复验证，无hash验收/逐步回归。已交付私有归档、持久分页同步、一次性配对与设备撤销、对象绑定短期下载，见[#17接受记录](acceptance/17-private-archive-and-device-sync.md)。下一票#18 Canonical MD转中文PDF；仍按完整功能块快速交付，真实部署未验证。下方#16等为历史状态。
 
