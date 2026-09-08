@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #24已实际读回CLOSED（2026-09-08T05:46:18Z）；#25 OPEN已派发fresh-context `/root/implement_v1_25`，专属 `O:/GenesisCode/Observer-worktrees/v1-25` / `ticket/v1-25`，base `a976bf8`。交付隔离影子评测、事实级核查表及可接续统计工具，不运行真实14日、不代签人工核查。沿完整功能块快速实施；无hash验收、夹具或逐步/集成回归，Root短静态审查。#26环境输入仍待Owner，不阻断本票开发。
+
 - 2026-09-08 #24已接受并本地集成 `24cd94f`（功能 `9925a11`、邮件围栏修复 `dde7b45`，base `8c8c170`）。短静态 Standards 0、Spec 原1项P2已修；唯一typecheck失败后作窄修，最终仅静态、未复跑，不标类型PASS。见[#24接受记录](acceptance/24-off-node-backup-restore.md)。已交付私有节点外备份和受控恢复/演练入口；无hash验收、夹具或逐步/集成回归，未操作真实存储或Owner数据，代码未push。下一票#25评测工具；真实灾备门槛留#26。下方为历史状态。
 
 - #23已实际读回CLOSED（2026-09-08T05:04:05Z）；#24 OPEN已派发fresh-context `/root/implement_v1_24`，专属 `O:/GenesisCode/Observer-worktrees/v1-24` / `ticket/v1-24`，base `8c8c170`。实现节点外私有备份接入、一致快照、秘密独立恢复、持久去重及先应用最新删除契约再开放服务的恢复入口；不购买/连接真实对象存储、不操作Owner数据。继续整块快速交付，无hash验收、新夹具或逐步/集成回归，真实RPO/RTO和私有性留#26。目标主机/地区/对象存储的Owner异步问题尚未回复，不阻断本票开发。
