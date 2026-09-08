@@ -375,3 +375,9 @@ Root核163–169b各capture完整before/after一致及实际日志SHA。163保�
 恢复裁定：#14不新增启动自动写入、全库abandoned标记、Owner认领或lease。readRun的running/ready仅为last-observed事实，不证明进程存活或清理完成，不据此回收旧槽、接管其他writer或重放发布。受控路径仍须终态，本票补数据库终态防覆盖及只读重启不改遗留run证据；跨实例恢复/fencing留在原#15持久任务重入与#23单节点重启设计，不称已实现。
 
 资格初稿冲突裁定：采用后续137–142已验证的当前可信资格逐次复核、完整内容hash保留、16授权快照+首次overflow锁定；version作为审计标识，本票不追加版本单调或同版本内容不可变约束。要求作者显式更正初稿相反语句；不声称此规则能防可信资格源自身回滚。Root当前再次检查无running容器、两固定镜像ID一致，批准170/171恶意语义CLI串行RED→GREEN窗口；尚未收到结果，不计通过。
+
+## 恶意语义工具隔离170–172
+
+Root核170–172完整before/after一致、实际日志SHA，亲读公开CLI测试及host绑定/cleanup校验后的policy-violation隔离分支。170真实RED：四个Codex语义attempt仍全部选择Codex，未按预期切换后两个，exit1，SHA `53ab3406ea758f3af5e42623da2f63933adce4820eec0b13c391d984f50c2e90`。171两种主Provider方向合并用例1/1、0skip/0cancelled、exit0，SHA `8664566a39531a1162dd2f33bd6714e2725a02688d0daa4c9d44c97aa7b2b0e0`；172类型exit0。
+
+每个方向world实际主CLI成功，AI主CLI收到Owned越权工具响应后failed/policy-violation且cleanup removed，其后两普通栏切到Owned备用Verifier（execution=null，不冒称实际备用CLI）。最终是总共三条安全故事，包含先前world，AI缺口；报告不含恶意canary，只读重启run一致。恶意进程收据exitCode=null/terminal=missing如实保留，不写成正常CLI完成。RED四容器、GREEN四容器，完整ID均在日志；窗口归还后Root独查未过滤docker ps --all完整ID，八个记录ID残留0、无running容器。不是live模型验收。#14继续六栏/历史、终态防覆盖、资格剩余边界和容量矩阵，尚未冻结或整票关闭。
