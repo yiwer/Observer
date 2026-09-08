@@ -41,6 +41,11 @@ export const AssessmentSchema = z.strictObject({
   domain: DomainAssessmentSchema.optional().catch(undefined),
   domainProjection: DomainProjectionSchema.optional(),
   discourse: DiscourseAssessmentSchema.optional().catch(undefined),
+  revision: z.strictObject({
+    classification: z.enum(["factual-error", "unresolved-major-error", "new-development", "insufficient"]),
+    affectedReferenceIds: z.array(id).min(1).max(20),
+    impact: z.enum(["nonmaterial-transcription", "changed-fact", "changed-conclusion", "safety-or-financial"]),
+  }).optional(),
 });
 export const VerificationSchema = z.strictObject({
   schemaVersion: z.literal(1), inputSha256: sha256,
@@ -56,6 +61,7 @@ export interface VerificationInput {
   configurationId: string;
   stories: CandidateV2[];
   evidence: ReadonlyArray<CollectedEvidence | EvidenceBundle["evidence"][number]>;
+  revisionContext?: { purpose: "correction-review"; originalStatements: Array<{ referenceId: string; versionId: string; storyId: string; claim: Claim }>; findingStoryId: string };
 }
 // A semantic judgment is external input, never a deterministic proof of truth.
 export interface SemanticVerifier { verify(input: VerificationInput, options?: AgentRunOptions): Promise<unknown>; }

@@ -244,6 +244,13 @@ export function createCollection(options: CollectionOptions) {
       lastOutcomes = outcomes;
       return { added, updated, duplicates, coverageGaps, outcomes };
     },
+    correctionEvidence(ids: string[]): CollectedEvidence[] {
+      purge();
+      return ids.flatMap((id) => {
+        const row = database.prepare("SELECT payload FROM evidence WHERE id=?").get(id);
+        return row ? [JSON.parse(String(row.payload)) as CollectedEvidence] : [];
+      });
+    },
     bundle(window: Pick<CollectedBundle, "businessDate" | "configurationId" | "windowStartUtc" | "cutoffUtc">, stage: "storage" | "model" | "distribution") {
       purge();
       const gaps = structuredClone(lastGaps);

@@ -33,6 +33,7 @@ export const ProductionConfigurationSchema = z.strictObject({
   providers: z.strictObject({ codex: provider.optional(), claude: provider.optional() }).default({}),
   pdf: PdfConfigurationSchema.default({ enabled: true }),
   email: EmailConfigurationSchema.default({ enabled: false }),
+  corrections: z.strictObject({ enabled: z.boolean().default(false) }).default({ enabled: false }),
   discourse: DiscourseConfigurationSchema.optional(),
   github: z.strictObject({ databasePath: z.string(), configuration: GitHubConfigurationSchema, developmentConfiguration: DevelopmentConfigurationSchema.optional(),
     credentialExpiresAtUtc: z.iso.datetime({ precision: 3, offset: false }).optional() }).optional(),
@@ -58,7 +59,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
   const mastodon = configuration.discourse ? createMastodonAdapter({ clock }) : undefined;
   for (const name of ["codex", "claude"] as const) {
     const entry = configuration.providers[name];
-    if (!configuration.schedule.enabled || !entry?.enabled) continue;
+    if ((!configuration.schedule.enabled && !configuration.corrections.enabled) || !entry?.enabled) continue;
     if (entry.eligibility.provider !== name || entry.eligibility.scope !== "live") throw new Error("invalid-live-provider-qualification");
     if (!entry.eligibility.enabled || !entry.eligibility.accountEligible || !entry.eligibility.regionEligible || entry.eligibility.checkedAtUtc > clock() || entry.eligibility.validUntilUtc <= clock()) continue;
     const key = process.env[name === "codex" ? "OBSERVER_OPENAI_API_KEY" : "OBSERVER_ANTHROPIC_API_KEY"];
@@ -85,6 +86,7 @@ export function createProductionRuntime(configurationPath: string, ownerToken: s
     ...(configuration.github.developmentConfiguration ? { developmentConfiguration: () => configuration.github!.developmentConfiguration } : {}) }) : undefined;
   const observer = createObserver({ databasePath: path(configuration.databasePath), ownerToken, mode: "production", clock,
     pdf: configuration.pdf,
+    corrections: { enabled: configuration.corrections.enabled, evidence: (ids) => collection.correctionEvidence(ids) },
     ...(email ? { email } : {}),
     sourcePolicies: sourceConfiguration.sources, sourcePolicyReader: () => sources().sources, ...(github ? { github } : {}),
     ...(mastodon ? { discourse: { configuration: configuration.discourse, adapter: mastodon } } : {}),

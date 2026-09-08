@@ -20,6 +20,8 @@ try {
   const inFlight = new Set<Promise<unknown>>();
   const tick = () => {
     if (shutdown.signal.aborted) return;
+    const correction = observer.processCorrections(shutdown.signal).catch(() => console.error("correction-tick-failed"));
+    inFlight.add(correction); void correction.finally(() => inFlight.delete(correction));
     const rendition = observer.processPdfRenditions(shutdown.signal).catch(() => console.error("pdf-rendition-tick-failed"));
     inFlight.add(rendition); void rendition.finally(() => inFlight.delete(rendition));
     const delivery = observer.processEmailDeliveries(shutdown.signal).catch(() => console.error("email-delivery-tick-failed"));

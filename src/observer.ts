@@ -39,6 +39,9 @@ import { privateArchive, checkedDate, editionMarkdown, parseEdition } from "./pr
 import { pdfRenditions, PdfConfigurationSchema } from "./pdf-rendition.ts";
 import { emailDeliveries } from "./email-delivery.ts";
 import { EmailConfigurationSchema, type EmailOptions, type NotificationKind } from "./email-contracts.ts";
+import { correctionPublisher, type CorrectionOptions } from "./correction-publication.ts";
+import { enqueueCorrection, correctionStatus } from "./correction-queue.ts";
+import { correctionMarkdown } from "./correction-rendering.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -65,6 +68,7 @@ export interface ObserverOptions {
   routing?: RoutingOptions;
   pdf?: { enabled?: boolean };
   email?: EmailOptions;
+  corrections?: CorrectionOptions;
   schedule?: { configuration: unknown; runtimeConfiguration: ScheduledSnapshot["configuration"]; versions: Record<string, string> };
 }
 
@@ -98,6 +102,7 @@ function reportFromRow(row: Record<string, unknown>): PublishedReport {
 }
 
 function markdown(record: ReportRecord): string {
+  if (record.schemaVersion === 12) return correctionMarkdown(record);
   if (record.schemaVersion === 11) return routedMarkdown(record);
   if (record.schemaVersion === 10) return githubRepromotionMarkdown(record);
   if (record.schemaVersion === 9) return githubRankingMarkdown(record);
@@ -191,6 +196,34 @@ export function createObserver(options: ObserverOptions) {
   const archive = privateArchive(database, access, options.mode);
   const pdf = pdfRenditions(database, clock, options.mode, PdfConfigurationSchema.parse(options.pdf ?? {}).enabled);
   const email = emailDeliveries(database, clock, options.mode, options.email);
+  // Internal, synchronous policy validation of immutable section provenance. Never exposed remotely.
+  let historicalReadDepth = 0;
+  function correctionSource(versionId: string): PublishedReport {
+    const row = database.prepare(`SELECT ${reportColumns} FROM reports WHERE id=?`).get(versionId);
+    if (!row) throw new ObserverError("not-found");
+    const report = storedReport(row);
+    if (report.record.schemaVersion === 12) {
+      if (options.mode === "production" && report.version.provenance !== "scheduled") throw new ObserverError("not-found");
+      if (!consistentArchive(report, versionId)) throw new ObserverError("canonical-integrity-failed");
+      for (const evidence of report.record.evidenceBundle.evidence) {
+        if (evidence.origin.kind !== "collected") throw new ObserverError("source-policy-invalid");
+        const source = checkedPolicy({ sourceId: evidence.sourceId, ...evidence.origin });
+        if (!source.distribution.enabled || !source.distribution.allowDerivedText || !source.distribution.allowPermanentArchive || !source.citation.enabled) throw new ObserverError("not-found");
+      }
+      if (report.record.revision.routingRunId) {
+        const run = storedRun(report.record.revision.routingRunId);
+        if (run.status !== "published" || run.reportVersionId !== versionId) throw new ObserverError("routing-integrity-failed");
+      } else if (options.mode === "production") throw new ObserverError("routing-integrity-failed");
+      return report;
+    }
+    historicalReadDepth++;
+    try { return observer.readReport(versionId, options.ownerToken); }
+    finally { historicalReadDepth--; }
+  }
+  const corrections = correctionPublisher(database, { clock, mode: options.mode, policies: currentPolicies,
+    read: (versionId) => observer.readReport(versionId, options.ownerToken), historical: correctionSource, recordChange: archive.recordRevisionChange,
+    ...(options.routing ? { routing: options.routing } : {}), ...(options.verifier ? { verifier: options.verifier } : {}),
+    ...(options.corrections ? { configuration: options.corrections } : {}) });
   const activeScheduled = new Map<string, ScheduledSnapshot>();
   function authenticate(credential: string | undefined) {
     try { return access.authenticate(credential); }
@@ -310,6 +343,9 @@ export function createObserver(options: ObserverOptions) {
   }
 
   const observer = {
+    enqueueCorrection(input: unknown) { return enqueueCorrection(database, input, clock()); },
+    correctionStatus(signalId: string) { return correctionStatus(database, signalId); },
+    async processCorrections(signal?: AbortSignal) { return corrections.processNext(signal); },
     // Local management only: HTTP intentionally exposes consumption, never issuance.
     issueDevicePairing() { return access.issuePairing(); },
     pairDevice(input: unknown) { return access.pair(input); },
@@ -341,7 +377,7 @@ export function createObserver(options: ObserverOptions) {
       }
       const version = view.versions.find((entry) => entry.version.id === versionId)!;
       return { schemaVersion: 1, businessDate, latestVersionId: view.latestVersionId, version: report.version, edition: selected,
-        canonicalMarkdown: editionMarkdown(report, selected), contentSourceVersionId: source.version.id,
+        canonicalMarkdown: editionMarkdown(report, selected), contentSourceVersionId: report.record.schemaVersion === 12 ? report.record.revision.inherited.find((entry) => entry.edition === selected)?.sourceVersionId ?? versionId : source.version.id,
         researchAvailable: version.availableEditions.includes(selected), coverageGaps: version.coverageGaps.filter((gap) => gap.edition === selected),
         delivery: view.delivery, fullReportPath: `/v1/reports/${versionId}` };
     },
@@ -452,6 +488,7 @@ export function createObserver(options: ObserverOptions) {
       const collectedInput = routed ? structuredClone(request.evidenceBundle) : undefined;
       const previousVersionId = frozen ? schedule.status(request.businessDate)?.latestVersionId : null;
       const previous = previousVersionId ? observer.readReport(previousVersionId, options.ownerToken) : null;
+      if (previous?.record.schemaVersion === 12) throw new ObserverError("completion-closed-after-correction");
       const publicationVersion = previous ? previous.version.version + 1 : 1;
       const publicationId = `${request.businessDate}-v${publicationVersion}`;
       const missingEditions = previous ? recoveryEditions(previous) : [];
@@ -915,6 +952,8 @@ export function createObserver(options: ObserverOptions) {
       try {
         if (frozen) {
           if (!revisionWindowOpen(previous ? "completion" : "initial", request.businessDate, clock())) throw new ObserverError("recovery-window-closed");
+          const current = database.prepare("SELECT id FROM reports WHERE json_extract(payload,'$.version.businessDate')=? ORDER BY json_extract(payload,'$.version.version') DESC LIMIT 1").get(request.businessDate)?.id ?? null;
+          if (current !== (previous?.version.id ?? null)) throw new ObserverError("publication-current-version-conflict");
           if (previous && observer.readReport(previous.version.id, options.ownerToken).canonicalMarkdown !== previous.canonicalMarkdown) throw new ObserverError("completion-parent-changed");
         }
         if (request.schemaVersion === 8 && (digest(JSON.stringify(githubHistory(request.businessDate, bundle.cutoffUtc))) !== digest(JSON.stringify(rankingHistory)) ||
@@ -956,10 +995,20 @@ export function createObserver(options: ObserverOptions) {
       authenticate(credential);
       const row = database.prepare(`SELECT ${reportColumns} FROM reports WHERE id = ?`).get(versionId);
       if (!row) throw new ObserverError("not-found");
-      archive.assertReadable(versionId);
+      if (!historicalReadDepth) archive.assertReadable(versionId);
       const report = storedReport(row);
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");
       if (!consistentArchive(report, versionId)) throw new ObserverError("canonical-integrity-failed");
+      if (report.record.schemaVersion === 12) {
+        correctionSource(versionId);
+        for (const section of report.record.revision.inherited) {
+          const source = correctionSource(section.sourceVersionId);
+          if (source.version.businessDate !== report.version.businessDate || source.version.version >= report.version.version ||
+            source.record.schemaVersion === 12 && source.record.revision.inherited.some((entry) => entry.edition === section.edition) ||
+            editionMarkdown(source, section.edition) !== section.markdown) throw new ObserverError("canonical-inheritance-invalid");
+        }
+        return report;
+      }
       if (report.record.schemaVersion === 11 && report.record.recovery) {
         const recovery = report.record.recovery;
         if (recovery.previousVersionId) {
