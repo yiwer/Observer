@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, unlinkSync
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
-import { SourceConfigurationSchema, policyDigest, sourceFields } from "./collection.ts";
+import { SourceConfigurationSchema, policyDigest, sourceFields, type SourcePolicy } from "./collection.ts";
 import { DeletionContractSchema, contentDependencies } from "./retention.ts";
 import { PublishedReportSchema, type PublishedReport } from "./contracts.ts";
 import { dailyWindow } from "./scheduled-publication.ts";
@@ -12,10 +12,12 @@ import { runtimeSecret } from "./runtime-secrets.ts";
 import { CampaignSchema, CompleteShadowSchema, FailureShadowSchema, FreezeShadowSchema, ReviewShadowSchema, ShadowConfigurationSchema,
   StartShadowSchema, shadowRules, type Campaign, type FrozenShadowInput, type ShadowConfiguration, type ShadowReview } from "./shadow-contracts.ts";
 import { sampleShadowReport, reviewShadowSample, type ShadowSample } from "./shadow-sampling.ts";
+import type { GitHubSnapshot } from "./github-contracts.ts";
+import type { DevelopmentSnapshot } from "./github-development-contracts.ts";
 
 const APP_ID = 1329746771;
 type Provider = "codex" | "claude";
-type Material = { input: FrozenShadowInput };
+type Material = { input: FrozenShadowInput; additionalPolicies?: SourcePolicy[] };
 type ResultMaterial = { report: PublishedReport; history: PublishedReport[]; sample: ShadowSample; review: ShadowReview | null };
 type JsonRow = Record<string, unknown>;
 type Metrics = ReturnType<typeof reviewShadowSample> & { scope: "live" | "protocol-fixture"; modelAvailable: boolean; inputComparable: boolean;
@@ -70,6 +72,50 @@ function quality(metrics: Omit<Metrics, "modelQuality">): Metrics["modelQuality"
   return "PASS";
 }
 
+// Only actual evidence collections confer citation identity. Task/config/story
+// IDs and arbitrary nested object IDs are never proof references.
+function reviewEvidenceIds(input: FrozenShadowInput, reports: PublishedReport[]) {
+  const ids = new Set(input.request.evidenceBundle.evidence.map((entry) => entry.id));
+  for (const sample of input.request.discourseSamples ?? []) {
+    ids.add(sample.receiptId); sample.records.forEach((entry) => ids.add(entry.id));
+  }
+  const github = (snapshot: GitHubSnapshot) => {
+    snapshot.runs.forEach((run) => run.observations.forEach((entry) => ids.add(entry.id)));
+    for (const item of snapshot.watchItems) {
+      if (item.current) ids.add(item.current.id);
+      if (item.historical) ids.add(item.historical.id);
+    }
+  };
+  const developments = (snapshot: DevelopmentSnapshot) => {
+    for (const run of snapshot.runs) {
+      run.evidence.forEach((entry) => ids.add(entry.observationId));
+      run.assessments.forEach((entry) => entry.previousEvidence.forEach((origin) => ids.add(origin.evidence.observationId)));
+      if (run.security) {
+        run.security.evidence.forEach((entry) => ids.add(entry.observationId));
+        run.security.history.entries.forEach((entry) => ids.add(entry.evidence.observationId));
+        run.security.history.materials.forEach((entry) => ids.add(entry.origin.evidence.observationId));
+        run.security.history.mitigations.forEach((entry) => ids.add(entry.origin.evidence.observationId));
+        run.security.assessments.forEach((entry) => entry.previous.forEach((origin) => ids.add(origin.origin.evidence.observationId)));
+      }
+    }
+    const momentum = snapshot.momentum;
+    for (const point of [momentum?.point, ...(momentum?.capsules.flatMap((entry) => entry.points) ?? [])]) {
+      if (!point) continue;
+      for (const candidate of point.candidates) {
+        if (candidate.current) ids.add(candidate.current.observation.id);
+        if (candidate.historical) ids.add(candidate.historical.observation.id);
+      }
+    }
+  };
+  github(input.github.github); developments(input.github.developments);
+  for (const report of reports) {
+    report.record.evidenceBundle.evidence.forEach((entry) => ids.add(entry.id));
+    if ("github" in report.record) github(report.record.github);
+    if ("githubDevelopments" in report.record) developments(report.record.githubDevelopments);
+  }
+  return ids;
+}
+
 /** Dedicated local evaluation archive. No reports/outbox tables, publisher, SMTP,
  * collector, or provider constructor. All source-bearing material is expiring. */
 export function openShadowEvaluation(config: ShadowConfiguration, clock = () => new Date().toISOString()) {
@@ -93,6 +139,7 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
       CREATE TABLE IF NOT EXISTS attempts(id TEXT PRIMARY KEY,batch_id TEXT NOT NULL,provider TEXT NOT NULL,ordinal INTEGER NOT NULL,started_at TEXT NOT NULL,
         lease_until TEXT NOT NULL,finished_at TEXT,state TEXT NOT NULL,failure TEXT,metrics TEXT,material TEXT,UNIQUE(batch_id,provider,ordinal));
       CREATE TABLE IF NOT EXISTS suppressions(kind TEXT NOT NULL,id TEXT NOT NULL,PRIMARY KEY(kind,id));
+      CREATE TABLE IF NOT EXISTS policy_identities(source_id TEXT PRIMARY KEY,version INTEGER NOT NULL,digest TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS exports(id TEXT PRIMARY KEY,batch_id TEXT NOT NULL,expires_at TEXT NOT NULL);`);
   } catch (error) { db.close(); throw error; }
   function transaction<T>(action: () => T): T {
@@ -106,8 +153,25 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
     const sources = SourceConfigurationSchema.parse(readShadowJson(config.sourceConfigurationPath)).sources;
     if (new Set(sources.map((source) => source.sourceId)).size !== sources.length) throw new Error("shadow-duplicate-policy");
     const contract = DeletionContractSchema.parse(readShadowJson(config.rightsContractPath));
-    for (const entry of contract.sources) db.prepare("INSERT OR IGNORE INTO suppressions VALUES('source',?)").run(entry.sourceId);
-    for (const entry of contract.versions) db.prepare("INSERT OR IGNORE INTO suppressions VALUES('version',?)").run(entry.versionId);
+    transaction(() => {
+      // Additive upgrade: seed still-present accepted materials before comparing
+      // current authority. Expiry/removal never deletes this identity high-water.
+      for (const row of db.prepare("SELECT material FROM batches WHERE material IS NOT NULL").all()) {
+        const saved = json<Material>(row, "material");
+        for (const policy of [...saved.input.policies, ...(saved.additionalPolicies ?? [])]) {
+          const old = db.prepare("SELECT version,digest FROM policy_identities WHERE source_id=?").get(policy.sourceId), digest = policyDigest(policy);
+          if (old && Number(old.version) === policy.version && old.digest !== digest) throw new Error("shadow-policy-version-conflict");
+          db.prepare("INSERT INTO policy_identities VALUES(?,?,?) ON CONFLICT(source_id) DO UPDATE SET version=excluded.version,digest=excluded.digest WHERE excluded.version>policy_identities.version").run(policy.sourceId, policy.version, digest);
+        }
+      }
+      for (const source of sources) {
+        const old = db.prepare("SELECT version,digest FROM policy_identities WHERE source_id=?").get(source.sourceId);
+        if (old && (Number(old.version) > source.version || Number(old.version) === source.version && old.digest !== policyDigest(source))) throw new Error("shadow-policy-version-conflict");
+      }
+      for (const source of sources) db.prepare("INSERT INTO policy_identities VALUES(?,?,?) ON CONFLICT(source_id) DO UPDATE SET version=excluded.version,digest=excluded.digest WHERE excluded.version>policy_identities.version").run(source.sourceId, source.version, policyDigest(source));
+      for (const entry of contract.sources) db.prepare("INSERT OR IGNORE INTO suppressions VALUES('source',?)").run(entry.sourceId);
+      for (const entry of contract.versions) db.prepare("INSERT OR IGNORE INTO suppressions VALUES('version',?)").run(entry.versionId);
+    });
     return sources;
   }
   function material(id: string): { row: JsonRow; value: Material } {
@@ -127,8 +191,8 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
   function maintain() {
     const sources = authorities(), now = clock(); let cleared = 0;
     for (const row of db.prepare("SELECT * FROM batches WHERE material IS NOT NULL").all()) {
-      const input = json<Material>(row, "material").input;
-      const invalidPolicy = input.policies.some((old) => {
+      const saved = json<Material>(row, "material");
+      const invalidPolicy = [...saved.input.policies, ...(saved.additionalPolicies ?? [])].some((old) => {
         const current = sources.find((source) => source.sourceId === old.sourceId);
         if (!current || current.review.status !== "approved" || !current.collection.enabled || !current.distribution.enabled)
           db.prepare("INSERT OR IGNORE INTO suppressions VALUES('source',?)").run(old.sourceId);
@@ -195,13 +259,59 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
       if ("editionRuns" in record) for (const run of record.editionRuns) {
         if (run.status !== "completed") continue;
         const result = run.result, execution = result.execution;
-        if (result.provider !== provider || result.model !== identity.model || result.runnerVersion !== identity.runnerVersion || execution?.cliVersion !== identity.cliVersion)
-          throw new Error("shadow-provider-identity-mismatch");
-        if (owner.scope === "live" && (!execution || execution.provenance !== `${provider}-cli` || execution.processKind !== `${provider}-cli` ||
-          execution.modelTransport !== (provider === "codex" ? "openai-api" : "anthropic-api") || execution.cleanup !== "removed" || !execution.containerId)) throw new Error("shadow-live-execution-required");
-        if (owner.scope === "protocol-fixture" && execution?.provenance !== "protocol-fixture") throw new Error("shadow-fixture-execution-required");
+        if (result.provider !== provider) throw new Error("shadow-provider-identity-mismatch");
+        const transport = provider === "codex" ? "openai-api" : "anthropic-api";
+        if (owner.scope === "live" && execution && (execution.provenance !== `${provider}-cli` || execution.processKind !== `${provider}-cli` ||
+          ![transport, "not-used"].includes(execution.modelTransport))) throw new Error("shadow-live-execution-required");
+        if (owner.scope === "protocol-fixture" && execution && (execution.provenance !== "protocol-fixture" || execution.processKind !== "protocol-fixture" ||
+          !["model-protocol-fixture", "not-used"].includes(execution.modelTransport))) throw new Error("shadow-fixture-execution-required");
+        // A completed Edition can carry an actual failed/cancelled run, including
+        // launch failure with unknown CLI or no container. Retain that failure.
+        if (result.status !== "succeeded") continue;
+        if (result.model !== identity.model || result.runnerVersion !== identity.runnerVersion || execution?.cliVersion !== identity.cliVersion) throw new Error("shadow-provider-identity-mismatch");
+        if (!execution || execution.terminal !== "completed" || execution.exitCode !== 0) throw new Error("shadow-success-execution-required");
+        if (owner.scope === "live" && (execution.modelTransport !== transport || execution.cleanup !== "removed" || !execution.containerId)) throw new Error("shadow-live-execution-required");
       }
     }
+  }
+  function outputBoundary(reports: PublishedReport[], sources: SourcePolicy[], existingExpiry: string, scope: Campaign["scope"]) {
+    let expires = Date.parse(existingExpiry); const used = new Map<string, SourcePolicy>(), now = clock();
+    const policyFor = (id: string) => {
+      const policy = sources.find((entry) => entry.sourceId === id);
+      if (!policy || policy.review.status !== "approved" || !policy.collection.enabled || !policy.distribution.enabled ||
+        !policy.distribution.allowDerivedText || !policy.distribution.allowPermanentArchive || !policy.citation.enabled ||
+        db.prepare("SELECT 1 FROM suppressions WHERE kind='source' AND id=?").get(id)) throw new Error("shadow-output-source-rights-invalid");
+      used.set(id, policy); return policy;
+    };
+    function inspect(value: unknown, inherited?: SourcePolicy) {
+      if (Array.isArray(value)) { value.forEach((entry) => inspect(entry, inherited)); return; }
+      if (!value || typeof value !== "object") return;
+      const item = value as Record<string, unknown>, origin = item.origin as Record<string, unknown> | undefined;
+      const identity = item.policy && typeof item.policy === "object" ? item.policy as Record<string, unknown> : item;
+      const sourceId = typeof identity.sourceId === "string" ? identity.sourceId : undefined;
+      const policy = sourceId ? policyFor(sourceId) : inherited;
+      if (sourceId && policy) {
+        const version = identity.policyVersion ?? (origin?.kind === "collected" ? origin.policyVersion : undefined);
+        const digest = identity.policySha256 ?? (origin?.kind === "collected" ? origin.policySha256 : undefined);
+        if (version !== undefined && (version !== policy.version || digest !== policyDigest(policy)) || scope === "live" && origin?.kind === "fixture") throw new Error("shadow-output-source-policy-mismatch");
+        if (typeof item.retrievedAtUtc === "string") for (const field of sourceFields) if (item[field] !== undefined &&
+          (!policy.collection.fields.includes(field) || !policy.storage.fields.includes(field) || !policy.distribution.fields.includes(field))) throw new Error("shadow-output-evidence-storage-forbidden");
+      }
+      if (policy) for (const field of ["retrievedAtUtc", "capturedAtUtc", "observedAtUtc"] as const) if (typeof item[field] === "string") {
+        const at = Date.parse(item[field]);
+        if (!Number.isFinite(at) || at > Date.parse(now)) throw new Error("shadow-output-material-time-invalid");
+        expires = Math.min(expires, at + policy.storage.retentionHours * 3600000);
+      }
+      if (typeof item.expiresAtUtc === "string") expires = Math.min(expires, Date.parse(item.expiresAtUtc));
+      Object.values(item).forEach((entry) => inspect(entry, policy));
+    }
+    for (const report of reports) {
+      const dependencies = contentDependencies(report); dependencies.versions.add(report.version.id);
+      if ([...dependencies.versions].some((id) => !!db.prepare("SELECT 1 FROM suppressions WHERE kind='version' AND id=?").get(id))) throw new Error("shadow-output-version-removed");
+      dependencies.sources.forEach(policyFor); inspect(report);
+    }
+    if (!Number.isFinite(expires) || expires <= Date.parse(clock())) throw new Error("shadow-output-material-expired");
+    return { expiresAtUtc: new Date(expires).toISOString(), policies: [...used.values()] };
   }
   const api = {
     close() { db.close(); }, maintain,
@@ -273,11 +383,24 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
       const metrics = metricsFor(output, owner, Date.parse(clock()) - Date.parse(String(row.started_at)));
       const dependencies = contentDependencies([frozen.value.input, value.report, value.history]);
       dependencies.versions.add(value.report.version.id); value.history.forEach((report) => dependencies.versions.add(report.version.id));
+      const sources = authorities();
       transaction(() => {
+        // Re-read under the write lock: another Provider may already have
+        // shortened this batch's lifetime or attached additional source policies.
+        const latest = material(String(row.batch_id));
+        if (attempt(value.attemptId).state !== "running") throw new Error("shadow-attempt-not-running");
+        const boundary = outputBoundary([value.report, ...value.history], sources, String(latest.row.expires_at), owner.scope);
+        const additional = new Map((latest.value.additionalPolicies ?? []).map((policy) => [policy.sourceId, policy]));
+        for (const policy of boundary.policies) if (!latest.value.input.policies.some((entry) => entry.sourceId === policy.sourceId)) additional.set(policy.sourceId, policy);
+        const prior = json<{ sources: string[]; versions: string[] }>(latest.row, "dependencies");
+        // Old exported headers must not promise the former, later deadline.
+        for (const exported of db.prepare("SELECT id FROM exports WHERE batch_id=? AND expires_at>?").all(row.batch_id!, boundary.expiresAtUtc)) deleteExport(String(exported.id));
+        if (boundary.expiresAtUtc <= clock()) throw new Error("shadow-output-material-expired");
         db.prepare("UPDATE attempts SET state='completed',finished_at=?,metrics=?,material=? WHERE id=?").run(clock(), JSON.stringify(metrics), JSON.stringify(output), row.id!);
         db.prepare("UPDATE jobs SET state='completed',active_attempt=NULL,selected_attempt=? WHERE active_attempt=?").run(row.id!, row.id!);
-        const prior = json<{ sources: string[]; versions: string[] }>(frozen.row, "dependencies");
-        db.prepare("UPDATE batches SET dependencies=? WHERE id=?").run(JSON.stringify({ sources: [...new Set([...prior.sources, ...dependencies.sources])], versions: [...new Set([...prior.versions, ...dependencies.versions])] }), row.batch_id!);
+        db.prepare("UPDATE batches SET dependencies=?,expires_at=?,material=? WHERE id=?").run(
+          JSON.stringify({ sources: [...new Set([...prior.sources, ...dependencies.sources])], versions: [...new Set([...prior.versions, ...dependencies.versions])] }),
+          boundary.expiresAtUtc, JSON.stringify({ input: latest.value.input, additionalPolicies: [...additional.values()] }), row.batch_id!);
       });
       maintain(); return { attemptId: row.id, metrics, sampling: { ...output.sample, items: undefined } };
     },
@@ -295,15 +418,7 @@ export function openShadowEvaluation(config: ShadowConfiguration, clock = () => 
       if (!row.material || review.reviewedAtUtc > clock() || review.reviewedAtUtc < String(row.finished_at)) throw new Error("shadow-review-time-or-material-invalid");
       const value = json<ResultMaterial>(row, "material");
       if (value.review?.finalized) throw new Error("shadow-review-already-recorded");
-      const knownEvidence = new Set<string>();
-      function collectIds(input: unknown) {
-        if (Array.isArray(input)) input.forEach(collectIds);
-        else if (input && typeof input === "object") for (const [key, item] of Object.entries(input)) {
-          if (["id", "observationId", "receiptId"].includes(key) && typeof item === "string") knownEvidence.add(item);
-          collectIds(item);
-        }
-      }
-      collectIds([frozen.value.input, value.report.record.evidenceBundle, ...value.history.map((report) => report.record.evidenceBundle)]);
+      const knownEvidence = reviewEvidenceIds(frozen.value.input, [value.report, ...value.history]);
       for (const entry of review.claims) for (const fact of entry.facts) if (fact.verdict === "supported" && (!fact.evidenceRefs.length || fact.fabricatedSource || fact.seriousError || fact.wrongAttribution)) throw new Error("shadow-supported-fact-inconsistent");
       for (const entry of review.claims) for (const fact of entry.facts) if (fact.verdict === "supported" && fact.evidenceRefs.some((id) => !knownEvidence.has(id))) throw new Error("shadow-review-evidence-not-in-batch");
       value.review = review;
