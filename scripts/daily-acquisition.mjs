@@ -252,6 +252,18 @@ export async function collectDaily({ date, outputDir } = {}) {
   return result;
 }
 
+export function sourceWarningsForEdition(bundle, edition) {
+  const routes = [...RSS.map(([source, target]) => [source, target]),
+    ['Alpha Vantage', 'finance'], ['OpenAlex', 'frontier'], ['知乎', 'social'],
+    ['Hacker News', 'social'], ['GitHub', 'github'], ...EDITIONS.map(name => [name, name])];
+  const relevant = (bundle.sourceWarnings ?? bundle.warnings ?? []).filter(warning => {
+    const route = routes.find(([source]) => warning.startsWith(source));
+    // General search providers and unrecognized failures remain visible, never silent.
+    return !route || route[1] === edition;
+  });
+  return [...new Set([...relevant, ...(bundle.warningsByEdition?.[edition] ?? [])])];
+}
+
 function enforcePublicationWindow(bundle) {
   if (bundle.publicationPolicy !== 'previous-day-midnight-v1') throw new Error('legacy-bundle-requires-new-collection');
   bundle.filteredOut ??= Object.fromEntries(EDITIONS.map(e => [e, {}]));
