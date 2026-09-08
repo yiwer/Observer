@@ -339,3 +339,13 @@ Root实时只读检查Docker Linux engine无running容器，两个已批准固�
 Root核152完整before/after一致及日志SHA `86f990a834ba675656394b864bfe25830fd591187284ed9633215c9ec78b8b5f`，亲读新增公开CLI测试。选中1项、exit1，实际RED为动态导入semantic-verifiers.ts缺模块，0容器/0外部模型请求；不是已复现CLI执行行为失败。拟覆盖Owned研究加两种固定实际CLI各四普通栏主核验，经真实Gate、鉴权Report/run及只读重启，断言实际CLI版本、containerID、cleanup、usage和dispatch计数。社会/GitHub在此输入仍Gap，routine主核验不代替条件review CLI或完整六栏历史验收。
 
 作者现实现已批准typed mode/host envelope，实际八容器串行运行前再申请窗口；普通回归将显式排除Audit与CLI，禁止隐式启动容器。当前尚无SemanticRun/真实语义CLI通过结论。
+
+## 首组真实语义CLI与host执行收据153–156
+
+Root亲读semantic-verifiers.ts、协议mode增量、容器host接线与router解封装，核153–156完整before/after一致和实际日志SHA。153类型exit0；154显式排除Audit|CLI后47/47、0skip/0cancelled、exit0，SHA `a2c961e206338782b731b3821773692d90fd9c5b589c11239471095ab47b889d`。可信Verifier工厂选择Verification schema，host WeakSet封装不能由普通JSON形状伪造；router验证attempt/input/provider/model/Bundle/configuration绑定，再将原Verification交Gate，记录实际执行/清理和用量来源。旧默认Candidate路径仍需票末完整回归，不以源码检查代替。
+
+Root再次实时检查无running容器且两固定镜像ID一致后批准155串行窗口。155选中CLI用例1/1、0skip/0cancelled、exit0，capture33760.943ms，SHA `fe22a82c504f9897e86384992a10fe76d7d47e715942292e427fcd71569cd72c`；156类型exit0。实际Codex 0.153.4四容器、Claude 2.1.252四容器，每个一次Owned模型响应、exit0/terminal completed/cleanup removed。八个完整containerID及安全usage在该日志两条JSON；前缀分别Codex c77d77e3/854cd145/66c5f9f1/36c48f22，Claude bddb16ab/a6eb164a/a4469a44/f064cab6。
+
+各provider的一轮四普通栏均经真实Gate生成，Owner readReport/readRun与无Provider只读重启完全相等。input12/output21来自Owned响应；Codex cost未知null、Claude CLI返回cost0.0003516，不能称真实账单或实际付费消耗。没有真实模型网络/凭据，也无镜像build/pull/retag。作者归还窗口后Root独查docker ps --all完整ID，八个本次ID均不存在；既有Exited容器未动。
+
+这证明真实固定CLI+Owned语义主核验闭环，不是live、实际地区/账户资格、条件review CLI、专用六栏或生产通过。Root另指出schema/hash合法但assessment覆盖/归属非法时，semanticAttempt可能先记succeeded而后Gate拒绝；作者已接下公开边界TDD，当前不把该细节算已验收。#14仍为未冻结WIP，剩余原矩阵继续。
