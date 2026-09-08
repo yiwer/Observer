@@ -1,6 +1,17 @@
 const DAY = 86400000;
 const shanghaiDate = value => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
 
+// GitHub is a current Trending observation, not a news publication. Other
+// editions keep their exact publication window without this exception.
+export function sourceEligible(item, window, edition = item.edition) {
+  if (edition !== 'github') return publicationDecision(item.publishedAt, window).eligible;
+  const observed = Date.parse(item.observedAt);
+  return item.evidenceKind === 'github-trending' && item.trendPeriod === 'daily' &&
+    item.trendingUrl === 'https://github.com/trending?since=daily' &&
+    Number.isInteger(item.trendingRank) && item.trendingRank > 0 &&
+    Number.isFinite(observed) && observed >= Date.parse(window.cutoff) && observed <= Date.now();
+}
+
 export function createDailyWindow({ date, now = new Date() } = {}) {
   const cutoffMs = new Date(now).getTime();
   if (!Number.isFinite(cutoffMs)) throw new Error('invalid-collection-cutoff');
