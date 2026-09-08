@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- 2026-09-08 #22已接受并本地集成 `f7cd014`（功能 `aa6d1ff`，集中修复 `3143e19`，base `69f5d97`）。短静态 Standards1、Spec2已修，最终修复仅静态核对；功能块末类型/一次微型删除路径发生在最终修复之前。见[#22接受记录](acceptance/22-retention-and-rights-removal.md)。无hash验收、追加夹具或逐步/集成回归，没有对Owner数据执行清理。下一票#23单节点运行；代码未push，真实环境未验收。下方为历史状态。
+
 - #21已实际读回CLOSED；#22 OPEN已派发fresh-context `/root/implement_v1_22`，专属 `O:/GenesisCode/Observer-worktrees/v1-22` / `ticket/v1-22`，base `69f5d97`。实现存活系统的到期/权利删除、允许的墓碑与GitHub压缩保留，并为#24提供恢复前删除契约；不清理Owner历史目录或原数据库。继续完整功能块快速交付，无hash验收、新夹具或逐步/集成回归；块末最少必要检查，Root短静态review。无真实来源/模型/SMTP/部署操作。
 
 - 2026-09-08 #21已接受并本地集成 `bc7b558`（功能 `db308f0`，集中修复 `83f4a1f`，base `1ca9e3d`）。已接通七日精确来源复读、当前栏目追溯、有界持久巡查及#20候选队列。短静态 Standards1、Spec1及Root补充1已修；修复前类型/一条注入排队路径通过，最终修复仅静态核对。见[#21接受记录](acceptance/21-seven-day-correction-patrol.md)。无hash验收、新夹具或逐步/集成回归，未真实调用/发送/部署。下一票#22到期清理与权利删除；#26已对齐快速检查策略及QQ预检事实。代码未push，下方为历史状态。
