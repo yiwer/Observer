@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #26 手动补发/附件邮件子块已本地集成 `84048d7`（作者 `f462f2e`，base `28606c7`）。短静态 Standards 0、Spec 0，无额外检查；见[子块接受记录](acceptance/26-owner-requested-publication.md)。native 子块的唯一真实启动在 CLI 配置阶段 exit 1，模型成功未证实，已清理进程；作者正根据配置 Schema 作静态修正，不重复模型 probe。真实来源启用确认仍待回复，今日报告/PDF/邮件尚未生成发送，#26 仍 OPEN。
+
 - 2026-09-08 14:58 接续刷新：旧 native/manual agent 句柄已从活动列表消失，两个工作树仍有完整未提交 WIP，按精确树路径检查无相关运行进程或真实调用结果。已派 fresh-context `/root/finish_v1_26_native` 与 `/root/finish_v1_26_manual` 接手原树收尾，不重建、不丢弃改动；native 最多一次安全真实调用，manual 仅静态提交。Root 补齐现有 lock 依赖并准备 ignored 的本地独立 generate/export/send 操作脚本，未执行。真实来源 [starter](../../research/today-source-starter-2026-09-08.md)已完成，已非阻塞询问 Owner 批准五家机构的最少公开字段用于私人摘要/邮件，未代签；当前无今日日报或新邮件。
 
 - 最新增量：Owner 指定 Codex 默认 `gpt-6-astra` / `medium`，已交 native 作者接入。并行 fresh-context `/root/implement_v1_26_manual` 在 `O:/GenesisCode/Observer-worktrees/v1-26-manual` / `ticket/v1-26-manual`（base `28606c7`）实现 Owner 鉴权的一次性今日初刊/附件邮件入口，使用实际冻结时间与独立截止时间，不改变自动日程或把手动补发计入准时影子样本。Root 在集成后执行真实来源采集、成品检查及单次发送；作者不触发模型/SMTP。后台 research 准备第一方许可来源，当前尚未生成或发送今日日报。下面较早的等待国家/接入选择条目为历史，不再构成前置阻断。
