@@ -357,3 +357,11 @@ Root核157–159完整before/after一致及实际日志SHA，亲读公开三场�
 Root批准下一host dispatchControl.observeUsage最小增量：实际Runner/Verifier读取每次响应后观察白名单safe usage，仅绑定本attempt真实已dispatch请求序号（1..实际modelRequests、最大8）；模型正文不能自行增加收据。相同请求不得双计，重复/冲突及未知转已知规则明确；CLI聚合与broker请求来源分别保留，不相加重复计量。冻结run或已终态attempt的迟到观察不能改旧审计，阈值保护只描述已观察下界，可取消在途并阻止新send，但保留cleanup grace/熔断和外部Promise实际settle才释放槽的生命周期。
 
 新增数组、数值与安全元数据须同时纳入审计最坏字节预留，不存原始响应。本项尚为TDD准入，不记实时用量保护已通过；作者继续实际响应/条件review/旧Candidate协议回归及完整六栏历史。Root建议在轻量checkpoint先跑既有纯协议测试，Docker仍另行协调。
+
+## 逐响应观察控制160–162
+
+Root核160–162完整before/after一致及实际日志SHA，亲读公开host控制测试、计量/取消逻辑及Codex/Claude Runner与新Verifier调用observeUsage的接线。160真实RED实际send8而期望1，SHA `b6e2736499b873ac9205f41e85270e6ad432b971899121b2e95c7ee25fc9e10c`；161排除Audit|CLI后49/49、0skip/0cancelled、exit0，SHA `619e3ea8d723417ff1e1ce6076c7d3dc73ed31d4f182c8c814928acdbda193b3`；162类型exit0。
+
+四研究已观察120 tokens，首语义response增加40使已知下界160超过150阈值，实际send仅1、仅1语义attempt、usage-budget-exhausted；不等待最终语义receipt才止新send，后续核验不启动、无故事发表，重启run完整一致。observedResponses最多8，序号只允许已派发范围；input/output按每字段broker合计与最终CLI观察取较大值，不相加双计，cache/reasoning子集不再额外加总。
+
+当前规则为首次观察不可覆盖（含unknown→known冲突），相同值幂等，终态观察忽略；Root已要求以公开回归分别验证重复/冲突、未派发序号、迟到冻结和CLI/broker不双计，不能以源码存在替代通过。此片实际Owned host控制，不代表新增observe接线已在固定CLI重跑。作者将增加保存旧Candidate帧的纯parser回归，仍须原Docker Runner suites及票末整套验收，不把轻量回归替代真实CLI旧协议资格。
