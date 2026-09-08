@@ -215,7 +215,7 @@ function mailStatus(directory, edition, subscriberId) {
   return existsSync(join(directory, `smtp-attempt-${suffix}.json`)) ? { state: 'unknown-inspect-before-retry' } : { state: 'not-attempted' };
 }
 
-async function sendEditions(report, directory, requestedEdition) {
+async function sendEditions(report, directory, requestedEdition, deadline = Infinity) {
   assertCurrentPolicy(report);
   assertCurrentContent(report);
   if (existsSync(join(directory, 'smtp-attempt.json'))) throw new Error('legacy-combined-mail-already-attempted');
@@ -233,6 +233,7 @@ async function sendEditions(report, directory, requestedEdition) {
   try {
     await Promise.all([0, 1].map(async () => {
       while (pending.length) {
+        if (Date.now() >= deadline) break;
         const { edition, subscriber } = pending.shift();
         const name = edition.edition;
         const suffix = `${name}-${subscriber.id}`;
@@ -254,7 +255,8 @@ async function sendEditions(report, directory, requestedEdition) {
           saveNew(attemptPath, { runId: report.runId, edition: name, subscriberId: subscriber.id, sender: config.sender,
             recipient: subscriber.address, messageId, state: 'attempting', at: new Date().toISOString() });
           log({ phase: 'email-started', edition: name, subscriber: subscriber.id });
-          const result = await transport.send({ from: config.sender, to: subscriber.address, messageId, raw: mail.message });
+          const signal = Number.isFinite(deadline) ? AbortSignal.timeout(Math.max(1, deadline - Date.now())) : undefined;
+          const result = await transport.send({ from: config.sender, to: subscriber.address, messageId, raw: mail.message }, signal);
           saveNew(resultPath, { ...result, edition: name, subscriberId: subscriber.id, messageId, at: new Date().toISOString() });
           log({ phase: 'email-result', edition: name, subscriber: subscriber.id, ...result });
           if (result.state !== 'accepted') process.exitCode = 1;
@@ -266,6 +268,49 @@ async function sendEditions(report, directory, requestedEdition) {
       }
     }));
   } finally { transport.close(); }
+}
+
+// Used only by the explicitly enabled local daily task. Manual runs retain their
+// stricter all-editions-generated behavior and their own run IDs.
+export async function runScheduledDaily({ date, cutoff, deadline, runId }) {
+  const deadlineMs = Date.parse(deadline);
+  if (date !== today() || runId !== `${date}-scheduled` || cutoff !== `${date}T07:30:00+08:00` ||
+    deadline !== `${date}T08:30:00+08:00` || Date.now() < Date.parse(cutoff) || Date.now() >= deadlineMs)
+    throw new Error('outside-scheduled-window');
+  const directory = join(root, runId);
+  mkdirSync(root, { recursive: true });
+  mkdirSync(directory); // Never resume/overwrite an ambiguous previous daily attempt.
+  const acquisition = await collectDaily({ date, cutoff, outputDir: directory });
+  const editions = [], failures = [], pending = Object.keys(names);
+  await Promise.all([0, 1].map(async () => {
+    while (pending.length) {
+      const edition = pending.shift();
+      try {
+        // Each native call is bounded to five minutes; leave a minute for mail.
+        if (Date.now() + 360000 >= deadlineMs) throw new Error('insufficient-generation-time');
+        editions.push(await generateEdition(edition, acquisition, date, directory));
+      } catch {
+        failures.push(edition);
+        const marketSnapshot = edition === 'finance' ? { ...acquisition.markets,
+          rows: acquisition.markets.rows.map(row => ({ ...row, insight: '本次未能生成可靠解读，请以所列行情与原始来源为准。' })) } : null;
+        editions.push({ edition, intro: '', stories: [], coverageNote: '本栏内容整理未完成，未用旧稿或猜测内容补齐；其他栏目正常提供。',
+          ...(marketSnapshot ? { marketSnapshot } : {}) });
+      }
+    }
+  }));
+  editions.sort((a, b) => Object.keys(names).indexOf(a.edition) - Object.keys(names).indexOf(b.edition));
+  const report = { date, runId, kind: 'scheduled-separate-editions', publicationPolicy, contentPolicy,
+    windowStart: acquisition.windowStart, cutoff: acquisition.cutoff,
+    generatedAt: new Date().toISOString(), observedThrough: acquisition.completedAt,
+    editions, sourceWarnings: acquisition.warnings ?? [], warningsByEdition: acquisition.warningsByEdition ?? {} };
+  saveNew(join(directory, 'report.json'), report);
+  writeRenditions(report, directory);
+  if (Date.now() >= deadlineMs) throw new Error('scheduled-delivery-deadline-reached');
+  await sendEditions(report, directory, undefined, deadlineMs);
+  const delivery = editions.flatMap(edition => mailConfiguration().subscribers.map(subscriber =>
+    ({ edition: edition.edition, subscriberId: subscriber.id, state: mailStatus(directory, edition.edition, subscriber.id).state })));
+  return { directory, failedEditions: failures, delivery, deadlineMet: Date.now() < deadlineMs,
+    state: delivery.every(item => item.state === 'accepted') ? (failures.length ? 'partial-content' : 'accepted') : 'delivery-incomplete' };
 }
 
 async function main() {

@@ -73,8 +73,9 @@ function parseFeed(xml) {
   return entries.map(e => ({ title: e.title, url: e.link || e.guid, publishedAt: e.pubDate || e.published || e.date, text: e.description || e.summary || '', updatedAt: e.updated || null }));
 }
 
-export async function collectDaily({ date, outputDir } = {}) {
-  const now = new Date();
+export async function collectDaily({ date, outputDir, cutoff: requestedCutoff } = {}) {
+  const now = requestedCutoff === undefined ? new Date() : new Date(requestedCutoff);
+  if (!Number.isFinite(now.getTime()) || now.getTime() > Date.now()) throw new Error('invalid-collection-cutoff');
   const window = createDailyWindow({ date, now }); date = window.date;
   if (outputDir && await access(resolve(outputDir, 'acquisition.json')).then(() => true, () => false)) throw new Error('acquisition-already-exists');
   const keys = credentials();
