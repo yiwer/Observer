@@ -15,6 +15,8 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
+- #17已实际读回CLOSED；#18 OPEN已派发fresh-context `/root/implement_v1_18`，专属 `O:/GenesisCode/Observer-worktrees/v1-18` / `ticket/v1-18`，base `541cbe5`。实现已保存Canonical MD到中文PDF、独立格式状态/有限重试，以及归档与鉴权下载接入；邮件归#19。按完整功能块交付，最多必要类型检查及一次代表性生成/下载/排版检查，不做hash验收、逐小步回归或矩阵。
+
 - 2026-09-08 #17已接受并本地集成 `f23fccf`（功能 `c244a5e`，base `3049fa2`）。短静态 Standards/Spec 各0，作者类型检查及修正配对 INSERT 后唯一核心路径1/1；Root未重复验证，无hash验收/逐步回归。已交付私有归档、持久分页同步、一次性配对与设备撤销、对象绑定短期下载，见[#17接受记录](acceptance/17-private-archive-and-device-sync.md)。下一票#18 Canonical MD转中文PDF；仍按完整功能块快速交付，真实部署未验证。下方#16等为历史状态。
 
 - 2026-09-08 #16已接受并本地集成`bcfd571`（功能`3c44caf`，交付时效修复`cbb06f5`）。短Standards0、Spec1项P2已处理；类型通过、原单条核心路径通过，最后小修未新增回归，无hash验收。最新交付时效由首次私有可读确定，未确认pending，旧正文不回写；见[#16接受记录](acceptance/16-brief-recovery.md)。下一票#17私有归档/配对/同步API，沿快速功能块交付；下方#16实施中为历史状态。
