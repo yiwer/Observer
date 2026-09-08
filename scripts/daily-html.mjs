@@ -95,7 +95,7 @@ function safeSources(ids, evidence, window, edition) {
     const url = new URL(item.url);
     if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error('unsafe-source-link');
     return { id, title: item.title, url: url.href, source: item.source, publishedAt: item.publishedAt,
-      publicationBasis: item.publicationBasis ?? item.evidenceKind ?? 'publication', publicationPrecision: item.publicationPrecision ?? 'timestamp',
+      publicationBasis: item.publicationBasis ?? item.evidenceKind ?? 'publication', publicationPrecision: edition === 'github' ? 'not-applicable' : item.publicationPrecision ?? 'timestamp',
       ...(edition === 'github' ? { evidenceKind: item.evidenceKind, observedAt: item.observedAt, trendingUrl: item.trendingUrl,
         trendPeriod: item.trendPeriod, trendingRank: item.trendingRank, stars: item.stars, starsToday: item.starsToday } : {}) };
   });
