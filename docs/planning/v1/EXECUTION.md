@@ -15,7 +15,7 @@ Owner 已授权：按 ticket 顺序逐个派发 fresh-context subagent，使用 
 
 ## 当前停止点
 
-- #18已实际读回CLOSED；#19 OPEN已派发fresh-context `/root/implement_v1_19`，专属 `O:/GenesisCode/Observer-worktrees/v1-19` / `ticket/v1-19`，base `88b8c6b`。实现同版本安全HTML总览/私有链接/预算内PDF、QQ SMTP可替换传输、持久幂等身份与未知受理状态；接通既有发布outbox和runtime，不仅写替身接口。默认邮件关闭，本票作者不读取秘密或真实邮箱、不连接SMTP/发送邮件。沿快速功能块交付，无hash验收、逐步或集成回归；必要块末类型与一次本地替身关键路径，Root简短静态review。
+- 2026-09-08 #19已接受并本地集成 `3453d83`（功能 `8aeccab`，base `88b8c6b`）。短静态 Standards/Spec 各0；类型及一次注入主路径通过，原脚本解码错误修正后通过、末尾字段命名未动态重跑。已接通outbox/同版HTML与PDF/QQ适配器/持久受理状态，unknown不重发；见[#19接受记录](acceptance/19-email-delivery-and-reconciliation.md)。默认禁用，未读秘密或发信；无hash验收、逐步或集成回归。下一票#20给定更正信号的核验/版本/重大通知，自动发现归#21。代码未push，真实上线未验证；下方为历史状态。
 
 - 2026-09-08 #18已接受并本地集成 `13f3668`（功能 `161b2e0`，base `541cbe5`）。短静态 Standards/Spec 各0；最终类型通过，存量Completion全文一次转换/保存/私有下载通过，Root复用两页现成PNG确认代表性排版。无hash验收、逐步或集成回归，见[#18接受记录](acceptance/18-markdown-to-pdf-rendition.md)。下一票#19邮件投递；[QQ SMTP实施预研](../../research/qq-smtp-delivery-preflight-2026-09-08.md)已提交 `9bf8ff5`，未连接SMTP或发送邮件。代码未push，真实部署未验证；下方为历史状态。
 
