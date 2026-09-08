@@ -154,7 +154,7 @@ export function scheduledStore(database: DatabaseSync, clock: () => string) {
         if (sample.expiresAtUtc <= clock() || !source || !source.collection.enabled || source.review.status !== "approved" || source.version !== sample.policyVersion || policyDigest(source) !== sample.policySha256)
           database.prepare("DELETE FROM scheduled_discourse_samples WHERE business_date=? AND group_id=?").run(String(value.business_date), String(value.group_id));
       }
-      for (const value of database.prepare("SELECT business_date,snapshot,state FROM scheduled_tasks").all()) {
+      for (const value of database.prepare("SELECT business_date,snapshot,state FROM scheduled_tasks WHERE state!='rights-removed'").all()) {
         const snapshot = ScheduledSnapshotSchema.parse(JSON.parse(String(value.snapshot)));
         let changed = false, invalid = false;
         if (snapshot.request.discourseSamples) {

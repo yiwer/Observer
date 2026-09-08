@@ -43,6 +43,7 @@ import { correctionPublisher, type CorrectionOptions } from "./correction-public
 import { enqueueCorrection, correctionStatus } from "./correction-queue.ts";
 import { correctionMarkdown } from "./correction-rendering.ts";
 import { correctionPatrol, type PatrolOptions } from "./correction-patrol.ts";
+import { initializeRetention, retentionLifecycle } from "./retention.ts";
 
 export class ObserverError extends Error {
   code: string;
@@ -71,6 +72,8 @@ export interface ObserverOptions {
   email?: EmailOptions;
   corrections?: CorrectionOptions;
   correctionPatrol?: PatrolOptions;
+  retention?: { purgeRaw?: (sourceIds: string[]) => void; availableEvidence?: (ids: string[]) => string[];
+    compactGitHub?: (published: unknown[], sourceIds: string[]) => unknown; restoreContract?: unknown };
   schedule?: { configuration: unknown; runtimeConfiguration: ScheduledSnapshot["configuration"]; versions: Record<string, string> };
 }
 
@@ -134,7 +137,9 @@ export function createObserver(options: ObserverOptions) {
   if (options.email) EmailConfigurationSchema.parse(options.email.configuration);
   const interest = interestConfiguration(options.databasePath);
   const policies = (options.sourcePolicies ?? []).map((source) => SourcePolicySchema.parse(source));
-  const currentPolicies = () => options.sourcePolicyReader ? SourcePolicySchema.array().parse(options.sourcePolicyReader()) : policies;
+  let retention: ReturnType<typeof retentionLifecycle> | undefined;
+  const rawPolicies = () => options.sourcePolicyReader ? SourcePolicySchema.array().parse(options.sourcePolicyReader()) : policies;
+  const currentPolicies = () => retention ? retention.policies() : rawPolicies();
   function checkedPolicy(evidence: { sourceId: string; policyVersion: number; policySha256: string }, authority = currentPolicies()) {
     const source = authority.find((source) => source.sourceId === evidence.sourceId);
     if (!source || source.review.status !== "approved" || !source.collection.enabled || source.version !== evidence.policyVersion || policyDigest(source) !== evidence.policySha256) throw new ObserverError("source-policy-invalid");
@@ -192,6 +197,7 @@ export function createObserver(options: ObserverOptions) {
   const routingInstalled = database.prepare("PRAGMA table_xinfo(reports)").all().some((entry) => entry.name === "routing_capture_sha256");
   const reportColumns = `id,payload,development_capture_sha256,${routingInstalled ? "routing_capture_sha256" : "NULL AS routing_capture_sha256"}`;
   const clock = options.clock ?? (() => new Date().toISOString());
+  initializeRetention(database);
   const scheduleConfiguration = options.schedule ? ScheduleConfigurationSchema.parse(options.schedule.configuration) : undefined;
   const schedule = scheduledStore(database, clock);
   const access = privateAccess(database, options.ownerToken, clock);
@@ -203,6 +209,7 @@ export function createObserver(options: ObserverOptions) {
   function correctionSource(versionId: string): PublishedReport {
     const row = database.prepare(`SELECT ${reportColumns} FROM reports WHERE id=?`).get(versionId);
     if (!row) throw new ObserverError("not-found");
+    retention?.assertReadable(versionId, JSON.parse(String(row.payload)));
     const report = storedReport(row);
     if (report.record.schemaVersion === 12) {
       if (options.mode === "production" && report.version.provenance !== "scheduled") throw new ObserverError("not-found");
@@ -230,6 +237,9 @@ export function createObserver(options: ObserverOptions) {
     read: (versionId) => observer.readReport(versionId, options.ownerToken), historical: correctionSource,
     ...(options.routing ? { routing: options.routing } : {}), ...(options.correctionPatrol ? { configuration: options.correctionPatrol } : {}) });
   const activeScheduled = new Map<string, ScheduledSnapshot>();
+  retention = retentionLifecycle(database, clock, rawPolicies, { ...options.retention, purgeScheduled: (current) => schedule.purge(current) });
+  if (options.retention?.restoreContract) retention.applyContract(options.retention.restoreContract);
+  retention.maintenance(true);
   function authenticate(credential: string | undefined) {
     try { return access.authenticate(credential); }
     catch { throw new ObserverError("unauthorized"); }
@@ -250,6 +260,7 @@ export function createObserver(options: ObserverOptions) {
   }
 
   function storedReport(row: Record<string, unknown>) {
+    retention?.assertReadable(String(row.id), JSON.parse(String(row.payload)));
     const report = reportFromRow(row);
     if (report.record.schemaVersion === 11) {
       const run = storedRun(report.record.routing.runId);
@@ -348,10 +359,15 @@ export function createObserver(options: ObserverOptions) {
   }
 
   const observer = {
+    processRetention() { retention!.maintenance(); },
+    removeSourceRights(input: unknown) { return retention!.remove(input); },
+    retentionStatus() { return retention!.status(); },
+    deletionContract() { return retention!.contract(); },
+    applyDeletionContract(input: unknown) { return retention!.applyContract(input); },
     enqueueCorrection(input: unknown) { return enqueueCorrection(database, input, clock()); },
     correctionStatus(signalId: string) { return correctionStatus(database, signalId); },
-    async processCorrections(signal?: AbortSignal) { return corrections.processNext(signal); },
-    async processCorrectionPatrol(signal?: AbortSignal) { return patrol.tick(signal); },
+    async processCorrections(signal?: AbortSignal) { retention!.maintenance(); return corrections.processNext(signal); },
+    async processCorrectionPatrol(signal?: AbortSignal) { retention!.maintenance(); return patrol.tick(signal); },
     correctionPatrolStatus(businessDate?: string) { return patrol.status(businessDate); },
     // Local management only: HTTP intentionally exposes consumption, never issuance.
     issueDevicePairing() { return access.issuePairing(); },
@@ -360,16 +376,17 @@ export function createObserver(options: ObserverOptions) {
     revokeDevice(deviceId: string) { return access.revokeDevice(deviceId); },
     recordArchiveChange(input: unknown) { return archive.recordRevisionChange(input); },
     archiveHistory(input: { cursor?: string; limit?: number }, credential: string | undefined) {
-      authenticate(credential); return archive.history(input);
+      authenticate(credential); retention!.maintenance(); return archive.history(input);
     },
     syncArchive(input: { cursor?: string; limit?: number }, credential: string | undefined) {
-      authenticate(credential); return archive.sync(input);
+      authenticate(credential); retention!.maintenance(); return archive.sync(input);
     },
     readArchive(businessDate: string, credential: string | undefined) {
-      authenticate(credential); return archive.view(checkedDate(businessDate));
+      authenticate(credential); retention!.maintenance(); return archive.view(checkedDate(businessDate));
     },
     readArchiveReport(businessDate: string, requestedVersion: string, edition: string | null, credential: string | undefined) {
       authenticate(credential);
+      retention!.maintenance();
       const view = archive.view(checkedDate(businessDate)), selected = parseEdition(edition);
       if (requestedVersion !== "latest" && !/^[1-9]\d*$/.test(requestedVersion)) throw new PrivateApiError("invalid-version");
       const versionId = requestedVersion === "latest" ? view.latestVersionId : `${businessDate}-v${requestedVersion}`;
@@ -411,9 +428,11 @@ export function createObserver(options: ObserverOptions) {
       return pdf.read(observer.readReport(versionId, credential), parseEdition(edition));
     },
     async processPdfRenditions(signal?: AbortSignal): Promise<void> {
+      retention!.maintenance();
       await pdf.processNext((versionId) => observer.readReport(versionId, options.ownerToken), signal);
     },
     async processEmailDeliveries(signal?: AbortSignal): Promise<void> {
+      retention!.maintenance();
       await email.processNext({ report: (versionId) => observer.readReport(versionId, options.ownerToken), pdf: (report) => pdf.read(report),
         grant(versionId, format) {
           const report = observer.readReport(versionId, options.ownerToken);
@@ -451,7 +470,11 @@ export function createObserver(options: ObserverOptions) {
     },
     scheduledStatus(businessDate: string) { return schedule.status(businessDate); },
     recoverScheduledCollection(businessDate: string, input: unknown) { return schedule.recoverCollection(businessDate, input); },
-    saveScheduledDiscourseSample(sample: unknown) { schedule.saveDiscourseSample(sample); },
+    saveScheduledDiscourseSample(sample: unknown) {
+      const sourceId = (sample as { sourceId?: string })?.sourceId;
+      if (!currentPolicies().some((source) => source.sourceId === sourceId)) return;
+      schedule.saveDiscourseSample(sample);
+    },
     scheduledDiscourseSamples(businessDate: string) { return schedule.discourseSamples(businessDate); },
     pendingScheduled() { schedule.expire(); return schedule.pending(); },
     purgeScheduledEvidence() { schedule.purge(currentPolicies()); },
@@ -1002,6 +1025,7 @@ export function createObserver(options: ObserverOptions) {
       authenticate(credential);
       const row = database.prepare(`SELECT ${reportColumns} FROM reports WHERE id = ?`).get(versionId);
       if (!row) throw new ObserverError("not-found");
+      retention!.assertReadable(versionId, JSON.parse(String(row.payload)));
       if (!historicalReadDepth) archive.assertReadable(versionId);
       const report = storedReport(row);
       if (options.mode === "production" && report.version.provenance === "test-fixture") throw new ObserverError("not-found");

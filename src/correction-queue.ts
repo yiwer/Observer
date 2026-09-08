@@ -31,6 +31,9 @@ export function enqueueCorrection(database: DatabaseSync, value: unknown, atUtc:
   const parsed = CorrectionSignalSchema.safeParse(value);
   if (!parsed.success || Buffer.byteLength(JSON.stringify(parsed.data)) > 256 * 1024) throw new PrivateApiError("invalid-correction-signal");
   const signal = parsed.data, { signalId, ...body } = signal;
+  if (database.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rights_versions'").get() &&
+    [signal.expectedCurrentVersionId, ...signal.affected.map((entry) => entry.versionId)].some((version) => database.prepare("SELECT 1 FROM rights_versions WHERE version_id=?").get(version)))
+    throw new PrivateApiError("report-rights-removed", 410);
   if (new Set(signal.affected.map((entry) => entry.referenceId)).size !== signal.affected.length || new Set(signal.evidence.map((entry) => entry.evidenceId)).size !== signal.evidence.length ||
     signal.affected.some((entry) => entry.versionId.slice(0, 10) !== signal.expectedCurrentVersionId.slice(0, 10)) ||
     signal.evidence.some((entry) => entry.retrievedAtUtc > atUtc) || signal.replacement?.edition && signal.replacement.edition !== signal.finding.edition ||
