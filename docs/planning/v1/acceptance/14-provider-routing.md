@@ -1,6 +1,20 @@
 # V1-14 双 Provider 路由：执行与验收记录
 
-状态：2026-09-08 Root已批准设计及首个T1切片，作者开始TDD；尚无产品测试通过结论。GitHub [#14](https://github.com/yiwer/Observer/issues/14) OPEN；Root确认依赖#4/#5/#9均CLOSED。
+状态：2026-09-08，作者未提交产品WIP，Root已核验至切片175；普通回归51/51及受控响应下的固定CLI切片通过，但尚未冻结候选、完成整套检查或最终双轴review。GitHub [#14](https://github.com/yiwer/Observer/issues/14) OPEN；#1–#13已验收关闭。下文按时间保留历史判断，“尚未批准/实现”等旧描述只表示当时状态，以后续明确裁定和证据为准。
+
+## 当前收口与最终验收门槛
+
+以下均不是整票PASS，切片证据不替代固定候选复验：
+
+| 范围 | 已有切片证据 | 仍须完成 |
+| --- | --- | --- |
+| 主备、条件复核、局部失败 | 双向替代、分歧/同源、安全隔离、四普通栏保留 | 完整六栏的真实业务来源结构与Record11历史链，不以两Gap替代 |
+| 有界运行与资格 | 时限、共享槽、逐请求资格/来源、用量观察及溢出锁定 | 作者对全部批准边界逐项核对；新字段下容量重跑与默认配置可达输入 |
+| 持久化与版本 | 失败run、出版关联、只读读取、终态UPDATE保护 | 固定候选独立Record10/更早版本兼容，旧原始样本不回写 |
+| CLI与回归 | 固定Codex/Claude主核验、条件复核和恶意工具隔离 | 原Runner回归、原npm check/smoke，不把Owned响应当live |
+| 最终交付 | Root证据账本、原失败capture保留 | 作者收敛当前规格与历史记录、提交固定SHA；非空base diff的Standards/Spec独立review；Root独立验收、集成复验后关闭票 |
+
+重型与Docker检查继续串行协调。真实账户/地域、Claude live延期、部署及后续生产门槛仍单列，不以本票受控测试消除。
 
 ## 实施身份与边界
 
@@ -9,7 +23,7 @@
 - 使用implement/TDD，先提交`docs/implementation/v1-14.md`供Root批准，再逐个公开业务切片RED→GREEN。票末固定提交双轴审查、独立验收、集成后复验。
 - 不新增HTTP发布入口或开始每日调度；#15负责持久调度。Sandcastle非V1依赖。Claude live延期，不缩减双Provider业务契约；Codex地域资格仍未确认，不以历史费用授权代替资格。
 
-## Root已核当前代码的接入约束
+## 实施前基线的接入约束（历史）
 
 1. `AgentRunner.run`使用旧单栏ProduceRequest，taskId上限200；`EditionResearch`允许附加栏目后更长身份。路由必须明确安全且有界的身份映射，不静默拓宽旧CLI契约。
 2. `observer.ts`有证据却未装配EditionRunner会拒绝；Runner整体抛错会成为整期`agent-unknown`。路由必须返回可解释的局部终态，单栏失败不得丢失其他栏。
@@ -18,7 +32,7 @@
 5. 复核一致不是独立来源；转载同一上游不能投票成为交叉佐证。分歧需要Claim/Evidence身份绑定且不得绕过现有Publication Gate。
 6. 运行约束须分清attempt数、attempt内模型请求数、共享并发、总deadline、异常已观察usage；未知消耗不能记零，后验告警不能声称已经阻止这次费用。资格在dispatch与替代前从可信配置复查，不接受Agent自报。
 
-## 已确认T1验收方向
+## 首片T1验收方向（历史）
 
 出版行为通过真实`createObserver.produce → authenticated readReport → SQLite重启读取`；全部失败、取消、预算和运行审计通过路由公开Interface及Owner鉴权运行记录读取。只替换外部Provider/transport、可信时间/资格输入；自有Gate、SQLite与Final Editor不mock，不用私有方法计数或SQL查行充当业务oracle。
 
